@@ -14,6 +14,7 @@ import {
   Mic,
   Plus,
   RefreshCw,
+  Save,
   Settings,
   Sliders,
   Sparkles,
@@ -22,6 +23,7 @@ import {
   Volume2,
   Wand2,
 } from 'lucide-react';
+import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { SourceWizardModal } from './components/SourceWizardModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
@@ -31,6 +33,8 @@ import {
   getContentLanguage,
   MotionStyle,
   RemotionEffect,
+  SavedProjectRecord,
+  SavedProjectSummary,
   SceneSpec,
   TEMPLATE_LABELS,
   TechDomain,
@@ -73,10 +77,95 @@ export function App() {
     outputUrl?: string;
     error?: string;
   }>({ active: false, progress: 0, status: 'idle' });
+  const [savedProjects, setSavedProjects] = useState<SavedProjectSummary[]>([]);
+  const [savedProjectsLoading, setSavedProjectsLoading] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
 
   const playerRef = useRef<PlayerRef>(null);
   const activeProjectIdRef = useRef<string>(project.id);
   activeProjectIdRef.current = project.id;
+
+  const fetchSavedProjects = async () => {
+    setSavedProjectsLoading(true);
+    try {
+      const resp = await fetch('/api/projects');
+      if (!resp.ok) return;
+      const data = (await resp.json()) as { projects?: SavedProjectSummary[] };
+      setSavedProjects(Array.isArray(data.projects) ? data.projects : []);
+    } catch {
+      // Ignore network errors when backend is starting
+    } finally {
+      setSavedProjectsLoading(false);
+    }
+  };
+
+  const saveProjectToDisk = async (targetProject: TrainingProject, showNotice = false) => {
+    setSavingProject(true);
+    try {
+      const resp = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project: targetProject }),
+      });
+      if (!resp.ok) throw new Error('儲存專案失敗');
+      await fetchSavedProjects();
+      if (showNotice) {
+        setAiNotice(`已儲存專案「${targetProject.title}」至專案 / 草稿庫`);
+      }
+    } catch (err) {
+      if (showNotice) {
+        setAiNotice(err instanceof Error ? err.message : '儲存專案失敗');
+      }
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
+  const handleSelectSavedProject = async (projectId: string) => {
+    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);
+    if (!resp.ok) {
+      setAiNotice('無法載入所選專案');
+      return;
+    }
+    const data = (await resp.json()) as { record?: SavedProjectRecord };
+    if (!data.record?.project) return;
+    const loaded = data.record.project;
+    setProject({
+      ...loaded,
+      llmConfig: loaded.llmConfig || loadStoredLlmConfig(),
+    });
+    setSelectedSceneIdx(0);
+    setRenderState({ active: false, progress: 0, status: 'idle' });
+    playerRef.current?.seekTo(0);
+    setAiNotice(`已載入專案「${loaded.title}」`);
+  };
+
+  const handleDeleteSavedProject = async (projectId: string) => {
+    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: 'DELETE',
+    });
+    if (resp.ok) {
+      await fetchSavedProjects();
+    }
+  };
+
+  useEffect(() => {
+    void fetchSavedProjects();
+  }, []);
+
+  const isCurrentProjectSaved = useMemo(
+    () => savedProjects.some((p) => p.id === project.id),
+    [savedProjects, project.id]
+  );
+
+  useEffect(() => {
+    if (project.sourceType === 'preset' && !isCurrentProjectSaved) return;
+    const timer = setTimeout(() => {
+      void saveProjectToDisk(project, false);
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project]);
 
   const selectedScene = project.scenes[selectedSceneIdx] || project.scenes[0];
   const readyTtsCount = useMemo(
@@ -393,6 +482,7 @@ export function App() {
           projectTitle: project.title,
           scenes: project.scenes,
           previewOnlySceneIndex,
+          project,
         }),
       });
       const { jobId, error } = await resp.json();
@@ -410,6 +500,7 @@ export function App() {
               status: 'done',
               outputUrl: job.outputUrl,
             });
+            void fetchSavedProjects();
           } else if (job.status === 'error') {
             clearInterval(timer);
             setRenderState({
@@ -516,6 +607,29 @@ export function App() {
               </button>
             )}
           </div>
+
+          <SavedProjectsMenu
+            projects={savedProjects}
+            loading={savedProjectsLoading}
+            currentProjectId={project.id}
+            onRefresh={() => void fetchSavedProjects()}
+            onSelectProject={handleSelectSavedProject}
+            onDeleteProject={handleDeleteSavedProject}
+          />
+
+          <button
+            onClick={() => void saveProjectToDisk(project, true)}
+            disabled={savingProject}
+            title="手動儲存目前專案至草稿庫"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            {savingProject ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+            ) : (
+              <Save className="w-3.5 h-3.5 text-cyan-400" />
+            )}
+            儲存
+          </button>
 
           <button
             onClick={() => setIsWizardOpen(true)}
@@ -1364,6 +1478,7 @@ export function App() {
           setSelectedSceneIdx(0);
           if (notice) setAiNotice(notice);
           playerRef.current?.seekTo(0);
+          void saveProjectToDisk(newProj, false);
         }}
       />
     </div>

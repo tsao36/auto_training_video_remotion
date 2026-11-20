@@ -13,7 +13,14 @@ import { renderMedia, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, regenerateSceneWithLlm } from './llmGenerator';
 import { parsePptxBuffer } from './pptxParser';
-import { DEFAULT_CONTENT_LANGUAGE, getContentLanguage } from '../src/types/training';
+import {
+  DEFAULT_CONTENT_LANGUAGE,
+  getContentLanguage,
+  RenderedVideoRecord,
+  SavedProjectRecord,
+  SavedProjectSummary,
+  TrainingProject,
+} from '../src/types/training';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,10 +28,12 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
+const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
 
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
 fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(PROJECTS_DIR, { recursive: true });
 
 const app = express();
 app.use(cors());
@@ -93,6 +102,134 @@ function createSilentOrToneWav(durationSec: number, filepath: string) {
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'remotion-tech-training-api' });
+});
+
+function sanitizeProjectId(id: string): string {
+  return String(id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function getProjectFilePath(id: string): string {
+  const safeId = sanitizeProjectId(id);
+  if (!safeId) throw new Error('無效的專案 ID');
+  return path.join(PROJECTS_DIR, `${safeId}.json`);
+}
+
+function readSavedProject(id: string): SavedProjectRecord | null {
+  const filePath = getProjectFilePath(id);
+  if (!fs.existsSync(filePath)) return null;
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  return JSON.parse(raw) as SavedProjectRecord;
+}
+
+function writeSavedProject(project: TrainingProject, newRender?: RenderedVideoRecord): SavedProjectRecord {
+  const safeId = sanitizeProjectId(project.id);
+  if (!safeId) throw new Error('無效的專案 ID');
+  const existing = readSavedProject(safeId);
+  const now = new Date().toISOString();
+
+  // Strip sensitive API keys if any? Keep structure consistent with existing project files.
+  const renders = existing?.renders ? [...existing.renders] : [];
+  if (newRender) {
+    renders.unshift(newRender);
+  }
+
+  const record: SavedProjectRecord = {
+    id: safeId,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    renders,
+    project: {
+      ...project,
+      id: safeId,
+    },
+  };
+
+  fs.writeFileSync(getProjectFilePath(safeId), JSON.stringify(record, null, 2), 'utf-8');
+  return record;
+}
+
+function toProjectSummary(record: SavedProjectRecord): SavedProjectSummary {
+  const scenes = record.project.scenes || [];
+  const totalDurationSeconds = scenes.reduce((sum, s) => sum + (Number(s.durationSeconds) || 0), 0);
+  const renders = record.renders || [];
+  const latestFullRender = renders.find((r) => !r.isPreview) || renders[0];
+
+  return {
+    id: record.id,
+    title: record.project.title || '未命名專案',
+    subtitle: record.project.subtitle || '',
+    domain: record.project.domain || 'debug-logic',
+    sceneCount: scenes.length,
+    totalDurationSeconds,
+    updatedAt: record.updatedAt,
+    latestVideoUrl: latestFullRender?.outputUrl,
+    latestRenderedAt: latestFullRender?.renderedAt,
+    renders,
+  };
+}
+
+app.get('/api/projects', (_req, res) => {
+  try {
+    const files = fs.readdirSync(PROJECTS_DIR).filter((f) => f.endsWith('.json'));
+    const summaries: SavedProjectSummary[] = [];
+    for (const file of files) {
+      try {
+        const raw = fs.readFileSync(path.join(PROJECTS_DIR, file), 'utf-8');
+        const record = JSON.parse(raw) as SavedProjectRecord;
+        if (record?.id && record?.project) {
+          summaries.push(toProjectSummary(record));
+        }
+      } catch (err) {
+        console.warn(`Failed to parse project file ${file}:`, err);
+      }
+    }
+    summaries.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    res.json({ projects: summaries });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '無法讀取專案列表' });
+  }
+});
+
+app.get('/api/projects/:id', (req, res) => {
+  try {
+    const record = readSavedProject(req.params.id);
+    if (!record) {
+      res.status(404).json({ error: '找不到指定的專案' });
+      return;
+    }
+    res.json({ record });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : '讀取專案失敗' });
+  }
+});
+
+app.post('/api/projects', (req, res) => {
+  try {
+    const body = req.body as { project?: TrainingProject } | TrainingProject;
+    const project = 'project' in body && body.project ? body.project : (body as TrainingProject);
+    if (!project?.id || !Array.isArray(project.scenes)) {
+      res.status(400).json({ error: '缺少有效的專案資料' });
+      return;
+    }
+    const record = writeSavedProject(project);
+    res.json({ record, summary: toProjectSummary(record) });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '儲存專案失敗' });
+  }
+});
+
+app.delete('/api/projects/:id', (req, res) => {
+  try {
+    const filePath = getProjectFilePath(req.params.id);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: '找不到指定的專案' });
+      return;
+    }
+    fs.unlinkSync(filePath);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '刪除專案失敗' });
+  }
 });
 
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
@@ -367,10 +504,11 @@ app.post('/api/tts/synthesize', async (req, res) => {
 // Start Remotion MP4 Render Job
 app.post('/api/render', async (req, res) => {
   try {
-    const { projectTitle, scenes, previewOnlySceneIndex } = req.body as {
+    const { projectTitle, scenes, previewOnlySceneIndex, project } = req.body as {
       projectTitle: string;
-      scenes: unknown[];
+      scenes: Array<{ durationSeconds?: number }>;
       previewOnlySceneIndex?: number;
+      project?: TrainingProject;
     };
 
     const jobId = `render-${Date.now()}`;
@@ -389,10 +527,10 @@ app.post('/api/render', async (req, res) => {
           },
         });
 
-        const selectedScenes =
-          typeof previewOnlySceneIndex === 'number' && scenes[previewOnlySceneIndex]
-            ? [scenes[previewOnlySceneIndex]]
-            : scenes;
+        const isPreview = typeof previewOnlySceneIndex === 'number' && Boolean(scenes[previewOnlySceneIndex]);
+        const selectedScenes = isPreview
+          ? [scenes[previewOnlySceneIndex!]]
+          : scenes;
 
         const inputProps = {
           projectTitle,
@@ -423,11 +561,32 @@ app.post('/api/render', async (req, res) => {
           },
         });
 
+        const outputUrl = `/output/${outFile}`;
+        if (project?.id) {
+          try {
+            const renderedDuration = selectedScenes.reduce(
+              (sum, s) => sum + (Number(s?.durationSeconds) || 0),
+              0
+            );
+            writeSavedProject(project, {
+              jobId,
+              outputUrl,
+              renderedAt: new Date().toISOString(),
+              durationSeconds: renderedDuration,
+              sceneCount: selectedScenes.length,
+              isPreview,
+              previewSceneIndex: isPreview ? previewOnlySceneIndex : undefined,
+            });
+          } catch (saveErr) {
+            console.warn('Failed to persist rendered project record:', saveErr);
+          }
+        }
+
         renderJobs.set(jobId, {
           id: jobId,
           status: 'done',
           progress: 100,
-          outputUrl: `/output/${outFile}`,
+          outputUrl,
         });
       } catch (err) {
         console.error('Remotion render failed:', err);
