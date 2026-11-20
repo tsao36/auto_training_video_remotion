@@ -1,10 +1,10 @@
 {
-  "id": "proj-1795161361384",
-  "createdAt": "2026-11-20T07:56:06.256Z",
-  "updatedAt": "2026-11-20T07:56:06.256Z",
+  "id": "proj-1795166936794",
+  "createdAt": "2026-11-20T09:29:00.277Z",
+  "updatedAt": "2026-11-20T09:29:00.277Z",
   "renders": [],
   "project": {
-    "id": "proj-1795161361384",
+    "id": "proj-1795166936794",
     "title": "PC/筆電硬體除錯共通邏輯：從 Power Sequence 到 Root-Cause",
     "subtitle": "EC/BIOS POST 時序、Power Rail 異常排查、PCIe/I2C/SPI 邏輯分析與 Root-Cause 決策樹",
     "domain": "debug-logic",
@@ -32,7 +32,7 @@
     },
     "scenes": [
       {
-        "id": "scene-1795161361383-0",
+        "id": "scene-1795166936794-0",
         "index": 0,
         "title": "PC/筆電除錯共通邏輯與方法論",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 1",
@@ -60,7 +60,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-1",
+        "id": "scene-1795166936794-1",
         "index": 1,
         "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 2",
@@ -116,7 +116,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-2",
+        "id": "scene-1795166936794-2",
         "index": 2,
         "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 3",
@@ -164,7 +164,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-3",
+        "id": "scene-1795166936794-3",
         "index": 3,
         "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 4",
@@ -220,7 +220,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-4",
+        "id": "scene-1795166936794-4",
         "index": 4,
         "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 5",
@@ -280,7 +280,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-5",
+        "id": "scene-1795166936794-5",
         "index": 5,
         "title": "PC/筆電除錯共通邏輯與方法論｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 6",
@@ -308,7 +308,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-6",
+        "id": "scene-1795166936794-6",
         "index": 6,
         "title": "PC/筆電除錯共通邏輯與方法論｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 7",
@@ -336,7 +336,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-7",
+        "id": "scene-1795166936794-7",
         "index": 7,
         "title": "PC/筆電除錯共通邏輯與方法論｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 8",
@@ -364,7 +364,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-8",
+        "id": "scene-1795166936794-8",
         "index": 8,
         "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 9",
@@ -420,7 +420,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-9",
+        "id": "scene-1795166936794-9",
         "index": 9,
         "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 10",
@@ -468,7 +468,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-10",
+        "id": "scene-1795166936794-10",
         "index": 10,
         "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 11",
@@ -524,7 +524,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-11",
+        "id": "scene-1795166936794-11",
         "index": 11,
         "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 12",
@@ -584,7 +584,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-12",
+        "id": "scene-1795166936794-12",
         "index": 12,
         "title": "筆電開機供電與核心控制架構",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 13",
@@ -640,7 +640,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-13",
+        "id": "scene-1795166936794-13",
         "index": 13,
         "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 14",
@@ -688,7 +688,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-14",
+        "id": "scene-1795166936794-14",
         "index": 14,
         "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 15",
@@ -744,7 +744,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-15",
+        "id": "scene-1795166936794-15",
         "index": 15,
         "title": "筆電開機供電與核心控制架構｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 16",
@@ -804,7 +804,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-16",
+        "id": "scene-1795166936794-16",
         "index": 16,
         "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 17",
@@ -832,7 +832,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-17",
+        "id": "scene-1795166936794-17",
         "index": 17,
         "title": "筆電開機供電與核心控制架構｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 18",
@@ -860,7 +860,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-18",
+        "id": "scene-1795166936794-18",
         "index": 18,
         "title": "筆電開機供電與核心控制架構｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 19",
@@ -888,7 +888,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-19",
+        "id": "scene-1795166936794-19",
         "index": 19,
         "title": "筆電開機供電與核心控制架構｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 20",
@@ -944,7 +944,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-20",
+        "id": "scene-1795166936794-20",
         "index": 20,
         "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 21",
@@ -992,7 +992,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-21",
+        "id": "scene-1795166936794-21",
         "index": 21,
         "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 22",
@@ -1048,7 +1048,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-22",
+        "id": "scene-1795166936794-22",
         "index": 22,
         "title": "筆電開機供電與核心控制架構｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 23",
@@ -1108,7 +1108,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-23",
+        "id": "scene-1795166936794-23",
         "index": 23,
         "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 24",
@@ -1136,7 +1136,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-24",
+        "id": "scene-1795166936794-24",
         "index": 24,
         "title": "邏輯分析儀與示波器關鍵波形判讀",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 25",
@@ -1184,7 +1184,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-25",
+        "id": "scene-1795166936794-25",
         "index": 25,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 26",
@@ -1240,7 +1240,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-26",
+        "id": "scene-1795166936794-26",
         "index": 26,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 27",
@@ -1300,7 +1300,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-27",
+        "id": "scene-1795166936794-27",
         "index": 27,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 28",
@@ -1328,7 +1328,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-28",
+        "id": "scene-1795166936794-28",
         "index": 28,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 29",
@@ -1356,7 +1356,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-29",
+        "id": "scene-1795166936794-29",
         "index": 29,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 30",
@@ -1384,7 +1384,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-30",
+        "id": "scene-1795166936794-30",
         "index": 30,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 31",
@@ -1440,7 +1440,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-31",
+        "id": "scene-1795166936794-31",
         "index": 31,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 32",
@@ -1488,7 +1488,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-32",
+        "id": "scene-1795166936794-32",
         "index": 32,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 33",
@@ -1544,7 +1544,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-33",
+        "id": "scene-1795166936794-33",
         "index": 33,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 34",
@@ -1604,7 +1604,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-34",
+        "id": "scene-1795166936794-34",
         "index": 34,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 35",
@@ -1632,7 +1632,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-35",
+        "id": "scene-1795166936794-35",
         "index": 35,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 36",
@@ -1660,7 +1660,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-36",
+        "id": "scene-1795166936794-36",
         "index": 36,
         "title": "S5 -> S0 開機時序與 POST 互動流程",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 37",
@@ -1708,7 +1708,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-37",
+        "id": "scene-1795166936794-37",
         "index": 37,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 38",
@@ -1768,7 +1768,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-38",
+        "id": "scene-1795166936794-38",
         "index": 38,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 39",
@@ -1796,7 +1796,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-39",
+        "id": "scene-1795166936794-39",
         "index": 39,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 40",
@@ -1824,7 +1824,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-40",
+        "id": "scene-1795166936794-40",
         "index": 40,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 41",
@@ -1852,7 +1852,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-41",
+        "id": "scene-1795166936794-41",
         "index": 41,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 42",
@@ -1908,7 +1908,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-42",
+        "id": "scene-1795166936794-42",
         "index": 42,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 43",
@@ -1956,7 +1956,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-43",
+        "id": "scene-1795166936794-43",
         "index": 43,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 44",
@@ -2012,7 +2012,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-44",
+        "id": "scene-1795166936794-44",
         "index": 44,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 45",
@@ -2072,7 +2072,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-45",
+        "id": "scene-1795166936794-45",
         "index": 45,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 46",
@@ -2100,7 +2100,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-46",
+        "id": "scene-1795166936794-46",
         "index": 46,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 47",
@@ -2128,7 +2128,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-47",
+        "id": "scene-1795166936794-47",
         "index": 47,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 48",
@@ -2156,7 +2156,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-48",
+        "id": "scene-1795166936794-48",
         "index": 48,
         "title": "常見除錯工具與量測手段對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 49",
@@ -2212,7 +2212,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-49",
+        "id": "scene-1795166936794-49",
         "index": 49,
         "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 50",
@@ -2240,7 +2240,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-50",
+        "id": "scene-1795166936794-50",
         "index": 50,
         "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 51",
@@ -2268,7 +2268,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-51",
+        "id": "scene-1795166936794-51",
         "index": 51,
         "title": "常見除錯工具與量測手段對照｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 52",
@@ -2296,7 +2296,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-52",
+        "id": "scene-1795166936794-52",
         "index": 52,
         "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 53",
@@ -2352,7 +2352,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-53",
+        "id": "scene-1795166936794-53",
         "index": 53,
         "title": "常見除錯工具與量測手段對照｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 54",
@@ -2400,7 +2400,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-54",
+        "id": "scene-1795166936794-54",
         "index": 54,
         "title": "常見除錯工具與量測手段對照｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 55",
@@ -2456,7 +2456,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-55",
+        "id": "scene-1795166936794-55",
         "index": 55,
         "title": "常見除錯工具與量測手段對照｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 56",
@@ -2516,7 +2516,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-56",
+        "id": "scene-1795166936794-56",
         "index": 56,
         "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 57",
@@ -2544,7 +2544,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-57",
+        "id": "scene-1795166936794-57",
         "index": 57,
         "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 58",
@@ -2572,7 +2572,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-58",
+        "id": "scene-1795166936794-58",
         "index": 58,
         "title": "常見除錯工具與量測手段對照｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 59",
@@ -2600,7 +2600,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-59",
+        "id": "scene-1795166936794-59",
         "index": 59,
         "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 60",
@@ -2656,7 +2656,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-60",
+        "id": "scene-1795166936794-60",
         "index": 60,
         "title": "No-Power / No-POST 五步排查決策樹",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 61",
@@ -2712,7 +2712,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-61",
+        "id": "scene-1795166936794-61",
         "index": 61,
         "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 62",
@@ -2740,7 +2740,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-62",
+        "id": "scene-1795166936794-62",
         "index": 62,
         "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 63",
@@ -2768,7 +2768,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-63",
+        "id": "scene-1795166936794-63",
         "index": 63,
         "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 64",
@@ -2824,7 +2824,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-64",
+        "id": "scene-1795166936794-64",
         "index": 64,
         "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 65",
@@ -2872,7 +2872,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-65",
+        "id": "scene-1795166936794-65",
         "index": 65,
         "title": "No-Power / No-POST 五步排查決策樹｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 66",
@@ -2928,7 +2928,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-66",
+        "id": "scene-1795166936794-66",
         "index": 66,
         "title": "No-Power / No-POST 五步排查決策樹｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 67",
@@ -2988,7 +2988,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-67",
+        "id": "scene-1795166936794-67",
         "index": 67,
         "title": "No-Power / No-POST 五步排查決策樹｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 68",
@@ -3016,7 +3016,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-68",
+        "id": "scene-1795166936794-68",
         "index": 68,
         "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 69",
@@ -3044,7 +3044,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-69",
+        "id": "scene-1795166936794-69",
         "index": 69,
         "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 70",
@@ -3072,7 +3072,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-70",
+        "id": "scene-1795166936794-70",
         "index": 70,
         "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 71",
@@ -3128,7 +3128,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-71",
+        "id": "scene-1795166936794-71",
         "index": 71,
         "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 72",
@@ -3176,7 +3176,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-72",
+        "id": "scene-1795166936794-72",
         "index": 72,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 73",
@@ -3224,7 +3224,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-73",
+        "id": "scene-1795166936794-73",
         "index": 73,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 74",
@@ -3252,7 +3252,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-74",
+        "id": "scene-1795166936794-74",
         "index": 74,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 75",
@@ -3308,7 +3308,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-75",
+        "id": "scene-1795166936794-75",
         "index": 75,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 76",
@@ -3356,7 +3356,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-76",
+        "id": "scene-1795166936794-76",
         "index": 76,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 77",
@@ -3412,7 +3412,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-77",
+        "id": "scene-1795166936794-77",
         "index": 77,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 78",
@@ -3472,7 +3472,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-78",
+        "id": "scene-1795166936794-78",
         "index": 78,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 79",
@@ -3500,7 +3500,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-79",
+        "id": "scene-1795166936794-79",
         "index": 79,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 80",
@@ -3528,7 +3528,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-80",
+        "id": "scene-1795166936794-80",
         "index": 80,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 81",
@@ -3556,7 +3556,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-81",
+        "id": "scene-1795166936794-81",
         "index": 81,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 82",
@@ -3612,7 +3612,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-82",
+        "id": "scene-1795166936794-82",
         "index": 82,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 83",
@@ -3660,7 +3660,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-83",
+        "id": "scene-1795166936794-83",
         "index": 83,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 84",
@@ -3716,7 +3716,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-84",
+        "id": "scene-1795166936794-84",
         "index": 84,
         "title": "工程除錯總結與 EVT/DVT 檢查清單",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 85",
@@ -3764,7 +3764,7 @@
         }
       },
       {
-        "id": "scene-1795161361383-85",
+        "id": "scene-1795166936794-85",
         "index": 85,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 86",
@@ -3820,7 +3820,7 @@
         }
       },
       {
-        "id": "scene-1795161361384-86",
+        "id": "scene-1795166936794-86",
         "index": 86,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 87",
@@ -3868,7 +3868,7 @@
         }
       },
       {
-        "id": "scene-1795161361384-87",
+        "id": "scene-1795166936794-87",
         "index": 87,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 88",
@@ -3924,7 +3924,7 @@
         }
       },
       {
-        "id": "scene-1795161361384-88",
+        "id": "scene-1795166936794-88",
         "index": 88,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 89",
@@ -3984,7 +3984,7 @@
         }
       },
       {
-        "id": "scene-1795161361384-89",
+        "id": "scene-1795166936794-89",
         "index": 89,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 90",

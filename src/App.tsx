@@ -9,6 +9,7 @@ import {
   Cpu,
   Download,
   Film,
+  LayoutGrid,
   Layers,
   Loader2,
   Mic,
@@ -24,6 +25,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
+import { ProjectDashboard } from './components/ProjectDashboard';
 import { SourceWizardModal } from './components/SourceWizardModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
@@ -64,6 +66,7 @@ export function App() {
     llmConfig: loadStoredLlmConfig(),
   }));
   const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
+  const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
@@ -150,6 +153,7 @@ export function App() {
     setRenderState({ active: false, progress: 0, status: 'idle' });
     playerRef.current?.seekTo(0);
     setAiNotice(`已載入專案「${loaded.title}」`);
+    setView('editor');
   };
 
   const handleDeleteSavedProject = async (projectId: string) => {
@@ -192,13 +196,14 @@ export function App() {
 
   useEffect(() => {
     if (deletedProjectIdsRef.current.has(project.id)) return;
-    if (project.sourceType === 'preset' && !isCurrentProjectSaved) return;
+    // Unsaved presets (page load, or the placeholder left after a delete) must not be written to disk.
+    if (!isCurrentProjectSaved) return;
     const timer = setTimeout(() => {
       void saveProjectToDisk(project, false);
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project]);
+  }, [project, isCurrentProjectSaved]);
 
   const selectedScene = project.scenes[selectedSceneIdx] || project.scenes[0];
   const readyTtsCount = useMemo(
@@ -476,6 +481,7 @@ export function App() {
   };
 
   useEffect(() => {
+    if (view !== 'editor') return;
     void synthesizeScenesConcurrent(
       project.id,
       project.scenes,
@@ -484,7 +490,7 @@ export function App() {
       true
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id]);
+  }, [project.id, view]);
 
   const synthesizeAllScenes = async () => {
     await synthesizeScenesConcurrent(
@@ -576,11 +582,90 @@ export function App() {
 
   const isExactTargetDuration = totalSeconds === project.targetDurationSeconds;
 
+  // Flush the debounced auto-save so reopening the project from disk shows the latest edits.
+  const goToDashboard = async () => {
+    if (isCurrentProjectSaved) {
+      await saveProjectToDisk(project, false);
+    }
+    setView('dashboard');
+    void fetchSavedProjects();
+  };
+
+  const handleCreateFromPreset = (domain: TechDomain) => {
+    const next: TrainingProject = {
+      ...createPresetProject(domain),
+      language: DEFAULT_CONTENT_LANGUAGE,
+      llmConfig: project.llmConfig || loadStoredLlmConfig(),
+    };
+    setProject(next);
+    setSelectedSceneIdx(0);
+    playerRef.current?.seekTo(0);
+    void saveProjectToDisk(next, false);
+    setView('editor');
+  };
+
+  const wizardModal = (
+    <SourceWizardModal
+      isOpen={isWizardOpen}
+      onClose={() => setIsWizardOpen(false)}
+      initialLlmConfig={project.llmConfig}
+      onProjectCreated={(newProj, notice) => {
+        setProject(newProj);
+        setSelectedSceneIdx(0);
+        if (notice) setAiNotice(notice);
+        playerRef.current?.seekTo(0);
+        void saveProjectToDisk(newProj, false);
+        setView('editor');
+      }}
+    />
+  );
+
+  if (view === 'dashboard') {
+    return (
+      <>
+        <ProjectDashboard
+          projects={savedProjects}
+          loading={savedProjectsLoading}
+          onRefresh={() => void fetchSavedProjects()}
+          onOpenProject={handleSelectSavedProject}
+          onDeleteProject={handleDeleteSavedProject}
+          onCreateWithAi={() => setIsWizardOpen(true)}
+          onCreateFromPreset={handleCreateFromPreset}
+        />
+        {aiNotice && (
+          <div
+            role="status"
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-lg px-4 py-2 rounded-lg bg-cyan-950 border border-cyan-500/40 text-xs text-cyan-200 flex items-center gap-3 shadow-xl"
+          >
+            <span className="break-all">{aiNotice}</span>
+            <button
+              type="button"
+              onClick={() => setAiNotice(null)}
+              className="px-1 rounded text-cyan-400 hover:text-white shrink-0"
+            >
+              關閉
+            </button>
+          </div>
+        )}
+        {wizardModal}
+      </>
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0B0F19] text-slate-100 overflow-hidden select-none">
       {/* Top Studio Header */}
       <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#0F1624] px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => void goToDashboard()}
+            title="回到專案總覽，選擇其他專案編輯"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition shrink-0"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-cyan-400" />
+            專案總覽
+          </button>
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Film className="w-4 h-4 text-slate-950" />
           </div>
@@ -1571,18 +1656,7 @@ export function App() {
         </aside>
       </div>
 
-      <SourceWizardModal
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        initialLlmConfig={project.llmConfig}
-        onProjectCreated={(newProj, notice) => {
-          setProject(newProj);
-          setSelectedSceneIdx(0);
-          if (notice) setAiNotice(notice);
-          playerRef.current?.seekTo(0);
-          void saveProjectToDisk(newProj, false);
-        }}
-      />
+      {wizardModal}
     </div>
   );
 }
