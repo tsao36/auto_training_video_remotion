@@ -27,6 +27,7 @@ import {
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { SourceWizardModal } from './components/SourceWizardModal';
+import { VoiceRecorderModal } from './components/VoiceRecorderModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
   DOMAIN_META,
@@ -70,6 +71,10 @@ export function App() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
+  const [voiceUploading, setVoiceUploading] = useState(false);
+  const voiceFileInputRef = useRef<HTMLInputElement>(null);
+  const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [sceneAiLoading, setSceneAiLoading] = useState<string | null>(null);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [copiedDebugKey, setCopiedDebugKey] = useState<string | null>(null);
@@ -334,6 +339,41 @@ export function App() {
     setSelectedSceneIdx(Math.max(0, Math.min(selectedSceneIdx, balanced.length - 1)));
   };
 
+  const setCustomVoice = (customVoice: TrainingProject['ttsConfig']['customVoice']) => {
+    // Existing audio was made with the old voice, so mark it for regeneration.
+    setProject((prev) => ({
+      ...prev,
+      ttsConfig: { ...prev.ttsConfig, customVoice },
+      scenes: prev.scenes.map((sc) => ({
+        ...sc,
+        tts: { ...sc.tts, status: 'idle', audioUrl: undefined, error: undefined },
+      })),
+    }));
+  };
+
+  const uploadVoiceSample = async (file: File): Promise<boolean> => {
+    setVoiceUploading(true);
+    setVoiceError(null);
+    setAiNotice(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const resp = await fetch('/api/tts/voice-sample', { method: 'POST', body: form });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || '上傳失敗');
+      setCustomVoice({ fileName: data.fileName, name: data.name, durationSec: data.durationSec });
+      setAiNotice('已套用自訂聲線，請重新生成 TTS 音軌');
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '上傳失敗';
+      setVoiceError(msg);
+      setAiNotice(msg);
+      return false;
+    } finally {
+      setVoiceUploading(false);
+    }
+  };
+
   const synthesizeSceneTts = async (idx: number) => {
     const scene = project.scenes[idx];
     if (!scene) return;
@@ -353,6 +393,7 @@ export function App() {
           durationSeconds: scene.durationSeconds,
           openformosa: project.ttsConfig.openformosa,
           mingTts: project.ttsConfig.mingTts,
+          customVoice: project.ttsConfig.customVoice,
         }),
       });
       const data = await resp.json();
@@ -435,6 +476,7 @@ export function App() {
               durationSeconds: s.durationSeconds,
               openformosa: ttsConfigSnapshot.openformosa,
               mingTts: ttsConfigSnapshot.mingTts,
+              customVoice: ttsConfigSnapshot.customVoice,
             }),
           });
           const data = await resp.json();
@@ -1210,20 +1252,87 @@ export function App() {
                     <label htmlFor="scene-tts-provider" className="block text-[11px] font-semibold text-slate-400 mb-1">
                       TTS 語音模型
                     </label>
-                    <select
-                      id="scene-tts-provider"
-                      value={selectedScene.tts.provider}
-                      onChange={(e) =>
-                        updateScene(selectedSceneIdx, {
-                          tts: { ...selectedScene.tts, provider: e.target.value as TtsProvider },
-                        })
-                      }
-                      className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
-                    >
-                      <option value="openformosa">OpenFormosa (預設)</option>
-                      <option value="ming-3.0">Ming-3.0-TTS (預設)</option>
-                      <option value="browser-fallback">瀏覽器即時試聽</option>
-                    </select>
+                    <div className="flex gap-1.5">
+                      <select
+                        id="scene-tts-provider"
+                        value={selectedScene.tts.provider}
+                        onChange={(e) =>
+                          updateScene(selectedSceneIdx, {
+                            tts: { ...selectedScene.tts, provider: e.target.value as TtsProvider },
+                          })
+                        }
+                        className="min-w-0 flex-1 px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                      >
+                        <option value="openformosa">OpenFormosa (預設)</option>
+                        <option value="ming-3.0">Ming-3.0-TTS (預設)</option>
+                        <option value="browser-fallback">瀏覽器即時試聽</option>
+                      </select>
+                      <input
+                        ref={voiceFileInputRef}
+                        type="file"
+                        accept=".wav,.mp3,.m4a,.ogg,.webm,audio/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (f) void uploadVoiceSample(f);
+                        }}
+                      />
+                      {voiceRecorderOpen && (
+                        <VoiceRecorderModal
+                          language={project.language || DEFAULT_CONTENT_LANGUAGE}
+                          uploading={voiceUploading}
+                          serverError={voiceError}
+                          onClose={() => setVoiceRecorderOpen(false)}
+                          onUseRecording={async (file) => {
+                            if (await uploadVoiceSample(file)) setVoiceRecorderOpen(false);
+                          }}
+                          onPickFile={() => {
+                            setVoiceRecorderOpen(false);
+                            voiceFileInputRef.current?.click();
+                          }}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        disabled={voiceUploading}
+                        onClick={() => {
+                          setVoiceError(null);
+                          setVoiceRecorderOpen(true);
+                        }}
+                        title={
+                          project.ttsConfig.customVoice
+                            ? `自訂聲線：${project.ttsConfig.customVoice.name}（點擊重新錄製或上傳）`
+                            : '錄製或上傳約 10 秒的人聲以自訂 TTS 聲線'
+                        }
+                        aria-label="錄製或上傳自訂聲線"
+                        className={`shrink-0 px-2 rounded-lg border transition disabled:opacity-50 ${
+                          project.ttsConfig.customVoice
+                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
+                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300'
+                        }`}
+                      >
+                        {voiceUploading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Mic className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                    {project.ttsConfig.customVoice && (
+                      <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-cyan-300">
+                        <span className="truncate" title={project.ttsConfig.customVoice.name}>
+                          自訂聲線：{project.ttsConfig.customVoice.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCustomVoice(undefined)}
+                          className="shrink-0 text-slate-400 underline hover:text-white"
+                        >
+                          移除
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

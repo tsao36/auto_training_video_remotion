@@ -3,4 +3,4 @@ node_modules/
 dist/
 output/
 .playwright-mcp/
-public/audio/tts-*.mp3
+public/audio/tts-*.mp3voice-samples/

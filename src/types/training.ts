@@ -248,6 +248,11 @@ export interface TtsEngineConfig {
     speaker: string;
     style: string;
   };
+  customVoice?: {
+    fileName: string;
+    name: string;
+    durationSec?: number;
+  };
 }
 
 export interface TrainingProject {

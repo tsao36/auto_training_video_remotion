@@ -29,7 +29,11 @@ const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
 const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
+// Not served statically: voice samples are private reference recordings.
+const VOICE_SAMPLES_DIR = path.join(ROOT_DIR, 'voice-samples');
+const VOICE_SAMPLE_FILE_RE = /^[a-f0-9]{16}\.(wav|mp3|m4a|ogg|webm)$/;
 
+fs.mkdirSync(VOICE_SAMPLES_DIR, { recursive: true });
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
 fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -341,6 +345,37 @@ app.post('/api/parse-document', upload.single('file'), async (req, res) => {
   }
 });
 
+// Upload a ~10s reference recording used for voice cloning
+app.post('/api/tts/voice-sample', upload.single('file'), (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: '請選擇音檔' });
+      return;
+    }
+    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+    if (!['wav', 'mp3', 'm4a', 'ogg', 'webm'].includes(ext)) {
+      res.status(400).json({ error: '僅支援 WAV / MP3 / M4A / OGG / WEBM 音檔' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      res.status(400).json({ error: '音檔不可超過 10 MB' });
+      return;
+    }
+    const durationSec = getAudioDurationSec(file.buffer, ext);
+    if (durationSec !== null && (durationSec < 3 || durationSec > 30)) {
+      res.status(400).json({ error: `音檔長度需介於 3–30 秒（建議約 10 秒），目前為 ${durationSec.toFixed(1)} 秒` });
+      return;
+    }
+    const id = crypto.createHash('sha1').update(file.buffer).digest('hex').slice(0, 16);
+    const fileName = `${id}.${ext}`;
+    fs.writeFileSync(path.join(VOICE_SAMPLES_DIR, fileName), file.buffer);
+    res.json({ ok: true, fileName, name: file.originalname, durationSec: durationSec ?? undefined });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '上傳失敗' });
+  }
+});
+
 // Synthesize TTS using OpenFormosa or Ming-3.0-TTS (with local WAV fallback for offline preview)
 app.post('/api/tts/synthesize', async (req, res) => {
   try {
@@ -354,6 +389,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
       durationSeconds = 60,
       openformosa,
       mingTts,
+      customVoice,
     } = req.body as {
       sceneId: string;
       text: string;
@@ -364,13 +400,28 @@ app.post('/api/tts/synthesize', async (req, res) => {
       durationSeconds?: number;
       openformosa?: { baseUrl?: string; apiKey?: string; model?: string; voice?: string };
       mingTts?: { baseUrl?: string; apiKey?: string; model?: string; speaker?: string; style?: string };
+      customVoice?: { fileName?: string };
     };
+
+    const voiceSampleFile =
+      customVoice?.fileName && VOICE_SAMPLE_FILE_RE.test(customVoice.fileName)
+        ? path.join(VOICE_SAMPLES_DIR, customVoice.fileName)
+        : null;
+    const referenceAudio =
+      voiceSampleFile && fs.existsSync(voiceSampleFile)
+        ? {
+            reference_audio: fs.readFileSync(voiceSampleFile).toString('base64'),
+            reference_audio_format: path.extname(voiceSampleFile).slice(1),
+          }
+        : null;
 
     const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
     const cacheHash = crypto
       .createHash('sha1')
-      .update(`${provider}|${ttsLanguage}|${voiceId || ''}|${speed}|${text || ''}`)
+      .update(
+        `${provider}|${ttsLanguage}|${voiceId || ''}|${referenceAudio ? customVoice?.fileName : ''}|${speed}|${text || ''}`
+      )
       .digest('hex')
       .slice(0, 14);
     const cachedMp3 = `tts-${cacheHash}.mp3`;
@@ -414,6 +465,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
             input: text,
             speed,
             response_format: 'wav',
+            ...referenceAudio,
           }),
         });
         if (resp.ok) {
@@ -440,6 +492,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
             style: mingTts.style || 'professional-training',
             language: ttsLanguage,
             speed,
+            ...referenceAudio,
           }),
         });
         if (resp.ok) {
@@ -482,6 +535,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
           fs.writeFileSync(mp3FilePath, audioBuf);
           finalFileName = mp3FileName;
           mode = 'neural-fallback';
+          if (referenceAudio) note += ' (備援語音無法複製自訂聲線)';
         } else {
           throw new Error('Empty audio stream');
         }
