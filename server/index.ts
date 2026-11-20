@@ -345,8 +345,40 @@ app.post('/api/parse-document', upload.single('file'), async (req, res) => {
   }
 });
 
-// Upload a ~10s reference recording used for voice cloning
-app.post('/api/tts/voice-sample', upload.single('file'), (req, res) => {
+// Voice profiles: named ~10s reference recordings used for voice cloning
+interface VoiceProfile {
+  id: string;
+  name: string;
+  fileName: string;
+  durationSec?: number;
+  createdAt: string;
+}
+
+const VOICE_PROFILES_FILE = path.join(VOICE_SAMPLES_DIR, 'profiles.json');
+
+function readVoiceProfiles(): VoiceProfile[] {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(VOICE_PROFILES_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeVoiceProfiles(list: VoiceProfile[]) {
+  fs.writeFileSync(VOICE_PROFILES_FILE, JSON.stringify(list, null, 2));
+}
+
+function cleanVoiceName(raw: unknown, fallback: string): string {
+  const name = typeof raw === 'string' ? raw.trim().slice(0, 40) : '';
+  return name || fallback;
+}
+
+app.get('/api/voice-profiles', (_req, res) => {
+  res.json({ profiles: readVoiceProfiles() });
+});
+
+app.post('/api/voice-profiles', upload.single('file'), (req, res) => {
   try {
     const file = req.file;
     if (!file) {
@@ -362,18 +394,60 @@ app.post('/api/tts/voice-sample', upload.single('file'), (req, res) => {
       res.status(400).json({ error: '音檔不可超過 10 MB' });
       return;
     }
-    const durationSec = getAudioDurationSec(file.buffer, ext);
+    // Duration can only be parsed reliably for WAV/MP3; other containers would be misread.
+    const durationSec = ext === 'wav' || ext === 'mp3' ? getAudioDurationSec(file.buffer, ext) : null;
     if (durationSec !== null && (durationSec < 3 || durationSec > 30)) {
       res.status(400).json({ error: `音檔長度需介於 3–30 秒（建議約 10 秒），目前為 ${durationSec.toFixed(1)} 秒` });
       return;
     }
-    const id = crypto.createHash('sha1').update(file.buffer).digest('hex').slice(0, 16);
+    const id = crypto.randomBytes(8).toString('hex');
     const fileName = `${id}.${ext}`;
     fs.writeFileSync(path.join(VOICE_SAMPLES_DIR, fileName), file.buffer);
-    res.json({ ok: true, fileName, name: file.originalname, durationSec: durationSec ?? undefined });
+    const profile: VoiceProfile = {
+      id,
+      name: cleanVoiceName(req.body?.name, path.basename(file.originalname, path.extname(file.originalname))),
+      fileName,
+      durationSec: durationSec ?? undefined,
+      createdAt: new Date().toISOString(),
+    };
+    writeVoiceProfiles([...readVoiceProfiles(), profile]);
+    res.json({ ok: true, profile });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : '上傳失敗' });
   }
+});
+
+app.patch('/api/voice-profiles/:id', (req, res) => {
+  const list = readVoiceProfiles();
+  const profile = list.find((p) => p.id === req.params.id);
+  if (!profile) {
+    res.status(404).json({ error: '找不到此聲線' });
+    return;
+  }
+  profile.name = cleanVoiceName(req.body?.name, profile.name);
+  writeVoiceProfiles(list);
+  res.json({ ok: true, profile });
+});
+
+app.delete('/api/voice-profiles/:id', (req, res) => {
+  const list = readVoiceProfiles();
+  const profile = list.find((p) => p.id === req.params.id);
+  if (!profile) {
+    res.status(404).json({ error: '找不到此聲線' });
+    return;
+  }
+  fs.rmSync(path.join(VOICE_SAMPLES_DIR, profile.fileName), { force: true });
+  writeVoiceProfiles(list.filter((p) => p.id !== profile.id));
+  res.json({ ok: true });
+});
+
+app.get('/api/voice-profiles/:id/audio', (req, res) => {
+  const profile = readVoiceProfiles().find((p) => p.id === req.params.id);
+  if (!profile || !VOICE_SAMPLE_FILE_RE.test(profile.fileName)) {
+    res.status(404).json({ error: '找不到此聲線' });
+    return;
+  }
+  res.sendFile(path.join(VOICE_SAMPLES_DIR, profile.fileName));
 });
 
 // Synthesize TTS using OpenFormosa or Ming-3.0-TTS (with local WAV fallback for offline preview)

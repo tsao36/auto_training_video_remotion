@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     // Runtime data written by the API server must not trigger a full page reload.
     watch: {
-      ignored: ['**/projects/**', '**/output/**', '**/public/audio/**', '**/public/pptx-media/**'],
+      ignored: ['**/projects/**', '**/output/**', '**/public/audio/**', '**/public/pptx-media/**', '**/voice-samples/**'],
     },
     proxy: {
       '/api': {

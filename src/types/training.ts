@@ -249,10 +249,19 @@ export interface TtsEngineConfig {
     style: string;
   };
   customVoice?: {
+    profileId?: string;
     fileName: string;
     name: string;
     durationSec?: number;
   };
+}
+
+export interface VoiceProfile {
+  id: string;
+  name: string;
+  fileName: string;
+  durationSec?: number;
+  createdAt: string;
 }
 
 export interface TrainingProject {

@@ -45,7 +45,10 @@ import {
   TtsProvider,
   VIDEO_FPS,
   VisualTemplate,
+  VoiceProfile,
 } from './types/training';
+import { applyTtsSettings, loadTtsSettings } from './utils/ttsSettingsStorage';
+import { createVoiceProfile, listVoiceProfiles, toCustomVoice } from './utils/voiceProfiles';
 import {
   DEFAULT_GNAI_CONFIG,
   loadStoredLlmConfig,
@@ -72,6 +75,7 @@ export function App() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
+  const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfile[]>([]);
   const voiceFileInputRef = useRef<HTMLInputElement>(null);
   const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
@@ -356,13 +360,10 @@ export function App() {
     setVoiceError(null);
     setAiNotice(null);
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const resp = await fetch('/api/tts/voice-sample', { method: 'POST', body: form });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || '上傳失敗');
-      setCustomVoice({ fileName: data.fileName, name: data.name, durationSec: data.durationSec });
-      setAiNotice('已套用自訂聲線，請重新生成 TTS 音軌');
+      const profile = await createVoiceProfile(file);
+      setVoiceProfiles((prev) => [...prev, profile]);
+      setCustomVoice(toCustomVoice(profile));
+      setAiNotice('已建立並套用自訂聲線，請重新生成 TTS 音軌；可在總覽頁「設定」管理聲線');
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : '上傳失敗';
@@ -524,6 +525,13 @@ export function App() {
 
   useEffect(() => {
     if (view !== 'editor') return;
+    listVoiceProfiles()
+      .then(setVoiceProfiles)
+      .catch(() => setVoiceProfiles([]));
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== 'editor') return;
     void synthesizeScenesConcurrent(
       project.id,
       project.scenes,
@@ -634,11 +642,15 @@ export function App() {
   };
 
   const handleCreateFromPreset = (domain: TechDomain) => {
-    const next: TrainingProject = {
-      ...createPresetProject(domain),
-      language: DEFAULT_CONTENT_LANGUAGE,
-      llmConfig: project.llmConfig || loadStoredLlmConfig(),
-    };
+    const next: TrainingProject = applyTtsSettings(
+      {
+        ...createPresetProject(domain),
+        language: DEFAULT_CONTENT_LANGUAGE,
+        llmConfig: project.llmConfig || loadStoredLlmConfig(),
+      },
+      loadTtsSettings(),
+      { overrideProvider: true }
+    );
     setProject(next);
     setSelectedSceneIdx(0);
     playerRef.current?.seekTo(0);
@@ -651,7 +663,8 @@ export function App() {
       isOpen={isWizardOpen}
       onClose={() => setIsWizardOpen(false)}
       initialLlmConfig={project.llmConfig}
-      onProjectCreated={(newProj, notice) => {
+      onProjectCreated={(created, notice) => {
+        const newProj = applyTtsSettings(created, loadTtsSettings());
         setProject(newProj);
         setSelectedSceneIdx(0);
         if (notice) setAiNotice(notice);
@@ -1319,18 +1332,31 @@ export function App() {
                         )}
                       </button>
                     </div>
-                    {project.ttsConfig.customVoice && (
-                      <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-cyan-300">
-                        <span className="truncate" title={project.ttsConfig.customVoice.name}>
-                          自訂聲線：{project.ttsConfig.customVoice.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setCustomVoice(undefined)}
-                          className="shrink-0 text-slate-400 underline hover:text-white"
+                    {(voiceProfiles.length > 0 || project.ttsConfig.customVoice) && (
+                      <div className="mt-1.5">
+                        <label htmlFor="scene-voice-profile" className="sr-only">自訂聲線</label>
+                        <select
+                          id="scene-voice-profile"
+                          value={project.ttsConfig.customVoice?.fileName ?? ''}
+                          onChange={(e) => {
+                            const picked = voiceProfiles.find((p) => p.fileName === e.target.value);
+                            setCustomVoice(picked ? toCustomVoice(picked) : undefined);
+                          }}
+                          className="w-full px-2 py-1 rounded-md bg-slate-900 border border-slate-700 text-[11px] text-cyan-200 focus:outline-none focus:border-cyan-400"
                         >
-                          移除
-                        </button>
+                          <option value="">不使用自訂聲線</option>
+                          {project.ttsConfig.customVoice &&
+                            !voiceProfiles.some((p) => p.fileName === project.ttsConfig.customVoice?.fileName) && (
+                              <option value={project.ttsConfig.customVoice.fileName}>
+                                {project.ttsConfig.customVoice.name}
+                              </option>
+                            )}
+                          {voiceProfiles.map((p) => (
+                            <option key={p.id} value={p.fileName}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
                   </div>

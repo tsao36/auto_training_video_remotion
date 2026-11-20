@@ -24,6 +24,7 @@ import {
   TtsProvider,
 } from '../types/training';
 import { loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
+import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { createPresetProject } from '../utils/planGenerator';
 
 interface SourceWizardModalProps {
@@ -55,7 +56,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   onProjectCreated,
 }) => {
   const [domain, setDomain] = useState<TechDomain>('debug-logic');
-  const [ttsProvider, setTtsProvider] = useState<TtsProvider>('openformosa');
+  const [ttsProvider, setTtsProvider] = useState<TtsProvider>(() => loadTtsSettings().defaultProvider);
   const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload' | 'preset'>('topic-llm');
   const [topic, setTopic] = useState('');

@@ -11,11 +11,13 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings,
   Trash2,
   Wand2,
 } from 'lucide-react';
 import { DOMAIN_META, SavedProjectSummary, TechDomain } from '../types/training';
 import { formatDuration } from '../utils/planGenerator';
+import { SettingsPanel } from './SettingsPanel';
 
 interface ProjectDashboardProps {
   projects: SavedProjectSummary[];
@@ -59,6 +61,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'projects' | 'settings'>('projects');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -113,6 +116,33 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+          <div role="tablist" aria-label="總覽分頁" className="flex items-center gap-1 border-b border-slate-800">
+            {([
+              { key: 'projects', label: '專案', icon: <FolderOpen className="w-3.5 h-3.5" /> },
+              { key: 'settings', label: '設定', icon: <Settings className="w-3.5 h-3.5" /> },
+            ] as const).map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.key}
+                onClick={() => setTab(t.key)}
+                className={`px-3.5 py-2 -mb-px text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
+                  tab === t.key
+                    ? 'border-cyan-400 text-cyan-300'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'settings' ? (
+            <SettingsPanel />
+          ) : (
+          <>
           <section aria-labelledby="dash-projects">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2">
@@ -300,6 +330,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               ))}
             </ul>
           </section>
+          </>
+          )}
         </div>
       </main>
     </div>
