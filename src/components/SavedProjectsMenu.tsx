@@ -38,6 +38,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'rendered' | 'draft'>('all');
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [cleaning, setCleaning] = useState(false);
   const [previewVideo, setPreviewVideo] = useState<{ title: string; url: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +74,37 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
       );
     });
   }, [projects, searchQuery, filterMode]);
+
+  // Every wizard run creates a new project id, so re-generating from one source piles up identical drafts.
+  const duplicateDraftIds = useMemo(() => {
+    const keyOf = (p: SavedProjectSummary) => `${p.title}|${p.subtitle}|${p.sceneCount}`;
+    const seen = new Set<string>();
+    const current = projects.find((p) => p.id === currentProjectId);
+    if (current && current.renders.length === 0) seen.add(keyOf(current));
+    const ids: string[] = [];
+    for (const p of projects) {
+      if (p.renders.length > 0 || p.id === currentProjectId) continue;
+      const key = keyOf(p);
+      if (seen.has(key)) ids.push(p.id);
+      else seen.add(key);
+    }
+    return ids;
+  }, [projects, currentProjectId]);
+
+  const handleCleanupDuplicates = async () => {
+    const ok = window.confirm(
+      `將刪除 ${duplicateDraftIds.length} 筆重複草稿（標題與場景數相同、尚未輸出 MP4），每組保留編輯中或最新的一筆。確定要刪除嗎？`
+    );
+    if (!ok) return;
+    setCleaning(true);
+    try {
+      for (const id of duplicateDraftIds) {
+        await onDeleteProject(id);
+      }
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const handleLoad = async (id: string) => {
     setLoadingId(id);
@@ -178,6 +210,17 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
                     {tab.label}
                   </button>
                 ))}
+                {duplicateDraftIds.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={cleaning}
+                    onClick={() => void handleCleanupDuplicates()}
+                    className="ml-auto px-2.5 py-1 rounded-md font-semibold transition border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {cleaning && <Loader2 className="w-3 h-3 animate-spin" />}
+                    清除重複草稿 ({duplicateDraftIds.length})
+                  </button>
+                )}
               </div>
             </div>
 

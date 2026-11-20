@@ -1,0 +1,355 @@
+{
+  "id": "proj-1795163729835",
+  "createdAt": "2026-11-20T08:35:29.841Z",
+  "updatedAt": "2026-11-20T08:35:35.494Z",
+  "renders": [],
+  "project": {
+    "id": "proj-1795163729835",
+    "title": "Bluetooth HDT トレーニング",
+    "subtitle": "802.11ax/be 環境での共存課題と実践対策（60秒）",
+    "language": "ja-JP",
+    "topic": "Bluetooth HDT training",
+    "domain": "wifi",
+    "targetDurationSeconds": 60,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "sourceType": "topic-llm",
+    "rawSourceText": "",
+    "llmConfig": {
+      "baseUrl": "https://gnai.intel.com/api/providers/openai/v1",
+      "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoc2VydmljZSIsInN1YiI6Imp0c2FvMSIsImF1ZCI6WyJhcnRpZmFjdG9yeSIsImd0YSIsImd0YXgiLCJnbmFpIiwiYnVpbGQtcmVnaXN0cnkiLCJnZnh3bCJdLCJleHAiOjE4MDI5MTM3NzQsInNjb3BlcyI6WyJhcHA6YXJ0aWZhY3RvcnkiLCJhcHA6Z3RhIiwiYXBwOmd0YXgiLCJhcHA6Z25haSIsImFwcDpidWlsZC1yZWdpc3RyeSIsImFwcDpnZnh3bCJdfQ.Hsrwoc30AEj9jpBYbWx4xfwanlpuUGvqimpMkKS-8OQ",
+      "model": "gpt-5-mini"
+    },
+    "ttsConfig": {
+      "defaultProvider": "openformosa",
+      "openformosa": {
+        "baseUrl": "https://openformosa.com/api/v1/tts",
+        "apiKey": "",
+        "model": "formosa-tts-v1",
+        "voice": "formosa-pro-tw"
+      },
+      "mingTts": {
+        "baseUrl": "http://localhost:8000/v1/tts",
+        "apiKey": "",
+        "model": "inclusionAI/Ming-3.0-tts",
+        "speaker": "ming-tech-zh-en",
+        "style": "professional-training"
+      }
+    },
+    "scenes": [
+      {
+        "id": "scene-1795163729829-0",
+        "index": 0,
+        "title": "導入：目的と範囲",
+        "subtitle": "Bluetooth HDT と Wi‑Fi 共存の全体像",
+        "domain": "wifi",
+        "template": "title-hero",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "Bluetooth HDT",
+          "802.11ax/be",
+          "共存課題"
+        ],
+        "script": "この短い訓練で、BluetoothのHDT（高デューティ送信）と802.11ax/be環境で起きる共存課題と実践的対策を概説します。",
+        "visualDescription": "端末のアイコンと802.11axアクセスポイントを横並びにしたヒーロー画面に、スイープが左右へ走査して注目点を強調。導入で扱う範囲（HDT定義、対象規格、共存問題）を概観するため、視線を画面全体に誘導するアニメーションを使います。",
+        "diagramData": {
+          "visualCaption": "Bluetooth HDT x 802.11ax/be 共存入門"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-16ab5a024efbc0.mp3",
+          "actualDurationSec": 13.13,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "sweep-scan",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795163729829-1",
+        "index": 1,
+        "title": "干渉の波形イメージ",
+        "subtitle": "重複と故障が何を引き起こすか",
+        "domain": "wifi",
+        "template": "signal-waveform",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "干渉波形",
+          "時間重複",
+          "パケット衝突"
+        ],
+        "script": "HDTの長時間送信はWi‑FiのOFDMAタイムユニットと重なり、パケット衝突や再送を引き起こします。重複の瞬間にスループットが落ちる理由を解説します。",
+        "visualDescription": "Bluetoothの長時間送信波形を赤で表示し、下段にWi‑FiのOFDMAタイムユニットを表示。グリッチが重なる箇所で瞬時にノイズと欠落を点滅させ、衝突がパケット再送や遅延を招く様子を視覚化します。脚本で説明する衝突の原因と影響を強調するためにグリッチ効果を使用します。",
+        "diagramData": {
+          "waveformChannels": [
+            {
+              "label": "Bluetooth (HDT)",
+              "color": "#FF6B6B",
+              "type": "rf-sine"
+            },
+            {
+              "label": "Wi‑Fi 802.11ax (OFDMA)",
+              "color": "#4D96FF",
+              "type": "ofdma"
+            },
+            {
+              "label": "バックグラウンド雑音",
+              "color": "#B0B0B0",
+              "type": "data"
+            }
+          ],
+          "faultChannelIndex": 0,
+          "visualCaption": "HDT送信とOFDMAタイムユニットの重なり"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-dbf12505c20a0f.mp3",
+          "actualDurationSec": 13.49,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "glitch-alert",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795163729829-2",
+        "index": 2,
+        "title": "共存アーキテクチャ",
+        "subtitle": "協調モジュールとスケジューラの役割",
+        "domain": "wifi",
+        "template": "architecture-flow",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "協調モジュール",
+          "APスケジューラ",
+          "アンテナ切替"
+        ],
+        "script": "共存はハードとスケジューラの協調が鍵です。Coexistenceモジュールが送信タイミングを調整し、APのスケジューラとアンテナ資源を分配して衝突を減らします。",
+        "visualDescription": "ノード図でBluetooth端末、Coexistenceモジュール、Wi‑Fi AP、スケジューラを配置。信号パルスがCoexistenceを経てスケジューラへ流れるアニメーションを再現し、どのコンポーネントが送受信の割当を制御するかを直感的に見せます。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "n1",
+              "label": "Bluetooth端末",
+              "sublabel": "HDT送信源",
+              "color": "#FF6B6B"
+            },
+            {
+              "id": "n2",
+              "label": "Coexistence",
+              "sublabel": "調停／ポリシー",
+              "color": "#FFA94D"
+            },
+            {
+              "id": "n3",
+              "label": "Wi‑Fi AP",
+              "sublabel": "802.11ax/be",
+              "color": "#4D96FF"
+            },
+            {
+              "id": "n4",
+              "label": "スケジューラ",
+              "sublabel": "OFDMA/TU割当",
+              "color": "#6FCF97"
+            }
+          ],
+          "highlightNodeIndex": 1,
+          "visualCaption": "Coexistenceとスケジューラが送信を仲介"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-613cb181abadab.mp3",
+          "actualDurationSec": 13.34,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "signal-pulse",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795163729829-3",
+        "index": 3,
+        "title": "プロトコル時間線",
+        "subtitle": "タイミング調整で遅延を抑える方法",
+        "domain": "wifi",
+        "template": "protocol-timeline",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "スキャン窓",
+          "TX割当",
+          "ACK同期"
+        ],
+        "script": "実務ではスキャン窓や送信ウィンドウを調整します。BT発見から共存シグナル、Wi‑Fi送信、ACKまでの順序で遅延緩和のポイントを示します。",
+        "visualDescription": "横並びのタイムラインにステップ毎のメッセージ（BT発見、共存信号、Wi‑Fi送信、ACK）を順にカスケード表示。アクティブステップを強調して、どのタイミングで送信を待避／再割当するかを視覚的に示します。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "Bluetooth",
+              "target": "周辺",
+              "message": "アドバタイズ/スキャン",
+              "timing": "t0–t1"
+            },
+            {
+              "actor": "Coexistence",
+              "target": "AP/STA",
+              "message": "送信許可調整",
+              "timing": "t1–t2"
+            },
+            {
+              "actor": "Wi‑Fi AP",
+              "target": "STA",
+              "message": "OFDMA送信",
+              "timing": "t2–t3"
+            },
+            {
+              "actor": "端末",
+              "target": "AP",
+              "message": "ACK/再送判定",
+              "timing": "t3–t4"
+            }
+          ],
+          "activeStepIndex": 2,
+          "visualCaption": "スキャン窓と送信ウィンドウの順序"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-91c07e7b6bec0d.mp3",
+          "actualDurationSec": 13.22,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "cascade-reveal",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795163729829-4",
+        "index": 4,
+        "title": "対策比較とトレードオフ",
+        "subtitle": "AFH vs タイムスライスの実務比較",
+        "domain": "wifi",
+        "template": "comparison-matrix",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "AFH",
+          "タイムスライス",
+          "遅延 vs スループット"
+        ],
+        "script": "AFHは混雑チャネルを避けてスループットを守りますが、制御が複雑です。タイムスライスは遅延制御に有効で実装が明瞭な代わりにスループットが限られます。",
+        "visualDescription": "左列に評価指標、列ヘッダに『AFH（周波数回避）』と『タイムスライス』を配置。ズームで行を拡大しながら、各手法の強みと弱み（スループット、遅延、消費電力、実装複雑度）を対比します。脚本の説明するトレードオフを視覚的に追いやすくします。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "AFH（周波数回避）",
+            "タイムスライス"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "スループット",
+              "optionA": "高維持",
+              "optionB": "中低",
+              "highlight": "A"
+            },
+            {
+              "metric": "遅延",
+              "optionA": "変動あり",
+              "optionB": "低抑制",
+              "highlight": "B"
+            },
+            {
+              "metric": "消費電力",
+              "optionA": "中",
+              "optionB": "低",
+              "highlight": "B"
+            },
+            {
+              "metric": "実装複雑度",
+              "optionA": "高",
+              "optionB": "中",
+              "highlight": "B"
+            }
+          ],
+          "visualCaption": "AFH と タイムスライスの実務的トレードオフ"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-bfc01097512ee5.mp3",
+          "actualDurationSec": 13.34,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "zoom-focus",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795163729829-5",
+        "index": 5,
+        "title": "まとめと検証チェック",
+        "subtitle": "測定指標と推奨アクション",
+        "domain": "wifi",
+        "template": "summary-takeaways",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "検証手順",
+          "測定指標",
+          "推奨設定"
+        ],
+        "script": "推奨はまずSIRと再送率で影響を測定し、AFHと時間スライスを組合せてテストすることです。ログ収集とシナリオ化で効果を定量化してください。",
+        "visualDescription": "主要な検証ステップと推奨設定を箇条で提示。ズームで各項目にフォーカスし、SIR、再送率、遅延などの測定値を監視する実務手順を強調します。最後に推奨の組合せ（AFH + 時間制御）を示します。",
+        "diagramData": {
+          "visualCaption": "SIR, 再送率, 遅延を監視しAFH+時間制御を検証"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-81e22ae50c478d.mp3",
+          "actualDurationSec": 13.01,
+          "error": "OpenFormosa 不支援此語言，已切換至對應的神經網路語音"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "zoom-focus",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      }
+    ]
+  }
+}
