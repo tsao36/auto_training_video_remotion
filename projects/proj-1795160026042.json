@@ -1,10 +1,10 @@
 {
-  "id": "proj-1795083875787",
-  "createdAt": "2026-11-19T10:24:47.963Z",
-  "updatedAt": "2026-11-19T10:24:47.963Z",
+  "id": "proj-1795160026042",
+  "createdAt": "2026-11-20T07:33:55.270Z",
+  "updatedAt": "2026-11-20T07:33:55.270Z",
   "renders": [],
   "project": {
-    "id": "proj-1795083875787",
+    "id": "proj-1795160026042",
     "title": "PC/筆電硬體除錯共通邏輯：從 Power Sequence 到 Root-Cause",
     "subtitle": "EC/BIOS POST 時序、Power Rail 異常排查、PCIe/I2C/SPI 邏輯分析與 Root-Cause 決策樹",
     "domain": "debug-logic",
@@ -32,7 +32,7 @@
     },
     "scenes": [
       {
-        "id": "scene-1795083875786-0",
+        "id": "scene-1795160026041-0",
         "index": 0,
         "title": "PC/筆電除錯共通邏輯與方法論",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 1",
@@ -48,7 +48,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-8a2bdb098f1321.mp3",
+          "audioUrl": "/audio/tts-702975a242da0c.mp3",
           "actualDurationSec": 11.83,
           "error": "使用快取語音音軌"
         },
@@ -60,7 +60,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-1",
+        "id": "scene-1795160026041-1",
         "index": 1,
         "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 2",
@@ -104,7 +104,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-6aad0cd9076a2a.mp3",
+          "audioUrl": "/audio/tts-6711a973dc646e.mp3",
           "actualDurationSec": 7.94,
           "error": "使用快取語音音軌"
         },
@@ -116,7 +116,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-2",
+        "id": "scene-1795160026041-2",
         "index": 2,
         "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 3",
@@ -152,7 +152,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-897a137074906e.mp3",
+          "audioUrl": "/audio/tts-03711f70adbb3e.mp3",
           "actualDurationSec": 8.06,
           "error": "使用快取語音音軌"
         },
@@ -164,7 +164,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-3",
+        "id": "scene-1795160026041-3",
         "index": 3,
         "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 4",
@@ -208,7 +208,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-951830be724be2.mp3",
+          "audioUrl": "/audio/tts-d18a0215900ebf.mp3",
           "actualDurationSec": 7.85,
           "error": "使用快取語音音軌"
         },
@@ -220,7 +220,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-4",
+        "id": "scene-1795160026041-4",
         "index": 4,
         "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 5",
@@ -268,7 +268,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-a50a67c6491098.mp3",
+          "audioUrl": "/audio/tts-bbd2d50a9bc743.mp3",
           "actualDurationSec": 7.08,
           "error": "使用快取語音音軌"
         },
@@ -280,7 +280,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-5",
+        "id": "scene-1795160026041-5",
         "index": 5,
         "title": "PC/筆電除錯共通邏輯與方法論｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 6",
@@ -296,7 +296,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-01e4c9e27e13a0.mp3",
+          "audioUrl": "/audio/tts-f97022e8be5c64.mp3",
           "actualDurationSec": 7.82,
           "error": "使用快取語音音軌"
         },
@@ -308,7 +308,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-6",
+        "id": "scene-1795160026041-6",
         "index": 6,
         "title": "PC/筆電除錯共通邏輯與方法論｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 7",
@@ -324,7 +324,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-d4b6601b33f9a1.mp3",
+          "audioUrl": "/audio/tts-9a94f4da80c93d.mp3",
           "actualDurationSec": 7.87,
           "error": "使用快取語音音軌"
         },
@@ -336,7 +336,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-7",
+        "id": "scene-1795160026041-7",
         "index": 7,
         "title": "PC/筆電除錯共通邏輯與方法論｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 8",
@@ -352,7 +352,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-84befb741de1fb.mp3",
+          "audioUrl": "/audio/tts-d299f5c3598b72.mp3",
           "actualDurationSec": 9.19,
           "error": "使用快取語音音軌"
         },
@@ -364,7 +364,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-8",
+        "id": "scene-1795160026041-8",
         "index": 8,
         "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 9",
@@ -408,7 +408,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-6aad0cd9076a2a.mp3",
+          "audioUrl": "/audio/tts-6711a973dc646e.mp3",
           "actualDurationSec": 7.94,
           "error": "使用快取語音音軌"
         },
@@ -420,7 +420,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-9",
+        "id": "scene-1795160026041-9",
         "index": 9,
         "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 10",
@@ -456,7 +456,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-897a137074906e.mp3",
+          "audioUrl": "/audio/tts-03711f70adbb3e.mp3",
           "actualDurationSec": 8.06,
           "error": "使用快取語音音軌"
         },
@@ -468,7 +468,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-10",
+        "id": "scene-1795160026041-10",
         "index": 10,
         "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 11",
@@ -512,7 +512,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-951830be724be2.mp3",
+          "audioUrl": "/audio/tts-d18a0215900ebf.mp3",
           "actualDurationSec": 7.85,
           "error": "使用快取語音音軌"
         },
@@ -524,7 +524,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-11",
+        "id": "scene-1795160026041-11",
         "index": 11,
         "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 12",
@@ -572,7 +572,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-a50a67c6491098.mp3",
+          "audioUrl": "/audio/tts-bbd2d50a9bc743.mp3",
           "actualDurationSec": 7.08,
           "error": "使用快取語音音軌"
         },
@@ -584,7 +584,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-12",
+        "id": "scene-1795160026041-12",
         "index": 12,
         "title": "筆電開機供電與核心控制架構",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 13",
@@ -628,7 +628,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-833216baac65ed.mp3",
+          "audioUrl": "/audio/tts-71937a9f3026f7.mp3",
           "actualDurationSec": 8.18,
           "error": "使用快取語音音軌"
         },
@@ -640,7 +640,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-13",
+        "id": "scene-1795160026041-13",
         "index": 13,
         "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 14",
@@ -676,7 +676,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-f673dcfc675a85.mp3",
+          "audioUrl": "/audio/tts-204203701b89bd.mp3",
           "actualDurationSec": 7.42,
           "error": "使用快取語音音軌"
         },
@@ -688,7 +688,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-14",
+        "id": "scene-1795160026041-14",
         "index": 14,
         "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 15",
@@ -732,7 +732,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-2092168ecad411.mp3",
+          "audioUrl": "/audio/tts-1fce7ce4eb4a6b.mp3",
           "actualDurationSec": 7.22,
           "error": "使用快取語音音軌"
         },
@@ -744,7 +744,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-15",
+        "id": "scene-1795160026041-15",
         "index": 15,
         "title": "筆電開機供電與核心控制架構｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 16",
@@ -792,7 +792,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-5ee41a331fff4d.mp3",
+          "audioUrl": "/audio/tts-95a2cf839e205f.mp3",
           "actualDurationSec": 6.36,
           "error": "使用快取語音音軌"
         },
@@ -804,7 +804,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-16",
+        "id": "scene-1795160026041-16",
         "index": 16,
         "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 17",
@@ -820,7 +820,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-04c4b575966714.mp3",
+          "audioUrl": "/audio/tts-864796c5cdc2ea.mp3",
           "actualDurationSec": 7.18,
           "error": "使用快取語音音軌"
         },
@@ -832,7 +832,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-17",
+        "id": "scene-1795160026041-17",
         "index": 17,
         "title": "筆電開機供電與核心控制架構｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 18",
@@ -848,7 +848,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b24f6dba94e72a.mp3",
+          "audioUrl": "/audio/tts-06da9225c12c99.mp3",
           "actualDurationSec": 7.13,
           "error": "使用快取語音音軌"
         },
@@ -860,7 +860,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-18",
+        "id": "scene-1795160026041-18",
         "index": 18,
         "title": "筆電開機供電與核心控制架構｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 19",
@@ -876,7 +876,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-a1003f1751e5d5.mp3",
+          "audioUrl": "/audio/tts-7ca641b5ff279f.mp3",
           "actualDurationSec": 8.83,
           "error": "使用快取語音音軌"
         },
@@ -888,7 +888,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-19",
+        "id": "scene-1795160026042-19",
         "index": 19,
         "title": "筆電開機供電與核心控制架構｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 20",
@@ -932,7 +932,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-63728f768f4b1a.mp3",
+          "audioUrl": "/audio/tts-ffa16e578d71aa.mp3",
           "actualDurationSec": 7.32,
           "error": "使用快取語音音軌"
         },
@@ -944,7 +944,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-20",
+        "id": "scene-1795160026042-20",
         "index": 20,
         "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 21",
@@ -980,7 +980,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-f673dcfc675a85.mp3",
+          "audioUrl": "/audio/tts-204203701b89bd.mp3",
           "actualDurationSec": 7.42,
           "error": "使用快取語音音軌"
         },
@@ -992,7 +992,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-21",
+        "id": "scene-1795160026042-21",
         "index": 21,
         "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 22",
@@ -1036,7 +1036,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-2092168ecad411.mp3",
+          "audioUrl": "/audio/tts-1fce7ce4eb4a6b.mp3",
           "actualDurationSec": 7.22,
           "error": "使用快取語音音軌"
         },
@@ -1048,7 +1048,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-22",
+        "id": "scene-1795160026042-22",
         "index": 22,
         "title": "筆電開機供電與核心控制架構｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 23",
@@ -1096,7 +1096,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-5ee41a331fff4d.mp3",
+          "audioUrl": "/audio/tts-95a2cf839e205f.mp3",
           "actualDurationSec": 6.36,
           "error": "使用快取語音音軌"
         },
@@ -1108,7 +1108,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-23",
+        "id": "scene-1795160026042-23",
         "index": 23,
         "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 24",
@@ -1124,7 +1124,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-04c4b575966714.mp3",
+          "audioUrl": "/audio/tts-864796c5cdc2ea.mp3",
           "actualDurationSec": 7.18,
           "error": "使用快取語音音軌"
         },
@@ -1136,7 +1136,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-24",
+        "id": "scene-1795160026042-24",
         "index": 24,
         "title": "邏輯分析儀與示波器關鍵波形判讀",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 25",
@@ -1172,7 +1172,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-3d0dd9706b8cc3.mp3",
+          "audioUrl": "/audio/tts-2d120d07a0924c.mp3",
           "actualDurationSec": 9.55,
           "error": "使用快取語音音軌"
         },
@@ -1184,7 +1184,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-25",
+        "id": "scene-1795160026042-25",
         "index": 25,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 26",
@@ -1228,7 +1228,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-37669c95b54ab0.mp3",
+          "audioUrl": "/audio/tts-1531448610c72a.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1240,7 +1240,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-26",
+        "id": "scene-1795160026042-26",
         "index": 26,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 27",
@@ -1288,7 +1288,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-e52d9091591766.mp3",
+          "audioUrl": "/audio/tts-0a97bd9e7ee24e.mp3",
           "actualDurationSec": 6.77,
           "error": "使用快取語音音軌"
         },
@@ -1300,7 +1300,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-27",
+        "id": "scene-1795160026042-27",
         "index": 27,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 28",
@@ -1316,7 +1316,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-ce1f95bcf756c4.mp3",
+          "audioUrl": "/audio/tts-0320b2c4e9ed84.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1328,7 +1328,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-28",
+        "id": "scene-1795160026042-28",
         "index": 28,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 29",
@@ -1344,7 +1344,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-3e5d0d30ec7e89.mp3",
+          "audioUrl": "/audio/tts-5850a97eae9cfb.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1356,7 +1356,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-29",
+        "id": "scene-1795160026042-29",
         "index": 29,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 30",
@@ -1372,7 +1372,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-ee7a06f9c0cdbf.mp3",
+          "audioUrl": "/audio/tts-fd2eba912830e8.mp3",
           "actualDurationSec": 8.28,
           "error": "使用快取語音音軌"
         },
@@ -1384,7 +1384,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-30",
+        "id": "scene-1795160026042-30",
         "index": 30,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 31",
@@ -1428,7 +1428,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-75ae0626369da5.mp3",
+          "audioUrl": "/audio/tts-f859f24419204f.mp3",
           "actualDurationSec": 7.7,
           "error": "使用快取語音音軌"
         },
@@ -1440,7 +1440,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-31",
+        "id": "scene-1795160026042-31",
         "index": 31,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 32",
@@ -1476,7 +1476,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b56ba804ec28eb.mp3",
+          "audioUrl": "/audio/tts-9c38443776507d.mp3",
           "actualDurationSec": 7.8,
           "error": "使用快取語音音軌"
         },
@@ -1488,7 +1488,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-32",
+        "id": "scene-1795160026042-32",
         "index": 32,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 33",
@@ -1532,7 +1532,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-37669c95b54ab0.mp3",
+          "audioUrl": "/audio/tts-1531448610c72a.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1544,7 +1544,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-33",
+        "id": "scene-1795160026042-33",
         "index": 33,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 34",
@@ -1592,7 +1592,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-e52d9091591766.mp3",
+          "audioUrl": "/audio/tts-0a97bd9e7ee24e.mp3",
           "actualDurationSec": 6.77,
           "error": "使用快取語音音軌"
         },
@@ -1604,7 +1604,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-34",
+        "id": "scene-1795160026042-34",
         "index": 34,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 35",
@@ -1620,7 +1620,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-ce1f95bcf756c4.mp3",
+          "audioUrl": "/audio/tts-0320b2c4e9ed84.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1632,7 +1632,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-35",
+        "id": "scene-1795160026042-35",
         "index": 35,
         "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 36",
@@ -1648,7 +1648,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-3e5d0d30ec7e89.mp3",
+          "audioUrl": "/audio/tts-5850a97eae9cfb.mp3",
           "actualDurationSec": 7.56,
           "error": "使用快取語音音軌"
         },
@@ -1660,7 +1660,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-36",
+        "id": "scene-1795160026042-36",
         "index": 36,
         "title": "S5 -> S0 開機時序與 POST 互動流程",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 37",
@@ -1696,7 +1696,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-dd8e02982e8bf2.mp3",
+          "audioUrl": "/audio/tts-2c8f8ce76ab055.mp3",
           "actualDurationSec": 10.75,
           "error": "使用快取語音音軌"
         },
@@ -1708,7 +1708,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-37",
+        "id": "scene-1795160026042-37",
         "index": 37,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 38",
@@ -1756,7 +1756,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-7575c756830fed.mp3",
+          "audioUrl": "/audio/tts-e6132bbacda0b5.mp3",
           "actualDurationSec": 7.08,
           "error": "使用快取語音音軌"
         },
@@ -1768,7 +1768,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-38",
+        "id": "scene-1795160026042-38",
         "index": 38,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 39",
@@ -1784,7 +1784,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-802a40284c237c.mp3",
+          "audioUrl": "/audio/tts-0172f1ff6d1dab.mp3",
           "actualDurationSec": 7.8,
           "error": "使用快取語音音軌"
         },
@@ -1796,7 +1796,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-39",
+        "id": "scene-1795160026042-39",
         "index": 39,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 40",
@@ -1812,7 +1812,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-fe3ce6abdabe56.mp3",
+          "audioUrl": "/audio/tts-23e81e56319243.mp3",
           "actualDurationSec": 7.78,
           "error": "使用快取語音音軌"
         },
@@ -1824,7 +1824,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-40",
+        "id": "scene-1795160026042-40",
         "index": 40,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 41",
@@ -1840,7 +1840,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b38a23629bccf9.mp3",
+          "audioUrl": "/audio/tts-9c415890bc1121.mp3",
           "actualDurationSec": 10.2,
           "error": "使用快取語音音軌"
         },
@@ -1852,7 +1852,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-41",
+        "id": "scene-1795160026042-41",
         "index": 41,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 42",
@@ -1896,7 +1896,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-0ee2bee64834e2.mp3",
+          "audioUrl": "/audio/tts-b5286bf848f26b.mp3",
           "actualDurationSec": 7.97,
           "error": "使用快取語音音軌"
         },
@@ -1908,7 +1908,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-42",
+        "id": "scene-1795160026042-42",
         "index": 42,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 43",
@@ -1944,7 +1944,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-2ce62373e9fd63.mp3",
+          "audioUrl": "/audio/tts-378cc5bc621021.mp3",
           "actualDurationSec": 7.99,
           "error": "使用快取語音音軌"
         },
@@ -1956,7 +1956,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-43",
+        "id": "scene-1795160026042-43",
         "index": 43,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 44",
@@ -2000,7 +2000,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-26404ec4cacee1.mp3",
+          "audioUrl": "/audio/tts-6eda7a034c21cf.mp3",
           "actualDurationSec": 7.8,
           "error": "使用快取語音音軌"
         },
@@ -2012,7 +2012,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-44",
+        "id": "scene-1795160026042-44",
         "index": 44,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 45",
@@ -2060,7 +2060,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-7575c756830fed.mp3",
+          "audioUrl": "/audio/tts-e6132bbacda0b5.mp3",
           "actualDurationSec": 7.08,
           "error": "使用快取語音音軌"
         },
@@ -2072,7 +2072,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-45",
+        "id": "scene-1795160026042-45",
         "index": 45,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 46",
@@ -2088,7 +2088,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-802a40284c237c.mp3",
+          "audioUrl": "/audio/tts-0172f1ff6d1dab.mp3",
           "actualDurationSec": 7.8,
           "error": "使用快取語音音軌"
         },
@@ -2100,7 +2100,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-46",
+        "id": "scene-1795160026042-46",
         "index": 46,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 47",
@@ -2116,7 +2116,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-fe3ce6abdabe56.mp3",
+          "audioUrl": "/audio/tts-23e81e56319243.mp3",
           "actualDurationSec": 7.78,
           "error": "使用快取語音音軌"
         },
@@ -2128,7 +2128,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-47",
+        "id": "scene-1795160026042-47",
         "index": 47,
         "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 48",
@@ -2144,7 +2144,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-309c86effabd5e.mp3",
+          "audioUrl": "/audio/tts-e3b4ea565794e0.mp3",
           "actualDurationSec": 9.6,
           "error": "使用快取語音音軌"
         },
@@ -2156,7 +2156,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-48",
+        "id": "scene-1795160026042-48",
         "index": 48,
         "title": "常見除錯工具與量測手段對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 49",
@@ -2200,7 +2200,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-bc25d831e78c0f.mp3",
+          "audioUrl": "/audio/tts-839d7ffe44298c.mp3",
           "actualDurationSec": 8.95,
           "error": "使用快取語音音軌"
         },
@@ -2212,7 +2212,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-49",
+        "id": "scene-1795160026042-49",
         "index": 49,
         "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 50",
@@ -2228,7 +2228,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-047a30e1cde3f7.mp3",
+          "audioUrl": "/audio/tts-699fccda678f84.mp3",
           "actualDurationSec": 7.39,
           "error": "使用快取語音音軌"
         },
@@ -2240,7 +2240,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-50",
+        "id": "scene-1795160026042-50",
         "index": 50,
         "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 51",
@@ -2256,7 +2256,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-8763fce6174121.mp3",
+          "audioUrl": "/audio/tts-f10d480237965d.mp3",
           "actualDurationSec": 7.44,
           "error": "使用快取語音音軌"
         },
@@ -2268,7 +2268,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-51",
+        "id": "scene-1795160026042-51",
         "index": 51,
         "title": "常見除錯工具與量測手段對照｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 52",
@@ -2284,7 +2284,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-2ce6276de148c4.mp3",
+          "audioUrl": "/audio/tts-3ca8962ace5d6c.mp3",
           "actualDurationSec": 9.46,
           "error": "使用快取語音音軌"
         },
@@ -2296,7 +2296,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-52",
+        "id": "scene-1795160026042-52",
         "index": 52,
         "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 53",
@@ -2340,7 +2340,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-7c2c8c10bc8556.mp3",
+          "audioUrl": "/audio/tts-dfbe35c5c518e7.mp3",
           "actualDurationSec": 7.51,
           "error": "使用快取語音音軌"
         },
@@ -2352,7 +2352,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-53",
+        "id": "scene-1795160026042-53",
         "index": 53,
         "title": "常見除錯工具與量測手段對照｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 54",
@@ -2388,7 +2388,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-f2fce95c7cbb19.mp3",
+          "audioUrl": "/audio/tts-0b8b311ee34729.mp3",
           "actualDurationSec": 7.49,
           "error": "使用快取語音音軌"
         },
@@ -2400,7 +2400,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-54",
+        "id": "scene-1795160026042-54",
         "index": 54,
         "title": "常見除錯工具與量測手段對照｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 55",
@@ -2444,7 +2444,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-58003f7c68d006.mp3",
+          "audioUrl": "/audio/tts-9974bfcc33e23b.mp3",
           "actualDurationSec": 7.37,
           "error": "使用快取語音音軌"
         },
@@ -2456,7 +2456,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-55",
+        "id": "scene-1795160026042-55",
         "index": 55,
         "title": "常見除錯工具與量測手段對照｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 56",
@@ -2504,7 +2504,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-9380cbacd4269e.mp3",
+          "audioUrl": "/audio/tts-e82efaa5998e4f.mp3",
           "actualDurationSec": 6.67,
           "error": "使用快取語音音軌"
         },
@@ -2516,7 +2516,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-56",
+        "id": "scene-1795160026042-56",
         "index": 56,
         "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 57",
@@ -2532,7 +2532,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-047a30e1cde3f7.mp3",
+          "audioUrl": "/audio/tts-699fccda678f84.mp3",
           "actualDurationSec": 7.39,
           "error": "使用快取語音音軌"
         },
@@ -2544,7 +2544,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-57",
+        "id": "scene-1795160026042-57",
         "index": 57,
         "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 58",
@@ -2560,7 +2560,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-8763fce6174121.mp3",
+          "audioUrl": "/audio/tts-f10d480237965d.mp3",
           "actualDurationSec": 7.44,
           "error": "使用快取語音音軌"
         },
@@ -2572,7 +2572,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-58",
+        "id": "scene-1795160026042-58",
         "index": 58,
         "title": "常見除錯工具與量測手段對照｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 59",
@@ -2588,7 +2588,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b4d7832f0877dd.mp3",
+          "audioUrl": "/audio/tts-55e0bfda01dc83.mp3",
           "actualDurationSec": 9.96,
           "error": "使用快取語音音軌"
         },
@@ -2600,7 +2600,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-59",
+        "id": "scene-1795160026042-59",
         "index": 59,
         "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 60",
@@ -2644,7 +2644,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-7c2c8c10bc8556.mp3",
+          "audioUrl": "/audio/tts-dfbe35c5c518e7.mp3",
           "actualDurationSec": 7.51,
           "error": "使用快取語音音軌"
         },
@@ -2656,7 +2656,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-60",
+        "id": "scene-1795160026042-60",
         "index": 60,
         "title": "No-Power / No-POST 五步排查決策樹",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 61",
@@ -2700,7 +2700,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-e007c28017e196.mp3",
+          "audioUrl": "/audio/tts-8cd450fc242df5.mp3",
           "actualDurationSec": 8.86,
           "error": "使用快取語音音軌"
         },
@@ -2712,7 +2712,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-61",
+        "id": "scene-1795160026042-61",
         "index": 61,
         "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 62",
@@ -2728,7 +2728,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b59adb1d2ad3aa.mp3",
+          "audioUrl": "/audio/tts-7c5b6de71f5213.mp3",
           "actualDurationSec": 7.39,
           "error": "使用快取語音音軌"
         },
@@ -2740,7 +2740,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-62",
+        "id": "scene-1795160026042-62",
         "index": 62,
         "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 63",
@@ -2756,7 +2756,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-da8b120b874f0b.mp3",
+          "audioUrl": "/audio/tts-585c41727d794e.mp3",
           "actualDurationSec": 10.46,
           "error": "使用快取語音音軌"
         },
@@ -2768,7 +2768,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-63",
+        "id": "scene-1795160026042-63",
         "index": 63,
         "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 64",
@@ -2812,7 +2812,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-f1c5521ee66ccf.mp3",
+          "audioUrl": "/audio/tts-82aa062a626532.mp3",
           "actualDurationSec": 7.49,
           "error": "使用快取語音音軌"
         },
@@ -2824,7 +2824,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-64",
+        "id": "scene-1795160026042-64",
         "index": 64,
         "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 65",
@@ -2860,7 +2860,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-1382263a493dd2.mp3",
+          "audioUrl": "/audio/tts-3b98d1d3dc5d2d.mp3",
           "actualDurationSec": 7.54,
           "error": "使用快取語音音軌"
         },
@@ -2872,7 +2872,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-65",
+        "id": "scene-1795160026042-65",
         "index": 65,
         "title": "No-Power / No-POST 五步排查決策樹｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 66",
@@ -2916,7 +2916,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-26cecb8269bac4.mp3",
+          "audioUrl": "/audio/tts-2c5264543d89d6.mp3",
           "actualDurationSec": 7.34,
           "error": "使用快取語音音軌"
         },
@@ -2928,7 +2928,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-66",
+        "id": "scene-1795160026042-66",
         "index": 66,
         "title": "No-Power / No-POST 五步排查決策樹｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 67",
@@ -2976,7 +2976,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-ee3544a621f328.mp3",
+          "audioUrl": "/audio/tts-924eea9fa12e44.mp3",
           "actualDurationSec": 6.67,
           "error": "使用快取語音音軌"
         },
@@ -2988,7 +2988,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-67",
+        "id": "scene-1795160026042-67",
         "index": 67,
         "title": "No-Power / No-POST 五步排查決策樹｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 68",
@@ -3004,7 +3004,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-73038b9c421eaf.mp3",
+          "audioUrl": "/audio/tts-0dd64e2027af42.mp3",
           "actualDurationSec": 7.44,
           "error": "使用快取語音音軌"
         },
@@ -3016,7 +3016,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-68",
+        "id": "scene-1795160026042-68",
         "index": 68,
         "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 69",
@@ -3032,7 +3032,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-b59adb1d2ad3aa.mp3",
+          "audioUrl": "/audio/tts-7c5b6de71f5213.mp3",
           "actualDurationSec": 7.39,
           "error": "使用快取語音音軌"
         },
@@ -3044,7 +3044,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-69",
+        "id": "scene-1795160026042-69",
         "index": 69,
         "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 70",
@@ -3060,7 +3060,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-d7bb8298bce283.mp3",
+          "audioUrl": "/audio/tts-680b7e2ec33713.mp3",
           "actualDurationSec": 9.12,
           "error": "使用快取語音音軌"
         },
@@ -3072,7 +3072,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-70",
+        "id": "scene-1795160026042-70",
         "index": 70,
         "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 71",
@@ -3116,7 +3116,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-f1c5521ee66ccf.mp3",
+          "audioUrl": "/audio/tts-82aa062a626532.mp3",
           "actualDurationSec": 7.49,
           "error": "使用快取語音音軌"
         },
@@ -3128,7 +3128,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-71",
+        "id": "scene-1795160026042-71",
         "index": 71,
         "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 72",
@@ -3164,7 +3164,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-1382263a493dd2.mp3",
+          "audioUrl": "/audio/tts-3b98d1d3dc5d2d.mp3",
           "actualDurationSec": 7.54,
           "error": "使用快取語音音軌"
         },
@@ -3176,7 +3176,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-72",
+        "id": "scene-1795160026042-72",
         "index": 72,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 73",
@@ -3212,7 +3212,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-6b0bedfefb9109.mp3",
+          "audioUrl": "/audio/tts-9ffd75e0747853.mp3",
           "actualDurationSec": 9.58,
           "error": "使用快取語音音軌"
         },
@@ -3224,7 +3224,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-73",
+        "id": "scene-1795160026042-73",
         "index": 73,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 74",
@@ -3240,7 +3240,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-ab5db2a9be5d06.mp3",
+          "audioUrl": "/audio/tts-7e035d7a75a739.mp3",
           "actualDurationSec": 10.7,
           "error": "使用快取語音音軌"
         },
@@ -3252,7 +3252,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-74",
+        "id": "scene-1795160026042-74",
         "index": 74,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 75",
@@ -3296,7 +3296,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-1dc0a0d5db87d2.mp3",
+          "audioUrl": "/audio/tts-1cc4a3b88bcda2.mp3",
           "actualDurationSec": 8.18,
           "error": "使用快取語音音軌"
         },
@@ -3308,7 +3308,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-75",
+        "id": "scene-1795160026042-75",
         "index": 75,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 76",
@@ -3344,7 +3344,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-012aca3bde7c23.mp3",
+          "audioUrl": "/audio/tts-8e16c4a6dab7ee.mp3",
           "actualDurationSec": 8.3,
           "error": "使用快取語音音軌"
         },
@@ -3356,7 +3356,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-76",
+        "id": "scene-1795160026042-76",
         "index": 76,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 77",
@@ -3400,7 +3400,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-5585d9e55d67f7.mp3",
+          "audioUrl": "/audio/tts-5bab53a282c791.mp3",
           "actualDurationSec": 8.09,
           "error": "使用快取語音音軌"
         },
@@ -3412,7 +3412,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-77",
+        "id": "scene-1795160026042-77",
         "index": 77,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 78",
@@ -3460,7 +3460,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-681c14b0237b86.mp3",
+          "audioUrl": "/audio/tts-29393f1718c25f.mp3",
           "actualDurationSec": 7.25,
           "error": "使用快取語音音軌"
         },
@@ -3472,7 +3472,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-78",
+        "id": "scene-1795160026042-78",
         "index": 78,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 79",
@@ -3488,7 +3488,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-809215e61ba8e0.mp3",
+          "audioUrl": "/audio/tts-aed042bc0d2e14.mp3",
           "actualDurationSec": 8.11,
           "error": "使用快取語音音軌"
         },
@@ -3500,7 +3500,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-79",
+        "id": "scene-1795160026042-79",
         "index": 79,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜EVT/DVT 檢查點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 80",
@@ -3516,7 +3516,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-13662ed7e34ab0.mp3",
+          "audioUrl": "/audio/tts-a6555ad3e3d11d.mp3",
           "actualDurationSec": 8.09,
           "error": "使用快取語音音軌"
         },
@@ -3528,7 +3528,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-80",
+        "id": "scene-1795160026042-80",
         "index": 80,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 81",
@@ -3544,7 +3544,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-02e6240f77498c.mp3",
+          "audioUrl": "/audio/tts-3124a3d24d45b9.mp3",
           "actualDurationSec": 9.7,
           "error": "使用快取語音音軌"
         },
@@ -3556,7 +3556,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-81",
+        "id": "scene-1795160026042-81",
         "index": 81,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 82",
@@ -3600,7 +3600,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-1dc0a0d5db87d2.mp3",
+          "audioUrl": "/audio/tts-1cc4a3b88bcda2.mp3",
           "actualDurationSec": 8.18,
           "error": "使用快取語音音軌"
         },
@@ -3612,7 +3612,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-82",
+        "id": "scene-1795160026042-82",
         "index": 82,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 83",
@@ -3648,7 +3648,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-012aca3bde7c23.mp3",
+          "audioUrl": "/audio/tts-8e16c4a6dab7ee.mp3",
           "actualDurationSec": 8.3,
           "error": "使用快取語音音軌"
         },
@@ -3660,7 +3660,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-83",
+        "id": "scene-1795160026042-83",
         "index": 83,
         "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 84",
@@ -3704,7 +3704,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-5585d9e55d67f7.mp3",
+          "audioUrl": "/audio/tts-5bab53a282c791.mp3",
           "actualDurationSec": 8.09,
           "error": "使用快取語音音軌"
         },
@@ -3716,7 +3716,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-84",
+        "id": "scene-1795160026042-84",
         "index": 84,
         "title": "工程除錯總結與 EVT/DVT 檢查清單",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 85",
@@ -3752,7 +3752,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-a6be5019ea7dcf.mp3",
+          "audioUrl": "/audio/tts-6294691c471e0f.mp3",
           "actualDurationSec": 9.86,
           "error": "使用快取語音音軌"
         },
@@ -3764,7 +3764,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-85",
+        "id": "scene-1795160026042-85",
         "index": 85,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜硬體拓撲圖",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 86",
@@ -3808,7 +3808,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-0d533efd9afc84.mp3",
+          "audioUrl": "/audio/tts-04135cfba77826.mp3",
           "actualDurationSec": 8.62,
           "error": "使用快取語音音軌"
         },
@@ -3820,7 +3820,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-86",
+        "id": "scene-1795160026042-86",
         "index": 86,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜波形與時域特徵",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 87",
@@ -3856,7 +3856,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-15f607db0627be.mp3",
+          "audioUrl": "/audio/tts-2bbc42e2c2949a.mp3",
           "actualDurationSec": 8.52,
           "error": "使用快取語音音軌"
         },
@@ -3868,7 +3868,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-87",
+        "id": "scene-1795160026042-87",
         "index": 87,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜交握與時序門檻",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 88",
@@ -3912,7 +3912,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-79604389257105.mp3",
+          "audioUrl": "/audio/tts-09e467941945b4.mp3",
           "actualDurationSec": 8.42,
           "error": "使用快取語音音軌"
         },
@@ -3924,7 +3924,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-88",
+        "id": "scene-1795160026042-88",
         "index": 88,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜規格指標對照",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 89",
@@ -3972,7 +3972,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-9d0cf5b7d668ab.mp3",
+          "audioUrl": "/audio/tts-53811c0105e521.mp3",
           "actualDurationSec": 7.75,
           "error": "使用快取語音音軌"
         },
@@ -3984,7 +3984,7 @@
         }
       },
       {
-        "id": "scene-1795083875787-89",
+        "id": "scene-1795160026042-89",
         "index": 89,
         "title": "工程除錯總結與 EVT/DVT 檢查清單｜除錯排查 SOP",
         "subtitle": "PC DEBUG & BRING-UP • BEAT 90",
@@ -4000,7 +4000,7 @@
           "voiceId": "formosa-pro-tw",
           "speed": 1.05,
           "status": "ready",
-          "audioUrl": "/audio/tts-d06948eb3e1605.mp3",
+          "audioUrl": "/audio/tts-a94dfd98a2c3de.mp3",
           "actualDurationSec": 8.42,
           "error": "使用快取語音音軌"
         },
@@ -4014,7 +4014,7 @@
     ],
     "llmConfig": {
       "baseUrl": "https://gnai.intel.com/api/providers/openai/v1",
-      "apiKey": "",
+      "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoc2VydmljZSIsInN1YiI6Imp0c2FvMSIsImF1ZCI6WyJhcnRpZmFjdG9yeSIsImd0YSIsImd0YXgiLCJnbmFpIiwiYnVpbGQtcmVnaXN0cnkiLCJnZnh3bCJdLCJleHAiOjE4MDI5MTM3NzQsInNjb3BlcyI6WyJhcHA6YXJ0aWZhY3RvcnkiLCJhcHA6Z3RhIiwiYXBwOmd0YXgiLCJhcHA6Z25haSIsImFwcDpidWlsZC1yZWdpc3RyeSIsImFwcDpnZnh3bCJdfQ.Hsrwoc30AEj9jpBYbWx4xfwanlpuUGvqimpMkKS-8OQ",
       "model": "gpt-5-mini"
     }
   }

@@ -1,0 +1,4021 @@
+{
+  "id": "proj-1795157804660",
+  "createdAt": "2026-11-20T06:56:48.137Z",
+  "updatedAt": "2026-11-20T06:56:48.137Z",
+  "renders": [],
+  "project": {
+    "id": "proj-1795157804660",
+    "title": "PC/筆電硬體除錯共通邏輯：從 Power Sequence 到 Root-Cause",
+    "subtitle": "EC/BIOS POST 時序、Power Rail 異常排查、PCIe/I2C/SPI 邏輯分析與 Root-Cause 決策樹",
+    "domain": "debug-logic",
+    "targetDurationSeconds": 600,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "sourceType": "research-text",
+    "rawSourceText": "PC Laptop Hardware Debug Common Logic Training: Power Sequencing, EC/BIOS POST, SPI/I2C/PCIe probing, and systematic root-cause isolation.",
+    "ttsConfig": {
+      "defaultProvider": "openformosa",
+      "openformosa": {
+        "baseUrl": "https://openformosa.com/api/v1/tts",
+        "apiKey": "",
+        "model": "formosa-tts-v1",
+        "voice": "formosa-pro-tw"
+      },
+      "mingTts": {
+        "baseUrl": "http://localhost:8000/v1/tts",
+        "apiKey": "",
+        "model": "inclusionAI/Ming-3.0-tts",
+        "speaker": "ming-tech-zh-en",
+        "style": "professional-training"
+      }
+    },
+    "scenes": [
+      {
+        "id": "scene-1795157804659-0",
+        "index": 0,
+        "title": "PC/筆電除錯共通邏輯與方法論",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 1",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 13,
+        "keyPoints": [
+          "建立標準化硬體除錯思維：從電源軌驗證、時脈確認、重置訊號到匯流排協定分析"
+        ],
+        "script": "PC/筆電除錯共通邏輯與方法論：建立標準化硬體除錯思維：從電源軌驗證、時脈確認、重置訊號到匯流排協定分析",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-702975a242da0c.mp3",
+          "actualDurationSec": 11.83,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-1",
+        "index": 1,
+        "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 2",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "歡迎來到 PC 與筆電工程除錯培訓課程"
+        ],
+        "script": "觀察 PC/筆電除錯共通邏輯與方法論 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-6711a973dc646e.mp3",
+          "actualDurationSec": 7.94,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-2",
+        "index": 2,
+        "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 3",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "在現代輕薄筆電的高密度主機板設計中，面對不開機或間歇性當機，我們需要一套嚴謹的共"
+        ],
+        "script": "示波器量測 PC/筆電除錯共通邏輯與方法論，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-03711f70adbb3e.mp3",
+          "actualDurationSec": 8.06,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-3",
+        "index": 3,
+        "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 4",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "這十分鐘的課程將帶您走過從 Power Rail 到 PCIe Link Tra"
+        ],
+        "script": "追蹤 PC/筆電除錯共通邏輯與方法論 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-d18a0215900ebf.mp3",
+          "actualDurationSec": 7.85,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-4",
+        "index": 4,
+        "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 5",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "建立標準化硬體除錯思維：從電源軌驗證、時脈確認、重置訊號到匯流排協定分析"
+        ],
+        "script": "比對正常板與異常板在 PC/筆電除錯共通邏輯與方法論 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-bbd2d50a9bc743.mp3",
+          "actualDurationSec": 7.08,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-5",
+        "index": 5,
+        "title": "PC/筆電除錯共通邏輯與方法論｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 6",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "歡迎來到 PC 與筆電工程除錯培訓課程"
+        ],
+        "script": "面對 PC/筆電除錯共通邏輯與方法論 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-f97022e8be5c64.mp3",
+          "actualDurationSec": 7.82,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-6",
+        "index": 6,
+        "title": "PC/筆電除錯共通邏輯與方法論｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 7",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "在現代輕薄筆電的高密度主機板設計中，面對不開機或間歇性當機，我們需要一套嚴謹的共"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 PC/筆電除錯共通邏輯與方法論 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-9a94f4da80c93d.mp3",
+          "actualDurationSec": 7.87,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-7",
+        "index": 7,
+        "title": "PC/筆電除錯共通邏輯與方法論｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 8",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "這十分鐘的課程將帶您走過從 Power Rail 到 PCIe Link Tra"
+        ],
+        "script": "PC/筆電除錯共通邏輯與方法論 是筆電研發關鍵。這十分鐘的課程將帶您走過從 Power Rail",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-d299f5c3598b72.mp3",
+          "actualDurationSec": 9.19,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-8",
+        "index": 8,
+        "title": "PC/筆電除錯共通邏輯與方法論｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 9",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "建立標準化硬體除錯思維：從電源軌驗證、時脈確認、重置訊號到匯流排協定分析"
+        ],
+        "script": "觀察 PC/筆電除錯共通邏輯與方法論 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-6711a973dc646e.mp3",
+          "actualDurationSec": 7.94,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-9",
+        "index": 9,
+        "title": "PC/筆電除錯共通邏輯與方法論｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 10",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "歡迎來到 PC 與筆電工程除錯培訓課程"
+        ],
+        "script": "示波器量測 PC/筆電除錯共通邏輯與方法論，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-03711f70adbb3e.mp3",
+          "actualDurationSec": 8.06,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-10",
+        "index": 10,
+        "title": "PC/筆電除錯共通邏輯與方法論｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 11",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "在現代輕薄筆電的高密度主機板設計中，面對不開機或間歇性當機，我們需要一套嚴謹的共"
+        ],
+        "script": "追蹤 PC/筆電除錯共通邏輯與方法論 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-d18a0215900ebf.mp3",
+          "actualDurationSec": 7.85,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-11",
+        "index": 11,
+        "title": "PC/筆電除錯共通邏輯與方法論｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 12",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "這十分鐘的課程將帶您走過從 Power Rail 到 PCIe Link Tra"
+        ],
+        "script": "比對正常板與異常板在 PC/筆電除錯共通邏輯與方法論 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-bbd2d50a9bc743.mp3",
+          "actualDurationSec": 7.08,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-12",
+        "index": 12,
+        "title": "筆電開機供電與核心控制架構",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 13",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "理解 AC_IN、3V/5V Always、Embedded Controlle"
+        ],
+        "script": "筆電開機供電與核心控制架構：理解 AC_IN、3V/5V Always、Embedded Controlle。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-71937a9f3026f7.mp3",
+          "actualDurationSec": 8.18,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-13",
+        "index": 13,
+        "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 14",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "首先觀察筆電的供電拓撲"
+        ],
+        "script": "示波器量測 筆電開機供電與核心控制架構，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-204203701b89bd.mp3",
+          "actualDurationSec": 7.42,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-14",
+        "index": 14,
+        "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 15",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "當電源接上後，Always-on 電源軌必須先穩定，接著由 EC 觸發 S5 到"
+        ],
+        "script": "追蹤 筆電開機供電與核心控制架構 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1fce7ce4eb4a6b.mp3",
+          "actualDurationSec": 7.22,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-15",
+        "index": 15,
+        "title": "筆電開機供電與核心控制架構｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 16",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 7,
+        "keyPoints": [
+          "任何一級 Power Good 訊號未拉高，都會導致後續時序卡死"
+        ],
+        "script": "比對正常板與異常板在 筆電開機供電與核心控制架構 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-95a2cf839e205f.mp3",
+          "actualDurationSec": 6.36,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-16",
+        "index": 16,
+        "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 17",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "理解 AC_IN、3V/5V Always、Embedded Controlle"
+        ],
+        "script": "面對 筆電開機供電與核心控制架構 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-864796c5cdc2ea.mp3",
+          "actualDurationSec": 7.18,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-17",
+        "index": 17,
+        "title": "筆電開機供電與核心控制架構｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 18",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "首先觀察筆電的供電拓撲"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 筆電開機供電與核心控制架構 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-06da9225c12c99.mp3",
+          "actualDurationSec": 7.13,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-18",
+        "index": 18,
+        "title": "筆電開機供電與核心控制架構｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 19",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "當電源接上後，Always-on 電源軌必須先穩定，接著由 EC 觸發 S5 到"
+        ],
+        "script": "筆電開機供電與核心控制架構 是筆電研發關鍵。當電源接上後，Always-on 電源軌必須先穩",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-7ca641b5ff279f.mp3",
+          "actualDurationSec": 8.83,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-19",
+        "index": 19,
+        "title": "筆電開機供電與核心控制架構｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 20",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "任何一級 Power Good 訊號未拉高，都會導致後續時序卡死"
+        ],
+        "script": "觀察 筆電開機供電與核心控制架構 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-ffa16e578d71aa.mp3",
+          "actualDurationSec": 7.32,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-20",
+        "index": 20,
+        "title": "筆電開機供電與核心控制架構｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 21",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "理解 AC_IN、3V/5V Always、Embedded Controlle"
+        ],
+        "script": "示波器量測 筆電開機供電與核心控制架構，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-204203701b89bd.mp3",
+          "actualDurationSec": 7.42,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-21",
+        "index": 21,
+        "title": "筆電開機供電與核心控制架構｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 22",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "首先觀察筆電的供電拓撲"
+        ],
+        "script": "追蹤 筆電開機供電與核心控制架構 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1fce7ce4eb4a6b.mp3",
+          "actualDurationSec": 7.22,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-22",
+        "index": 22,
+        "title": "筆電開機供電與核心控制架構｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 23",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 7,
+        "keyPoints": [
+          "當電源接上後，Always-on 電源軌必須先穩定，接著由 EC 觸發 S5 到"
+        ],
+        "script": "比對正常板與異常板在 筆電開機供電與核心控制架構 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-95a2cf839e205f.mp3",
+          "actualDurationSec": 6.36,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-23",
+        "index": 23,
+        "title": "筆電開機供電與核心控制架構｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 24",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "任何一級 Power Good 訊號未拉高，都會導致後續時序卡死"
+        ],
+        "script": "面對 筆電開機供電與核心控制架構 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-864796c5cdc2ea.mp3",
+          "actualDurationSec": 7.18,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-24",
+        "index": 24,
+        "title": "邏輯分析儀與示波器關鍵波形判讀",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 25",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "量測 SPI Flash BIOS 讀取時脈、I2C/SMBus PD 通訊以及"
+        ],
+        "script": "邏輯分析儀與示波器關鍵波形判讀：量測 SPI Flash BIOS 讀取時脈、I2C/SMBus PD 通訊以及。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-2d120d07a0924c.mp3",
+          "actualDurationSec": 9.55,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-25",
+        "index": 25,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 26",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "當電源軌正常卻無畫面時，第一步是掛上邏輯分析儀觀察 SPI ROM 的 CS#"
+        ],
+        "script": "追蹤 邏輯分析儀與示波器關鍵波形判讀 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1531448610c72a.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804659-26",
+        "index": 26,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 27",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "如果沒有看到 BIOS Bootblock 讀取封包，代表 SoC 根本尚未釋放"
+        ],
+        "script": "比對正常板與異常板在 邏輯分析儀與示波器關鍵波形判讀 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0a97bd9e7ee24e.mp3",
+          "actualDurationSec": 6.77,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-27",
+        "index": 27,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 28",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "量測 SPI Flash BIOS 讀取時脈、I2C/SMBus PD 通訊以及"
+        ],
+        "script": "面對 邏輯分析儀與示波器關鍵波形判讀 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0320b2c4e9ed84.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-28",
+        "index": 28,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 29",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "當電源軌正常卻無畫面時，第一步是掛上邏輯分析儀觀察 SPI ROM 的 CS#"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 邏輯分析儀與示波器關鍵波形判讀 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-5850a97eae9cfb.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-29",
+        "index": 29,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 30",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "如果沒有看到 BIOS Bootblock 讀取封包，代表 SoC 根本尚未釋放"
+        ],
+        "script": "邏輯分析儀與示波器關鍵波形判讀 是筆電研發關鍵。如果沒有看到 BIOS Bootblock 讀取",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-fd2eba912830e8.mp3",
+          "actualDurationSec": 8.28,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-30",
+        "index": 30,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 31",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "量測 SPI Flash BIOS 讀取時脈、I2C/SMBus PD 通訊以及"
+        ],
+        "script": "觀察 邏輯分析儀與示波器關鍵波形判讀 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-f859f24419204f.mp3",
+          "actualDurationSec": 7.7,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-31",
+        "index": 31,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 32",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "當電源軌正常卻無畫面時，第一步是掛上邏輯分析儀觀察 SPI ROM 的 CS#"
+        ],
+        "script": "示波器量測 邏輯分析儀與示波器關鍵波形判讀，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-9c38443776507d.mp3",
+          "actualDurationSec": 7.8,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-32",
+        "index": 32,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 33",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "如果沒有看到 BIOS Bootblock 讀取封包，代表 SoC 根本尚未釋放"
+        ],
+        "script": "追蹤 邏輯分析儀與示波器關鍵波形判讀 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1531448610c72a.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-33",
+        "index": 33,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 34",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "量測 SPI Flash BIOS 讀取時脈、I2C/SMBus PD 通訊以及"
+        ],
+        "script": "比對正常板與異常板在 邏輯分析儀與示波器關鍵波形判讀 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0a97bd9e7ee24e.mp3",
+          "actualDurationSec": 6.77,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-34",
+        "index": 34,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 35",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "當電源軌正常卻無畫面時，第一步是掛上邏輯分析儀觀察 SPI ROM 的 CS#"
+        ],
+        "script": "面對 邏輯分析儀與示波器關鍵波形判讀 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0320b2c4e9ed84.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-35",
+        "index": 35,
+        "title": "邏輯分析儀與示波器關鍵波形判讀｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 36",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "如果沒有看到 BIOS Bootblock 讀取封包，代表 SoC 根本尚未釋放"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 邏輯分析儀與示波器關鍵波形判讀 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-5850a97eae9cfb.mp3",
+          "actualDurationSec": 7.56,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-36",
+        "index": 36,
+        "title": "S5 -> S0 開機時序與 POST 互動流程",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 37",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 12,
+        "keyPoints": [
+          "追蹤 RSMRST#、ALL_SYS_PWRGD、SPI Fetch 與 PCI"
+        ],
+        "script": "S5 -> S0 開機時序與 POST 互動流程：追蹤 RSMRST#、ALL_SYS_PWRGD、SPI Fetch 與 PCI。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-2c8f8ce76ab055.mp3",
+          "actualDurationSec": 10.75,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-37",
+        "index": 37,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 38",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "透過時間軸我們可以清楚看到：EC 發出 RSMRST# 後約 35 毫秒，PMI"
+        ],
+        "script": "比對正常板與異常板在 S5 -> S0 開機時序與 POST 互動流程 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-e6132bbacda0b5.mp3",
+          "actualDurationSec": 7.08,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-38",
+        "index": 38,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 39",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "隨後 SoC 在 50 毫秒內讀取 BIOS，並在 180 毫秒左右釋放 PLT"
+        ],
+        "script": "面對 S5 -> S0 開機時序與 POST 互動流程 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0172f1ff6d1dab.mp3",
+          "actualDurationSec": 7.8,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-39",
+        "index": 39,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 40",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "追蹤 RSMRST#、ALL_SYS_PWRGD、SPI Fetch 與 PCI"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 S5 -> S0 開機時序與 POST 互動流程 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-23e81e56319243.mp3",
+          "actualDurationSec": 7.78,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-40",
+        "index": 40,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 41",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "透過時間軸我們可以清楚看到：EC 發出 RSMRST# 後約 35 毫秒，PMI"
+        ],
+        "script": "S5 -> S0 開機時序與 POST 互動流程 是筆電研發關鍵。透過時間軸我們可以清楚看到：EC 發出 RSMR",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-9c415890bc1121.mp3",
+          "actualDurationSec": 10.2,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-41",
+        "index": 41,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 42",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "隨後 SoC 在 50 毫秒內讀取 BIOS，並在 180 毫秒左右釋放 PLT"
+        ],
+        "script": "觀察 S5 -> S0 開機時序與 POST 互動流程 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-b5286bf848f26b.mp3",
+          "actualDurationSec": 7.97,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-42",
+        "index": 42,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 43",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "追蹤 RSMRST#、ALL_SYS_PWRGD、SPI Fetch 與 PCI"
+        ],
+        "script": "示波器量測 S5 -> S0 開機時序與 POST 互動流程，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-378cc5bc621021.mp3",
+          "actualDurationSec": 7.99,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-43",
+        "index": 43,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 44",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "透過時間軸我們可以清楚看到：EC 發出 RSMRST# 後約 35 毫秒，PMI"
+        ],
+        "script": "追蹤 S5 -> S0 開機時序與 POST 互動流程 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-6eda7a034c21cf.mp3",
+          "actualDurationSec": 7.8,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-44",
+        "index": 44,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 45",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "隨後 SoC 在 50 毫秒內讀取 BIOS，並在 180 毫秒左右釋放 PLT"
+        ],
+        "script": "比對正常板與異常板在 S5 -> S0 開機時序與 POST 互動流程 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-e6132bbacda0b5.mp3",
+          "actualDurationSec": 7.08,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-45",
+        "index": 45,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 46",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "追蹤 RSMRST#、ALL_SYS_PWRGD、SPI Fetch 與 PCI"
+        ],
+        "script": "面對 S5 -> S0 開機時序與 POST 互動流程 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0172f1ff6d1dab.mp3",
+          "actualDurationSec": 7.8,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-46",
+        "index": 46,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 47",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "透過時間軸我們可以清楚看到：EC 發出 RSMRST# 後約 35 毫秒，PMI"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 S5 -> S0 開機時序與 POST 互動流程 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-23e81e56319243.mp3",
+          "actualDurationSec": 7.78,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-47",
+        "index": 47,
+        "title": "S5 -> S0 開機時序與 POST 互動流程｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 48",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "隨後 SoC 在 50 毫秒內讀取 BIOS，並在 180 毫秒左右釋放 PLT"
+        ],
+        "script": "S5 -> S0 開機時序與 POST 互動流程 是筆電研發關鍵。隨後 SoC 在 50 毫秒內讀取 BIOS，並",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-e3b4ea565794e0.mp3",
+          "actualDurationSec": 9.6,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-48",
+        "index": 48,
+        "title": "常見除錯工具與量測手段對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 49",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "常見除錯工具與量測手段對照：比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-839d7ffe44298c.mp3",
+          "actualDurationSec": 8.95,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-49",
+        "index": 49,
+        "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 50",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "面對 常見除錯工具與量測手段對照 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-699fccda678f84.mp3",
+          "actualDurationSec": 7.39,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-50",
+        "index": 50,
+        "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 51",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 常見除錯工具與量測手段對照 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-f10d480237965d.mp3",
+          "actualDurationSec": 7.44,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-51",
+        "index": 51,
+        "title": "常見除錯工具與量測手段對照｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 52",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "常見除錯工具與量測手段對照 是筆電研發關鍵。工程師必須選對工具：電源漣波與 Signal I",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-3ca8962ace5d6c.mp3",
+          "actualDurationSec": 9.46,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-52",
+        "index": 52,
+        "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 53",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "觀察 常見除錯工具與量測手段對照 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-dfbe35c5c518e7.mp3",
+          "actualDurationSec": 7.51,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-53",
+        "index": 53,
+        "title": "常見除錯工具與量測手段對照｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 54",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "示波器量測 常見除錯工具與量測手段對照，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0b8b311ee34729.mp3",
+          "actualDurationSec": 7.49,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-54",
+        "index": 54,
+        "title": "常見除錯工具與量測手段對照｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 55",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "追蹤 常見除錯工具與量測手段對照 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-9974bfcc33e23b.mp3",
+          "actualDurationSec": 7.37,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-55",
+        "index": 55,
+        "title": "常見除錯工具與量測手段對照｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 56",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "比對正常板與異常板在 常見除錯工具與量測手段對照 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-e82efaa5998e4f.mp3",
+          "actualDurationSec": 6.67,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-56",
+        "index": 56,
+        "title": "常見除錯工具與量測手段對照｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 57",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "面對 常見除錯工具與量測手段對照 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-699fccda678f84.mp3",
+          "actualDurationSec": 7.39,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-57",
+        "index": 57,
+        "title": "常見除錯工具與量測手段對照｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 58",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 常見除錯工具與量測手段對照 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-f10d480237965d.mp3",
+          "actualDurationSec": 7.44,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-58",
+        "index": 58,
+        "title": "常見除錯工具與量測手段對照｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 59",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "比較示波器類比量測、邏輯分析儀協定解碼與 Port 80 POST Code 的"
+        ],
+        "script": "常見除錯工具與量測手段對照 是筆電研發關鍵。比較示波器類比量測、邏輯分析儀協定解碼與 Por",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-55e0bfda01dc83.mp3",
+          "actualDurationSec": 9.96,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-59",
+        "index": 59,
+        "title": "常見除錯工具與量測手段對照｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 60",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "工程師必須選對工具：電源漣波與 Signal Integrity 必須看示波器類"
+        ],
+        "script": "觀察 常見除錯工具與量測手段對照 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-dfbe35c5c518e7.mp3",
+          "actualDurationSec": 7.51,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-60",
+        "index": 60,
+        "title": "No-Power / No-POST 五步排查決策樹",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 61",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "Step 1 確認大電流短路；Step 2 量測 3V/5V LDO；Step"
+        ],
+        "script": "No-Power / No-POST 五步排查決策樹：Step 1 確認大電流短路；Step 2 量測 3V/5V LDO；Step 。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-8cd450fc242df5.mp3",
+          "actualDurationSec": 8.86,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-61",
+        "index": 61,
+        "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 62",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "768KHz；Step 4 驗證 SPI Flash；Step 5 隔離 PCI"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 No-Power / No-POST 五步排查決策樹 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-7c5b6de71f5213.mp3",
+          "actualDurationSec": 7.39,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-62",
+        "index": 62,
+        "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 63",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "實戰中最有效的五步排查法：先確認主電源無對地短路，再依序檢查待機電壓、晶振起振、"
+        ],
+        "script": "No-Power / No-POST 五步排查決策樹 是筆電研發關鍵。實戰中最有效的五步排查法：先確認主電源無對地短路",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-585c41727d794e.mp3",
+          "actualDurationSec": 10.46,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-63",
+        "index": 63,
+        "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 64",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "透過二分法快速縮小故障域"
+        ],
+        "script": "觀察 No-Power / No-POST 五步排查決策樹 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-82aa062a626532.mp3",
+          "actualDurationSec": 7.49,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-64",
+        "index": 64,
+        "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 65",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "Step 1 確認大電流短路；Step 2 量測 3V/5V LDO；Step"
+        ],
+        "script": "示波器量測 No-Power / No-POST 五步排查決策樹，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-3b98d1d3dc5d2d.mp3",
+          "actualDurationSec": 7.54,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-65",
+        "index": 65,
+        "title": "No-Power / No-POST 五步排查決策樹｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 66",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "768KHz；Step 4 驗證 SPI Flash；Step 5 隔離 PCI"
+        ],
+        "script": "追蹤 No-Power / No-POST 五步排查決策樹 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-2c5264543d89d6.mp3",
+          "actualDurationSec": 7.34,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-66",
+        "index": 66,
+        "title": "No-Power / No-POST 五步排查決策樹｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 67",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "實戰中最有效的五步排查法：先確認主電源無對地短路，再依序檢查待機電壓、晶振起振、"
+        ],
+        "script": "比對正常板與異常板在 No-Power / No-POST 五步排查決策樹 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-924eea9fa12e44.mp3",
+          "actualDurationSec": 6.67,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-67",
+        "index": 67,
+        "title": "No-Power / No-POST 五步排查決策樹｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 68",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "透過二分法快速縮小故障域"
+        ],
+        "script": "面對 No-Power / No-POST 五步排查決策樹 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-0dd64e2027af42.mp3",
+          "actualDurationSec": 7.44,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-68",
+        "index": 68,
+        "title": "No-Power / No-POST 五步排查決策樹｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 69",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "Step 1 確認大電流短路；Step 2 量測 3V/5V LDO；Step"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 No-Power / No-POST 五步排查決策樹 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-7c5b6de71f5213.mp3",
+          "actualDurationSec": 7.39,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-69",
+        "index": 69,
+        "title": "No-Power / No-POST 五步排查決策樹｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 70",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "768KHz；Step 4 驗證 SPI Flash；Step 5 隔離 PCI"
+        ],
+        "script": "No-Power / No-POST 五步排查決策樹 是筆電研發關鍵。768KHz；Step 4 驗證 SPI Fla",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-680b7e2ec33713.mp3",
+          "actualDurationSec": 9.12,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-70",
+        "index": 70,
+        "title": "No-Power / No-POST 五步排查決策樹｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 71",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "實戰中最有效的五步排查法：先確認主電源無對地短路，再依序檢查待機電壓、晶振起振、"
+        ],
+        "script": "觀察 No-Power / No-POST 五步排查決策樹 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-82aa062a626532.mp3",
+          "actualDurationSec": 7.49,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-71",
+        "index": 71,
+        "title": "No-Power / No-POST 五步排查決策樹｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 72",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "透過二分法快速縮小故障域"
+        ],
+        "script": "示波器量測 No-Power / No-POST 五步排查決策樹，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-3b98d1d3dc5d2d.mp3",
+          "actualDurationSec": 7.54,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-72",
+        "index": 72,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 73",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "利用高低溫箱、Vmin/Vmax 電壓邊界測試與 Clock Jitter 分析"
+        ],
+        "script": "間歇性 Fail (Thermal / Marginal) 應力測試：利用高低溫箱、Vmin/Vmax 電壓邊界測試與 Clock Jitter 分析。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-9ffd75e0747853.mp3",
+          "actualDurationSec": 9.58,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-73",
+        "index": 73,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 74",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 12,
+        "keyPoints": [
+          "面對最棘手的間歇性異常，單純室溫量測往往正常"
+        ],
+        "script": "間歇性 Fail (Thermal / Marginal) 應力測試 是筆電研發關鍵。面對最棘手的間歇性異常，單純室溫量測往往正常",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-7e035d7a75a739.mp3",
+          "actualDurationSec": 10.7,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-74",
+        "index": 74,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 75",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "我們必須結合電壓 Margin 測試與溫升應力，觀察是否因 Power Droo"
+        ],
+        "script": "觀察 間歇性 Fail (Thermal / Marginal) 應力測試 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1cc4a3b88bcda2.mp3",
+          "actualDurationSec": 8.18,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-75",
+        "index": 75,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 76",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "利用高低溫箱、Vmin/Vmax 電壓邊界測試與 Clock Jitter 分析"
+        ],
+        "script": "示波器量測 間歇性 Fail (Thermal / Marginal) 應力測試，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-8e16c4a6dab7ee.mp3",
+          "actualDurationSec": 8.3,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-76",
+        "index": 76,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 77",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "面對最棘手的間歇性異常，單純室溫量測往往正常"
+        ],
+        "script": "追蹤 間歇性 Fail (Thermal / Marginal) 應力測試 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-5bab53a282c791.mp3",
+          "actualDurationSec": 8.09,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-77",
+        "index": 77,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 78",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "我們必須結合電壓 Margin 測試與溫升應力，觀察是否因 Power Droo"
+        ],
+        "script": "比對正常板與異常板在 間歇性 Fail (Thermal / Marginal) 應力測試 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-29393f1718c25f.mp3",
+          "actualDurationSec": 7.25,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-78",
+        "index": 78,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 79",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "利用高低溫箱、Vmin/Vmax 電壓邊界測試與 Clock Jitter 分析"
+        ],
+        "script": "面對 間歇性 Fail (Thermal / Marginal) 應力測試 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-aed042bc0d2e14.mp3",
+          "actualDurationSec": 8.11,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-79",
+        "index": 79,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜EVT/DVT 檢查點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 80",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "面對最棘手的間歇性異常，單純室溫量測往往正常"
+        ],
+        "script": "EVT 與 DVT 階段務必完成 間歇性 Fail (Thermal / Marginal) 應力測試 邊界測試與存檔。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-a6555ad3e3d11d.mp3",
+          "actualDurationSec": 8.09,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-80",
+        "index": 80,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜核心痛點",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 81",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "我們必須結合電壓 Margin 測試與溫升應力，觀察是否因 Power Droo"
+        ],
+        "script": "間歇性 Fail (Thermal / Marginal) 應力測試 是筆電研發關鍵。我們必須結合電壓 Margin 測試與溫升應力，",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-3124a3d24d45b9.mp3",
+          "actualDurationSec": 9.7,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-81",
+        "index": 81,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 82",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "利用高低溫箱、Vmin/Vmax 電壓邊界測試與 Clock Jitter 分析"
+        ],
+        "script": "觀察 間歇性 Fail (Thermal / Marginal) 應力測試 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-1cc4a3b88bcda2.mp3",
+          "actualDurationSec": 8.18,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-82",
+        "index": 82,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 83",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "面對最棘手的間歇性異常，單純室溫量測往往正常"
+        ],
+        "script": "示波器量測 間歇性 Fail (Thermal / Marginal) 應力測試，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-8e16c4a6dab7ee.mp3",
+          "actualDurationSec": 8.3,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-83",
+        "index": 83,
+        "title": "間歇性 Fail (Thermal / Marginal) 應力測試｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 84",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "我們必須結合電壓 Margin 測試與溫升應力，觀察是否因 Power Droo"
+        ],
+        "script": "追蹤 間歇性 Fail (Thermal / Marginal) 應力測試 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-5bab53a282c791.mp3",
+          "actualDurationSec": 8.09,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-84",
+        "index": 84,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 85",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "建立完整量測波形存檔習慣，確保 Power Sequence、Reset 單調性"
+        ],
+        "script": "工程除錯總結與 EVT/DVT 檢查清單：建立完整量測波形存檔習慣，確保 Power Sequence、Reset 單調性。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-6294691c471e0f.mp3",
+          "actualDurationSec": 9.86,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-85",
+        "index": 85,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單｜硬體拓撲圖",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 86",
+        "domain": "debug-logic",
+        "template": "architecture-flow",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "總結今天的核心觀念：先電源、後時脈、再重置、最後看協定"
+        ],
+        "script": "觀察 工程除錯總結與 EVT/DVT 檢查清單 硬體訊號鏈，從主控端延伸至實體介面。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "pmic",
+              "label": "VR / PMIC",
+              "sublabel": "S5 -> S0 Power Rails",
+              "color": "#F59E0B"
+            },
+            {
+              "id": "ec",
+              "label": "Embedded Ctrl",
+              "sublabel": "Power Seq & Thermal",
+              "color": "#00C2FF"
+            },
+            {
+              "id": "soc",
+              "label": "x86 / ARM SoC",
+              "sublabel": "BIOS SPI & Memory Init",
+              "color": "#0071C5"
+            },
+            {
+              "id": "pcie",
+              "label": "PCIe / USB4",
+              "sublabel": "LTSSM Link Training",
+              "color": "#10B981"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-04135cfba77826.mp3",
+          "actualDurationSec": 8.62,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-86",
+        "index": 86,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單｜波形與時域特徵",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 87",
+        "domain": "debug-logic",
+        "template": "signal-waveform",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "在 EVT 與 DVT 階段務必完整記錄每個關鍵訊號的量測數據，祝大家除錯順利！"
+        ],
+        "script": "示波器量測 工程除錯總結與 EVT/DVT 檢查清單，務必鎖定上升緣與訊號雜訊比。",
+        "diagramData": {
+          "waveformFreqHz": 2.5,
+          "waveformChannels": [
+            {
+              "label": "SPI_CLK (48 MHz)",
+              "color": "#00C2FF",
+              "type": "clock"
+            },
+            {
+              "label": "SPI_MOSI (BIOS Fetch)",
+              "color": "#10B981",
+              "type": "data"
+            },
+            {
+              "label": "PLT_RST# (3.3V)",
+              "color": "#F59E0B",
+              "type": "data"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-2bbc42e2c2949a.mp3",
+          "actualDurationSec": 8.52,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-87",
+        "index": 87,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單｜交握與時序門檻",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 88",
+        "domain": "debug-logic",
+        "template": "protocol-timeline",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "建立完整量測波形存檔習慣，確保 Power Sequence、Reset 單調性"
+        ],
+        "script": "追蹤 工程除錯總結與 EVT/DVT 檢查清單 毫秒級交握時序，逾時將觸發系統重置。",
+        "diagramData": {
+          "protocolSteps": [
+            {
+              "actor": "EC",
+              "target": "PMIC",
+              "message": "Assert RSMRST# & SLP_S5#",
+              "timing": "T0 + 10ms"
+            },
+            {
+              "actor": "PMIC",
+              "target": "SoC",
+              "message": "VCCIN_AUX & ALL_SYS_PWRGD",
+              "timing": "T0 + 35ms"
+            },
+            {
+              "actor": "SoC",
+              "target": "SPI Flash",
+              "message": "Fetch Bootblock (CS0# Low)",
+              "timing": "T0 + 50ms"
+            },
+            {
+              "actor": "BIOS",
+              "target": "PCIe",
+              "message": "PLT_RST# De-assert & Link Up",
+              "timing": "T0 + 180ms"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-09e467941945b4.mp3",
+          "actualDurationSec": 8.42,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-88",
+        "index": 88,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單｜規格指標對照",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 89",
+        "domain": "debug-logic",
+        "template": "comparison-matrix",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "總結今天的核心觀念：先電源、後時脈、再重置、最後看協定"
+        ],
+        "script": "比對正常板與異常板在 工程除錯總結與 EVT/DVT 檢查清單 的電氣指標差異。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Nominal Spec (Pass)",
+            "Degraded Board (Fail)"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "S11 Return Loss",
+              "optionA": "< -10 dB",
+              "optionB": "-4.5 dB (Mismatch)",
+              "highlight": "A"
+            },
+            {
+              "metric": "Rx Desense (USB3)",
+              "optionA": "< 1.5 dB",
+              "optionB": "8.2 dB Noise Floor Rise",
+              "highlight": "A"
+            },
+            {
+              "metric": "Power Rail Ripple",
+              "optionA": "< 25 mVpp",
+              "optionB": "110 mVpp Droop",
+              "highlight": "A"
+            },
+            {
+              "metric": "Antenna Isolation",
+              "optionA": "> 18 dB",
+              "optionB": "9 dB Coupling",
+              "highlight": "A"
+            }
+          ]
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-53811c0105e521.mp3",
+          "actualDurationSec": 7.75,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795157804660-89",
+        "index": 89,
+        "title": "工程除錯總結與 EVT/DVT 檢查清單｜除錯排查 SOP",
+        "subtitle": "PC DEBUG & BRING-UP • BEAT 90",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "在 EVT 與 DVT 階段務必完整記錄每個關鍵訊號的量測數據，祝大家除錯順利！"
+        ],
+        "script": "面對 工程除錯總結與 EVT/DVT 檢查清單 異常，以二分法隔離電源、時脈與週邊。",
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-a94dfd98a2c3de.mp3",
+          "actualDurationSec": 8.42,
+          "error": "使用快取語音音軌"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      }
+    ],
+    "llmConfig": {
+      "baseUrl": "https://gnai.intel.com/api/providers/openai/v1",
+      "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoc2VydmljZSIsInN1YiI6Imp0c2FvMSIsImF1ZCI6WyJhcnRpZmFjdG9yeSIsImd0YSIsImd0YXgiLCJnbmFpIiwiYnVpbGQtcmVnaXN0cnkiLCJnZnh3bCJdLCJleHAiOjE4MDI5MTM3NzQsInNjb3BlcyI6WyJhcHA6YXJ0aWZhY3RvcnkiLCJhcHA6Z3RhIiwiYXBwOmd0YXgiLCJhcHA6Z25haSIsImFwcDpidWlsZC1yZWdpc3RyeSIsImFwcDpnZnh3bCJdfQ.Hsrwoc30AEj9jpBYbWx4xfwanlpuUGvqimpMkKS-8OQ",
+      "model": "gpt-5-mini"
+    }
+  }
+}

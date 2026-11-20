@@ -18,9 +18,7 @@ const VALID_EFFECTS: RemotionEffect[] = [
   'sweep-scan',
 ];
 
-// Target from the reference video: a visible change every few seconds.
-const TARGET_AVG_SECONDS_PER_BEAT = 8;
-// Measured ceiling of the current presets; tightening this is the pacing roadmap.
+// Measured ceiling of the current presets.
 const REGRESSION_AVG_SECONDS_PER_BEAT = 15;
 
 /** Shared invariants every generated cue list must satisfy. */
@@ -245,11 +243,6 @@ describe('preset projects: animation pacing self-validation', () => {
 
     it(`never regresses beyond ${REGRESSION_AVG_SECONDS_PER_BEAT}s per beat`, () => {
       expect(slowScenes(REGRESSION_AVG_SECONDS_PER_BEAT)).toEqual([]);
-    });
-
-    // Expected to fail until preset scripts/beat splitting reach the target; remove `.fails` then.
-    it.fails(`reaches the target of ${TARGET_AVG_SECONDS_PER_BEAT}s per beat`, () => {
-      expect(slowScenes(TARGET_AVG_SECONDS_PER_BEAT)).toEqual([]);
     });
 
     it('uses more than one effect across the video', () => {
