@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    // Runtime data written by the API server must not trigger a full page reload.
+    watch: {
+      ignored: ['**/projects/**', '**/output/**', '**/public/audio/**', '**/public/pptx-media/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

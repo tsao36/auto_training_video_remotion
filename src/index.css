@@ -2,7 +2,51 @@
 
 @theme {
   --font-sans: "IBM Plex Sans", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Warm charcoal neutrals (replaces cool slate). */
+  --color-slate-50: #faf8f5;
+  --color-slate-100: #f3efe8;
+  --color-slate-200: #e4ded3;
+  --color-slate-300: #cfc7b9;
+  --color-slate-400: #a39b8c;
+  --color-slate-500: #837b6f;
+  --color-slate-600: #5a554d;
+  --color-slate-700: #3d3934;
+  --color-slate-800: #2a2723;
+  --color-slate-900: #1d1b18;
+  --color-slate-950: #12100e;
+
+  /* Champagne gold accent (replaces cyan). */
+  --color-cyan-50: #fbf7ec;
+  --color-cyan-100: #f5ecd0;
+  --color-cyan-200: #ebdaa6;
+  --color-cyan-300: #e0c985;
+  --color-cyan-400: #d4b46a;
+  --color-cyan-500: #c9a45c;
+  --color-cyan-600: #a8843f;
+  --color-cyan-700: #86672f;
+  --color-cyan-800: #624b24;
+  --color-cyan-900: #43331a;
+  --color-cyan-950: #241b0e;
+
+  /* Bronze for gradient end stops (replaces blue). */
+  --color-blue-400: #b8935a;
+  --color-blue-500: #a8843f;
+  --color-blue-600: #8a6a30;
+
+  /* Sage for success (replaces emerald). */
+  --color-emerald-300: #b9d0b7;
+  --color-emerald-400: #98b896;
+  --color-emerald-500: #7ea382;
+  --color-emerald-950: #16201a;
+
+  /* Dusty rose for AI actions (replaces indigo). */
+  --color-indigo-200: #e6d2d9;
+  --color-indigo-300: #d6b7c3;
+  --color-indigo-400: #c298aa;
+  --color-indigo-500: #ad7b90;
 }
 
 @layer base {
@@ -22,20 +66,34 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0b0f19;
+    background: #0e0d0c;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: #2a2723;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: #3d3934;
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    letter-spacing: 0.02em;
+  }
+  h1 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
   }
 }
 
 /* Unlayered so it wins over Tailwind's focus:outline-none utilities. */
 :focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #d4b46a;
   outline-offset: 2px;
 }
 

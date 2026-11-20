@@ -90,14 +90,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0B0F19] text-slate-100 overflow-hidden">
-      <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#0F1624] px-6 flex items-center justify-between gap-4">
+    <div className="h-screen w-screen flex flex-col bg-[#0E0D0C] text-slate-100 overflow-hidden">
+      <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#151310] px-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Film className="w-4 h-4 text-slate-950" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-bold text-white">Remotion Tech Training Studio</h1>
+            <h1 className="text-lg font-semibold text-white tracking-wide leading-tight">Remotion Tech Training Studio</h1>
             <div className="text-[11px] text-slate-400">專案總覽</div>
           </div>
         </div>
@@ -190,7 +190,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   return (
                     <li
                       key={item.id}
-                      className="flex flex-col rounded-xl border border-slate-800 bg-[#0E1422] hover:border-slate-600 transition p-4"
+                      className="flex flex-col rounded-xl border border-slate-800 bg-[#131110] hover:border-slate-600 transition p-4"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">

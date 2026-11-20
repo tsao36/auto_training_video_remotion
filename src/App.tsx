@@ -653,9 +653,9 @@ export function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0B0F19] text-slate-100 overflow-hidden select-none">
+    <div className="h-screen w-screen flex flex-col bg-[#0E0D0C] text-slate-100 overflow-hidden select-none">
       {/* Top Studio Header */}
-      <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#0F1624] px-4 flex items-center justify-between gap-4">
+      <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#151310] px-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -852,7 +852,7 @@ export function App() {
       {(renderState.active || renderState.outputUrl || renderState.error) && (
         <div
           role={renderState.error ? 'alert' : 'status'}
-          className="px-4 py-2 bg-[#131C31] border-b border-slate-800 flex items-center justify-between text-xs"
+          className="px-4 py-2 bg-[#1A1713] border-b border-slate-800 flex items-center justify-between text-xs"
         >
           {renderState.active && (
             <div className="flex items-center gap-3 w-full">
@@ -915,7 +915,7 @@ export function App() {
       {/* Main 3-Pane Studio Workspace */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT PANE: Scene Outline */}
-        <aside className="w-72 shrink-0 border-r border-slate-800/90 bg-[#0E1422] flex flex-col">
+        <aside className="w-72 shrink-0 border-r border-slate-800/90 bg-[#131110] flex flex-col">
           <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
               <Layers className="w-4 h-4 text-cyan-400" />
@@ -1003,7 +1003,7 @@ export function App() {
             })}
           </div>
 
-          <div className="p-3 border-t border-slate-800/80 bg-[#0B101B]">
+          <div className="p-3 border-t border-slate-800/80 bg-[#0C0B0A]">
             <button
               onClick={handleAutoBalance}
               className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition"
@@ -1015,7 +1015,7 @@ export function App() {
         </aside>
 
         {/* CENTER PANE: Remotion Live Player + Timeline */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#080C15]">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#0A0908]">
           <div className="flex-1 flex items-center justify-center p-5 min-h-0">
             <div className="w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
               <Player
@@ -1038,7 +1038,7 @@ export function App() {
           </div>
 
           {/* Master Interactive Scene Timeline */}
-          <div className="h-28 shrink-0 border-t border-slate-800/90 bg-[#0D1320] px-5 py-3 flex flex-col justify-between">
+          <div className="h-28 shrink-0 border-t border-slate-800/90 bg-[#100F0D] px-5 py-3 flex flex-col justify-between">
             <div className="flex items-center justify-between text-[11px] text-slate-400">
               <span className="font-semibold text-slate-300">
                 {formatDuration(totalSeconds)} MASTER TIMELINE ({totalFrames.toLocaleString()} frames @ 30fps)
@@ -1082,9 +1082,9 @@ export function App() {
         </main>
 
         {/* RIGHT PANE: Script, TTS & Motion Inspector */}
-        <aside className="w-96 shrink-0 border-l border-slate-800/90 bg-[#0E1422] flex flex-col">
+        <aside className="w-96 shrink-0 border-l border-slate-800/90 bg-[#131110] flex flex-col">
           {/* Inspector Tabs */}
-          <div role="tablist" aria-label="場景編輯面板" className="grid grid-cols-3 border-b border-slate-800/90 bg-[#11192B]">
+          <div role="tablist" aria-label="場景編輯面板" className="grid grid-cols-3 border-b border-slate-800/90 bg-[#1A1713]">
             <button
               type="button"
               role="tab"

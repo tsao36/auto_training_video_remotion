@@ -1,0 +1,3396 @@
+{
+  "id": "proj-1795168587265",
+  "createdAt": "2026-11-20T09:56:27.273Z",
+  "updatedAt": "2026-11-20T10:09:48.247Z",
+  "renders": [],
+  "project": {
+    "id": "proj-1795168587265",
+    "title": "wifi 8",
+    "subtitle": "5 張投影片 • 100% 原版視覺還原",
+    "language": "zh-TW",
+    "topic": "wifi 8",
+    "domain": "wifi",
+    "targetDurationSeconds": 60,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "sourceType": "pptx",
+    "sourceFileName": "WiFi 8 Intro.pptx",
+    "rawSourceText": "# 1. Wi-Fi 8\nNext Gen Wi-Fi update\n\n# 2. Wi-Fi 8: Optimized Networking Support\nOptimized networking support has been the traditional Wi-Fi evolution focus\nIncreasing peak data rate, which is unlikely to happen in traditional Wi-Fi bands\nLatency started to be a more important KPI from Wi-Fi 6\nThe 11bn project is defining an expanded set of capabilities that will improve networking\nDomain | Feature | Value\nPHY | Distributed RU | Up to 10dB UL in low data rates\nExtended Range | IoT usages\nFiner MCS grid | Up to 1.5dB in specific SNRs\nUnequal MCS | Up to 2dB in specific scenarios\n2x LDPC | Limited performance increase\nSpectrum efficiency | DSO | Capacity improvements in some scenarios\nNPCA | Capacity improvements in some scenarios\nQoS improvement | E2E traffic management\nDynamic BW Expansion | Expand network BW on a long-term basis\nPower save | Control and TF Protection | Reduce exposure to MIM attacks\nAP and STA power save | Save power\n\n# 3. Wi-Fi 8: AI Enabling\nWi-Fi 8 expected to be when Wi-Fi industry will coalesce on specific standards-based features to claim enablement of AI based usages\n11az-based Wi-Fi proximity ranging (FR24+) and 11bf-based Wi-Fi sensing (FR27)\nConnection optimization\n(AP selection, roaming)\nWellness\n(Breathing/heart rate)\nPairing & Display Extension\n(Docking, D2D)\nAccess control\n(Secure (un)lock, WOA/WOL)\nPersonalization\n(Automatic setting)\nSession transfer\n(Calls, streaming)\nDomain | Feature | Value\nProximity ranging | 11az based proximity ranging for P2P and infra usages | Range, directionality\nWi-Fi sensing | 11bf-based network wide wireless sensing using Wi-Fi | Context awareness, wellness\n\n# 4. Wi-Fi 8: Stronger Privacy & Security\nDomain | Feature | Value\nPrivacy | 11bh, 11bi | Device privacy\nSecurity | 11bn control frame protection | Securing control frames, such as Trigger frames\nSeamless roaming | New protocol (messages) and mechanisms for key-storage and key-generation during roaming.\nStronger privacy and security are key value proposition of Wi-Fi 8\nWi-Fi 8 to incorporate mechanisms to improve user privacy such as:\nEncryption of the entire association process\nProtect many other, otherwise unprotected, management frames\nReduce content in probe frames to mitigate fingerprinting\nThis is in addition to the MAC address randomization solution already defined in 802.11bh\nWi-Fi 8 to also add control frame security and roaming enhancements\n\n# 5. Deterministic  = predictable/bounded latency + reliability\nThe 11bn project is defining features that will make Wi-Fi more deterministic despite operation in unlicensed spectrum\nMultiple low latency and reliable links\nMany APs per room\nMultiple low latency and reliable links\nMany overlapping P2P networks\nDomain | Feature | Value\nUltra low latency | High priority EDCA | QoS, ultra low latency\nMulti-AP | Coordinated TDMA | Coordination and more spatial reuse\nCoordinated BF (Nulling) | Reduced interference\nCoordinated SR | Reduced interference\nCoexistence | Short and long-term unavailability | Better coex and coordination\nRoaming | Seamless roaming across APs | Lower latency during roaming",
+    "llmConfig": {
+      "baseUrl": "https://gnai.intel.com/api/providers/openai/v1",
+      "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoc2VydmljZSIsInN1YiI6Imp0c2FvMSIsImF1ZCI6WyJhcnRpZmFjdG9yeSIsImd0YSIsImd0YXgiLCJnbmFpIiwiYnVpbGQtcmVnaXN0cnkiLCJnZnh3bCJdLCJleHAiOjE4MDI5MTM3NzQsInNjb3BlcyI6WyJhcHA6YXJ0aWZhY3RvcnkiLCJhcHA6Z3RhIiwiYXBwOmd0YXgiLCJhcHA6Z25haSIsImFwcDpidWlsZC1yZWdpc3RyeSIsImFwcDpnZnh3bCJdfQ.Hsrwoc30AEj9jpBYbWx4xfwanlpuUGvqimpMkKS-8OQ",
+      "model": "gpt-5-mini"
+    },
+    "ttsConfig": {
+      "defaultProvider": "openformosa",
+      "openformosa": {
+        "baseUrl": "https://openformosa.com/api/v1/tts",
+        "apiKey": "",
+        "model": "formosa-tts-v1",
+        "voice": "formosa-pro-tw"
+      },
+      "mingTts": {
+        "baseUrl": "http://localhost:8000/v1/tts",
+        "apiKey": "",
+        "model": "inclusionAI/Ming-3.0-tts",
+        "speaker": "ming-tech-zh-en",
+        "style": "professional-training"
+      }
+    },
+    "scenes": [
+      {
+        "id": "scene-1795168587260-0",
+        "index": 0,
+        "title": "Wi-Fi 8",
+        "subtitle": "SLIDE 1 / 5",
+        "domain": "wifi",
+        "template": "pptx-slide",
+        "durationSeconds": 12,
+        "keyPoints": [
+          "Next Gen Wi-Fi update"
+        ],
+        "script": "這份簡報介紹 Wi‑Fi 8，標題為 Wi‑Fi 8，重點是 Next Gen Wi‑Fi update。接下來每張投影片會說明 Wi‑Fi 8 的主要演進與功能。",
+        "visualDescription": "100% 還原 PowerPoint 第 1 頁原始版面、文字、圖形、表格與圖片",
+        "pptxSlide": {
+          "slideNumber": 1,
+          "slideWidthPx": 1920,
+          "slideHeightPx": 1080,
+          "background": {
+            "type": "solid",
+            "color": "#FFFFFF"
+          },
+          "elements": [
+            {
+              "id": "s1-l-6",
+              "kind": "shape",
+              "x": 979,
+              "y": 0,
+              "width": 100.74992125984251,
+              "height": 100.74992125984251,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "solid",
+                "color": "#156082"
+              },
+              "verticalAlign": "middle",
+              "paddingPx": {
+                "top": 22,
+                "right": 22,
+                "bottom": 22,
+                "left": 22
+              }
+            },
+            {
+              "id": "s1-l-7",
+              "kind": "shape",
+              "x": 1079.7499212598425,
+              "y": 100.74992125984251,
+              "width": 45.14236220472441,
+              "height": 45.14236220472441,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "solid",
+                "color": "#76CEFF"
+              },
+              "verticalAlign": "middle",
+              "paddingPx": {
+                "top": 8,
+                "right": 8,
+                "bottom": 8,
+                "left": 8
+              }
+            },
+            {
+              "id": "s1-3",
+              "kind": "shape",
+              "x": 1079.7499212598425,
+              "y": 304.0486614173228,
+              "width": 739.2499212598425,
+              "height": 288,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8 ",
+                      "fontSizePx": 96,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s1-4",
+              "kind": "shape",
+              "x": 1079.7499212598425,
+              "y": 606.5485039370078,
+              "width": 739.2499212598425,
+              "height": 273.5,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Next Gen Wi-Fi update",
+                      "fontSizePx": 56,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            }
+          ],
+          "title": "Wi-Fi 8",
+          "bodyText": "Next Gen Wi-Fi update"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-30969663b1c85f.mp3",
+          "actualDurationSec": 11.42,
+          "error": "OpenFormosa 無法連線 (fetch failed) — 已使用神經網路語音合成"
+        },
+        "animation": {
+          "motionStyle": "smooth-sweep",
+          "effect": "signal-pulse",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795168587260-1",
+        "index": 1,
+        "title": "Wi-Fi 8: Optimized Networking Support",
+        "subtitle": "SLIDE 2 / 5",
+        "domain": "wifi",
+        "template": "pptx-slide",
+        "durationSeconds": 66,
+        "keyPoints": [
+          "Optimized networking support has been the tradit",
+          "Increasing peak data rate, which is unlikely to ",
+          "Latency started to be a more important KPI from ",
+          "The 11bn project is defining an expanded set of "
+        ],
+        "script": "Wi‑Fi 8：Optimized Networking Support。傳統 Wi‑Fi 演進主要聚焦於優化網路支援。提升峰值資料率在傳統 Wi‑Fi 頻段不太可能發生；延遲自 Wi‑Fi 6 起成為更重要的 KPI。11bn project 正在定義一組擴展能力以改善網路。表格欄位為 Domain | Feature | Value。PHY：Distributed RU 可在低資料率時提供 up to 10dB UL；Extended Range 適合 IoT usages；Finer MCS grid 可在特定 SNRs 提供 up to 1.5dB；Unequal MCS 在特定情境可達 up to 2dB；2x LDPC 帶來 limited performance increase。頻譜效率方面，DSO 與 NPCA 在某些情境可帶來 capacity improvements。QoS improvement 則帶來 E2E traffic management。Dynamic BW Expansion 可 long‑term expand network BW。Power save 包含 Control and TF Protection，可 reduce exposure to MIM attacks，另外 AP and STA power save 可 save power。",
+        "visualDescription": "100% 還原 PowerPoint 第 2 頁原始版面、文字、圖形、表格與圖片",
+        "pptxSlide": {
+          "slideNumber": 2,
+          "slideWidthPx": 1920,
+          "slideHeightPx": 1080,
+          "background": {
+            "type": "solid",
+            "color": "#FFFFFF"
+          },
+          "elements": [
+            {
+              "id": "s2-3",
+              "kind": "shape",
+              "x": 89.97952755905511,
+              "y": 90,
+              "width": 1733.9867716535432,
+              "height": 94.21622047244094,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8: ",
+                      "fontSizePx": 64,
+                      "color": "#E97132",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    },
+                    {
+                      "text": "Optimized Networking Support",
+                      "fontSizePx": 64,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s2-4",
+              "kind": "shape",
+              "x": 90,
+              "y": 263.50015748031495,
+              "width": 1734,
+              "height": 197.30015748031497,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Optimized networking support has been the traditional Wi-Fi evolution focus",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "Increasing peak data rate, which is unlikely to happen in traditional Wi-Fi bands",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "Latency started to be a more important KPI from Wi-Fi 6",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "The 11bn project is defining an expanded set of capabilities that will improve networking",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": []
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": []
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": []
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s2-5",
+              "kind": "table",
+              "x": 90,
+              "y": 460.80015748031497,
+              "width": 1734.0001574803148,
+              "height": 523.1999999999999,
+              "flipH": false,
+              "flipV": false,
+              "tableColWidths": [
+                298,
+                548,
+                888
+              ],
+              "tableRows": [
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Domain",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Feature",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Value",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "PHY",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "rowSpan": 5,
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Distributed RU",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Up to 10dB UL in low data rates",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Extended Range",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "IoT usages",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Finer MCS grid",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Up to 1.5dB in specific SNRs",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Unequal MCS",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Up to 2dB in specific scenarios",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "2x LDPC",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Limited performance increase",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Spectrum efficiency",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "rowSpan": 4,
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "DSO",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Capacity improvements in some scenarios",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "NPCA",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Capacity improvements in some scenarios",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "QoS improvement",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "E2E traffic management",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Dynamic BW Expansion",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Expand network BW on a long-term basis",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Power save",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "rowSpan": 2,
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Control and TF Protection",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Reduce exposure to MIM attacks",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "AP and STA power save",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Save power",
+                              "fontSizePx": 24,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "title": "Wi-Fi 8: Optimized Networking Support",
+          "bodyText": "Optimized networking support has been the traditional Wi-Fi evolution focus\nIncreasing peak data rate, which is unlikely to happen in traditional Wi-Fi bands\nLatency started to be a more important KPI from Wi-Fi 6\nThe 11bn project is defining an expanded set of capabilities that will improve networking\nDomain | Feature | Value\nPHY | Distributed RU | Up to 10dB UL in low data rates\nExtended Range | IoT usages\nFiner MCS grid | Up to 1.5dB in specific SNRs\nUnequal MCS | Up to 2dB in specific scenarios\n2x LDPC | Limited performance increase\nSpectrum efficiency | DSO | Capacity improvements in some scenarios\nNPCA | Capacity improvements in some scenarios\nQoS improvement | E2E traffic management\nDynamic BW Expansion | Expand network BW on a long-term basis\nPower save | Control and TF Protection | Reduce exposure to MIM attacks\nAP and STA power save | Save power"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-69d8ebf0165a1d.mp3",
+          "actualDurationSec": 64.8,
+          "error": "OpenFormosa 無法連線 (fetch failed) — 已使用神經網路語音合成"
+        },
+        "animation": {
+          "motionStyle": "smooth-sweep",
+          "effect": "cascade-reveal",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795168587260-2",
+        "index": 2,
+        "title": "Wi-Fi 8: AI Enabling",
+        "subtitle": "SLIDE 3 / 5",
+        "domain": "wifi",
+        "template": "pptx-slide",
+        "durationSeconds": 15,
+        "keyPoints": [
+          "Wi-Fi 8 expected to be when Wi-Fi industry will ",
+          "11az-based Wi-Fi proximity ranging (FR24+) and 1",
+          "Connection optimization",
+          "(AP selection, roaming)"
+        ],
+        "script": "Wi‑Fi 8：AI Enabling。預期 Wi‑Fi 8 會讓業界在標準基礎功能上統一宣稱支援 AI 類應用。11az‑based Wi‑Fi proximity ranging (FR24+) 與 11bf‑based Wi‑Fi sensing (FR27) 是兩項關鍵能力。可支援的使用情境包括 Connection optimization（如 AP selection、roaming）、Wellness（如呼吸與心跳）、Pairing & Display Extension（Docking、D2D）、Access control（Secure (un)lock、WOA/WOL）、Personalization（Automatic setting）、Session transfer（Calls、streaming）。表格：Proximity ranging 為 11az based proximity ranging for P2P and infra usages，提供 Range 與 directionality；Wi‑Fi sensing 為 11bf‑based network wide wireless sensing using Wi‑Fi，可提供 Context awareness 與 wellness 功能。",
+        "visualDescription": "100% 還原 PowerPoint 第 3 頁原始版面、文字、圖形、表格與圖片",
+        "pptxSlide": {
+          "slideNumber": 3,
+          "slideWidthPx": 1920,
+          "slideHeightPx": 1080,
+          "background": {
+            "type": "solid",
+            "color": "#FFFFFF"
+          },
+          "elements": [
+            {
+              "id": "s3-3",
+              "kind": "shape",
+              "x": 100.8,
+              "y": 54.72,
+              "width": 1718.3999999999999,
+              "height": 100.8,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8: ",
+                      "fontSizePx": 64,
+                      "color": "#E97132",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    },
+                    {
+                      "text": "AI Enabling",
+                      "fontSizePx": 64,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-4",
+              "kind": "shape",
+              "x": 89.97952755905511,
+              "y": 263.53606299212595,
+              "width": 1734,
+              "height": 720.464094488189,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8 expected to be when Wi-Fi industry will coalesce on specific standards-based features to claim enablement of AI based usages",
+                      "fontSizePx": 48,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "11az-based Wi-Fi proximity ranging (FR24+) and 11bf-based Wi-Fi sensing (FR27)",
+                      "fontSizePx": 40,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": []
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-5",
+              "kind": "image",
+              "x": 916.296220472441,
+              "y": 467.59968503937006,
+              "width": 154.87102362204723,
+              "height": 123.00125984251967,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-a3a123fdc8106b0f.png"
+            },
+            {
+              "id": "s3-6",
+              "kind": "image",
+              "x": 917.6543307086614,
+              "y": 605.3874015748031,
+              "width": 128.95937007874016,
+              "height": 134.6811023622047,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-27618821d80dd4c6.jpeg",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-7-3",
+              "kind": "image",
+              "x": 458.72737835783045,
+              "y": 468.931811023622,
+              "width": 95.20443266579156,
+              "height": 107.96420095105304,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-9160ed3a5dce7460.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-7-4",
+              "kind": "image",
+              "x": 369.80771653543303,
+              "y": 476.05899993114303,
+              "width": 88.91961683445301,
+              "height": 100.83706306098291,
+              "flipH": true,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-ee94ec7e7843f562.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-8-3",
+              "kind": "image",
+              "x": 1524.1918715311217,
+              "y": 501.3433873314921,
+              "width": 52.488285949193305,
+              "height": 48.360337135604404,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-6df70d54a8c97601.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-8-4",
+              "kind": "image",
+              "x": 1399.775905511811,
+              "y": 453.55039370078737,
+              "width": 116.24715624750237,
+              "height": 107.10488188976379,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-da7a6ab2d2113242.png"
+            },
+            {
+              "id": "s3-9",
+              "kind": "image",
+              "x": 1401.151968503937,
+              "y": 587.1837795275591,
+              "width": 154.87102362204723,
+              "height": 135.83322834645668,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-ad84eccf99a02b6c.png"
+            },
+            {
+              "id": "s3-10",
+              "kind": "shape",
+              "x": 1094.2204724409448,
+              "y": 500.9283464566929,
+              "width": 299.4461417322834,
+              "height": 67.85622047244094,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Connection optimization",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(AP selection, roaming)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-11",
+              "kind": "shape",
+              "x": 1119.7170078740157,
+              "y": 627.0516535433071,
+              "width": 248.4527559055118,
+              "height": 65.43275590551181,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wellness",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(Breathing/heart rate)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-12",
+              "kind": "shape",
+              "x": 586.3114960629921,
+              "y": 492.80724409448817,
+              "width": 315.8546456692913,
+              "height": 65.43275590551181,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Pairing & Display Extension",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(Docking, D2D)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-13",
+              "kind": "shape",
+              "x": 592.3874015748031,
+              "y": 628.3795275590551,
+              "width": 331.75858267716535,
+              "height": 65.43275590551181,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Access control",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(Secure (un)lock, WOA/WOL)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-14",
+              "kind": "shape",
+              "x": 140.80535433070867,
+              "y": 641.7513385826771,
+              "width": 225.9855118110236,
+              "height": 65.43275590551181,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Personalization",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(Automatic setting)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-15-3",
+              "kind": "image",
+              "x": 408.02763229593813,
+              "y": 627.0805763805708,
+              "width": 131.27130642266556,
+              "height": 118.9614708635236,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-375010fe38edbe64.jpeg",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-15-4",
+              "kind": "image",
+              "x": 373.93212598425197,
+              "y": 599.6793210246956,
+              "width": 118.62837322212195,
+              "height": 107.50411608773342,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-fbe99a8628b9a133.png"
+            },
+            {
+              "id": "s3-15-5",
+              "kind": "image",
+              "x": 505.97675036830447,
+              "y": 599.4122834645669,
+              "width": 38.73579533783574,
+              "height": 35.10338484497418,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-76227ab49691e15c.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-15-6",
+              "kind": "image",
+              "x": 519.729355658606,
+              "y": 644.2307527246529,
+              "width": 58.37269158548858,
+              "height": 52.898850773329144,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-d290788ae9b0c437.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s3-16",
+              "kind": "shape",
+              "x": 156.8584251968504,
+              "y": 492.80724409448817,
+              "width": 204.78047244094486,
+              "height": 65.43275590551181,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Session transfer",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": true,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "center",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "(Calls, streaming)",
+                      "fontSizePx": 21,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s3-17",
+              "kind": "table",
+              "x": 53.79590551181102,
+              "y": 789.4918110236221,
+              "width": 1740.6999999999998,
+              "height": 144,
+              "flipH": false,
+              "flipV": false,
+              "tableColWidths": [
+                299,
+                733,
+                709
+              ],
+              "tableRows": [
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Domain",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Feature",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Value",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Proximity ranging",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "11az based proximity ranging for P2P and infra usages",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Range, directionality",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Wi-Fi sensing",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "11bf-based network wide wireless sensing using Wi-Fi",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Context awareness, wellness",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "title": "Wi-Fi 8: AI Enabling",
+          "bodyText": "Wi-Fi 8 expected to be when Wi-Fi industry will coalesce on specific standards-based features to claim enablement of AI based usages\n11az-based Wi-Fi proximity ranging (FR24+) and 11bf-based Wi-Fi sensing (FR27)\nConnection optimization\n(AP selection, roaming)\nWellness\n(Breathing/heart rate)\nPairing & Display Extension\n(Docking, D2D)\nAccess control\n(Secure (un)lock, WOA/WOL)\nPersonalization\n(Automatic setting)\nSession transfer\n(Calls, streaming)\nDomain | Feature | Value\nProximity ranging | 11az based proximity ranging for P2P and infra usages | Range, directionality\nWi-Fi sensing | 11bf-based network wide wireless sensing using Wi-Fi | Context awareness, wellness"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795168587260-2-6cbe13d3bd25b3.wav",
+          "actualDurationSec": 14,
+          "error": "OpenFormosa 無法連線 (fetch failed) — 已使用神經網路語音合成 (離線模式：已生成靜音時序軌)"
+        },
+        "animation": {
+          "motionStyle": "smooth-sweep",
+          "effect": "zoom-focus",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795168587260-3",
+        "index": 3,
+        "title": "Wi-Fi 8: Stronger Privacy & Security",
+        "subtitle": "SLIDE 4 / 5",
+        "domain": "wifi",
+        "template": "pptx-slide",
+        "durationSeconds": 14,
+        "keyPoints": [
+          "Domain | Feature | Value",
+          "Privacy | 11bh, 11bi | Device privacy",
+          "Security | 11bn control frame protection | Secur",
+          "Seamless roaming | New protocol (messages) and m"
+        ],
+        "script": "Wi‑Fi 8：Stronger Privacy & Security。表格欄位 Domain | Feature | Value。Privacy：11bh、11bi 聚焦 device privacy。Security：11bn control frame protection 用以 securing control frames，例如 Trigger frames。Seamless roaming 則透過 new protocol (messages) 以及 key‑storage 與 key‑generation 機制改善漫遊時的安全與延遲。Wi‑Fi 8 強調更強的隱私與安全，將納入機制例如：encryption of the entire association process、保護其他原本未受保護的 management frames、減少 probe frames 內容以降低 fingerprinting，這些是對已在 802.11bh 定義的 MAC address randomization 的補充，並加上 control frame security 與 roaming enhancements。",
+        "visualDescription": "100% 還原 PowerPoint 第 4 頁原始版面、文字、圖形、表格與圖片",
+        "pptxSlide": {
+          "slideNumber": 4,
+          "slideWidthPx": 1920,
+          "slideHeightPx": 1080,
+          "background": {
+            "type": "solid",
+            "color": "#FFFFFF"
+          },
+          "elements": [
+            {
+              "id": "s4-3",
+              "kind": "shape",
+              "x": 100.8,
+              "y": 54.72,
+              "width": 1718.3999999999999,
+              "height": 100.8,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8: ",
+                      "fontSizePx": 64,
+                      "color": "#E97132",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    },
+                    {
+                      "text": "Stronger Privacy & Security",
+                      "fontSizePx": 64,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s4-5",
+              "kind": "table",
+              "x": 82.54992125984252,
+              "y": 698.04,
+              "width": 1740.6999999999998,
+              "height": 225.6,
+              "flipH": false,
+              "flipV": false,
+              "tableColWidths": [
+                299,
+                550,
+                892
+              ],
+              "tableRows": [
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Domain",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Feature",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Value",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Privacy",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "11bh, 11bi",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Device privacy",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Security",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "rowSpan": 2,
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "11bn control frame protection",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Securing control frames, such as Trigger frames",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Seamless roaming",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "New protocol (messages) and mechanisms for key-storage and key-generation during roaming.",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "s4-6",
+              "kind": "shape",
+              "x": 89.97952755905511,
+              "y": 263.53606299212595,
+              "width": 1734,
+              "height": 720.464094488189,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Stronger privacy and security are key value proposition of Wi-Fi 8",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8 to incorporate mechanisms to improve user privacy such as:",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "Encryption of the entire association process",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "Protect many other, otherwise unprotected, management frames",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 1,
+                  "runs": [
+                    {
+                      "text": "Reduce content in probe frames to mitigate fingerprinting",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "This is in addition to the MAC address randomization solution already defined in 802.11bh",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Wi-Fi 8 to also add control frame security and roaming enhancements",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "•",
+                  "level": 0,
+                  "runs": []
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            }
+          ],
+          "title": "Wi-Fi 8: Stronger Privacy & Security",
+          "bodyText": "Domain | Feature | Value\nPrivacy | 11bh, 11bi | Device privacy\nSecurity | 11bn control frame protection | Securing control frames, such as Trigger frames\nSeamless roaming | New protocol (messages) and mechanisms for key-storage and key-generation during roaming.\nStronger privacy and security are key value proposition of Wi-Fi 8\nWi-Fi 8 to incorporate mechanisms to improve user privacy such as:\nEncryption of the entire association process\nProtect many other, otherwise unprotected, management frames\nReduce content in probe frames to mitigate fingerprinting\nThis is in addition to the MAC address randomization solution already defined in 802.11bh\nWi-Fi 8 to also add control frame security and roaming enhancements"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795168587260-3-db48a1c9ea98f6.wav",
+          "actualDurationSec": 13,
+          "error": "OpenFormosa 無法連線 (fetch failed) — 已使用神經網路語音合成 (離線模式：已生成靜音時序軌)"
+        },
+        "animation": {
+          "motionStyle": "smooth-sweep",
+          "effect": "sweep-scan",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795168587260-4",
+        "index": 4,
+        "title": "Deterministic  = predictable/bounded latency + reliability",
+        "subtitle": "SLIDE 5 / 5",
+        "domain": "wifi",
+        "template": "pptx-slide",
+        "durationSeconds": 50,
+        "keyPoints": [
+          "The 11bn project is defining features that will ",
+          "Multiple low latency and reliable links",
+          "Many APs per room",
+          "Multiple low latency and reliable links"
+        ],
+        "script": "Deterministic 等於 predictable／bounded latency 加上 reliability。11bn project 正在定義能讓 Wi‑Fi 更具決定性（即可預測且有界延遲與可靠性）的功能，即便在非執照頻譜運作。場景包含 multiple low latency and reliable links、many APs per room、many overlapping P2P networks。表格 Domain | Feature | Value 包含：Ultra low latency — High priority EDCA，提供 QoS 與 ultra low latency；Multi‑AP — Coordinated TDMA，提供 coordination 與 more spatial reuse；Coordinated BF (Nulling) 與 Coordinated SR 均可 reduced interference；Coexistence 提到 short and long‑term unavailability，改善 coex and coordination；Roaming 提供 seamless roaming across APs，降低漫遊期間延遲。",
+        "visualDescription": "100% 還原 PowerPoint 第 5 頁原始版面、文字、圖形、表格與圖片",
+        "pptxSlide": {
+          "slideNumber": 5,
+          "slideWidthPx": 1920,
+          "slideHeightPx": 1080,
+          "background": {
+            "type": "solid",
+            "color": "#FFFFFF"
+          },
+          "elements": [
+            {
+              "id": "s5-3",
+              "kind": "image",
+              "x": 617.7392125984252,
+              "y": 422.85999999999996,
+              "width": 302.36251968503933,
+              "height": 240.29732283464566,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-f7212c9af302058e.jpeg",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0.07601
+              }
+            },
+            {
+              "id": "s5-5",
+              "kind": "shape",
+              "x": 96.75007874015748,
+              "y": 235.64566929133858,
+              "width": 1727.7499212598425,
+              "height": 182.4296062992126,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Deterministic  = predictable/bounded latency + reliability",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "The 11bn project is defining features that will make Wi-Fi more deterministic despite operation in unlicensed spectrum",
+                      "fontSizePx": 36,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s5-6",
+              "kind": "image",
+              "x": 1142.1262992125983,
+              "y": 524.4283464566929,
+              "width": 261.90976377952757,
+              "height": 138.47055118110237,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-64ce21769e681a1d.png"
+            },
+            {
+              "id": "s5-7",
+              "kind": "image",
+              "x": 1484.1541732283463,
+              "y": 528.5603149606299,
+              "width": 193.85480314960628,
+              "height": 111.93102362204723,
+              "flipH": false,
+              "flipV": false,
+              "imageUrl": "/pptx-media/slide-img-6f2b7f267fc51013.png",
+              "cropRect": {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0
+              }
+            },
+            {
+              "id": "s5-8",
+              "kind": "shape",
+              "x": 91.22960629921259,
+              "y": 474.5374803149606,
+              "width": 459.3058267716535,
+              "height": 130.71417322834645,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "bullet": "§",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Multiple low latency and reliable links",
+                      "fontSizePx": 32,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "§",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Many APs per room",
+                      "fontSizePx": 32,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s5-9",
+              "kind": "shape",
+              "x": 1057.5393700787401,
+              "y": 425.4426771653543,
+              "width": 644.3211023622047,
+              "height": 91.9896062992126,
+              "flipH": false,
+              "flipV": false,
+              "shapeType": "rect",
+              "fill": {
+                "type": "none"
+              },
+              "paragraphs": [
+                {
+                  "align": "left",
+                  "bullet": "§",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Multiple low latency and reliable links",
+                      "fontSizePx": 32,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                },
+                {
+                  "align": "left",
+                  "bullet": "§",
+                  "level": 0,
+                  "runs": [
+                    {
+                      "text": "Many overlapping P2P networks",
+                      "fontSizePx": 32,
+                      "color": "#0F172A",
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "strike": false
+                    }
+                  ]
+                }
+              ],
+              "verticalAlign": "top",
+              "paddingPx": {
+                "top": 7,
+                "right": 14,
+                "bottom": 7,
+                "left": 14
+              }
+            },
+            {
+              "id": "s5-12",
+              "kind": "table",
+              "x": 112.91574803149605,
+              "y": 672.351811023622,
+              "width": 1717.1048818897636,
+              "height": 336,
+              "flipH": false,
+              "flipV": false,
+              "tableColWidths": [
+                295,
+                749,
+                673
+              ],
+              "tableRows": [
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Domain",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Feature",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Value",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Ultra low latency",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "High priority EDCA",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "QoS, ultra low latency",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Multi-AP",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "rowSpan": 3,
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Coordinated TDMA",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Coordination and more spatial reuse",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Coordinated BF (Nulling)",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Reduced interference",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": []
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": true
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Coordinated SR",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Reduced interference",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Coexistence",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Short and long-term unavailability",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Better ",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            },
+                            {
+                              "text": "coex",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            },
+                            {
+                              "text": " and coordination",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                },
+                {
+                  "height": 42,
+                  "cells": [
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Roaming",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Seamless roaming across APs",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    },
+                    {
+                      "textParagraphs": [
+                        {
+                          "align": "left",
+                          "level": 0,
+                          "runs": [
+                            {
+                              "text": "Lower latency during roaming",
+                              "fontSizePx": 28,
+                              "color": "#0F172A",
+                              "bold": false,
+                              "italic": false,
+                              "underline": false,
+                              "strike": false
+                            }
+                          ]
+                        }
+                      ],
+                      "borderColor": "#CBD5E1",
+                      "borderWidthPx": 1,
+                      "verticalAlign": "middle",
+                      "skip": false
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "title": "Deterministic  = predictable/bounded latency + reliability",
+          "bodyText": "The 11bn project is defining features that will make Wi-Fi more deterministic despite operation in unlicensed spectrum\nMultiple low latency and reliable links\nMany APs per room\nMultiple low latency and reliable links\nMany overlapping P2P networks\nDomain | Feature | Value\nUltra low latency | High priority EDCA | QoS, ultra low latency\nMulti-AP | Coordinated TDMA | Coordination and more spatial reuse\nCoordinated BF (Nulling) | Reduced interference\nCoordinated SR | Reduced interference\nCoexistence | Short and long-term unavailability | Better coex and coordination\nRoaming | Seamless roaming across APs | Lower latency during roaming"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "ready",
+          "audioUrl": "/audio/tts-a167d77bcf440b.mp3",
+          "actualDurationSec": 49.46,
+          "error": "OpenFormosa 無法連線 (fetch failed) — 已使用神經網路語音合成"
+        },
+        "animation": {
+          "motionStyle": "smooth-sweep",
+          "effect": "glitch-alert",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      }
+    ]
+  }
+}

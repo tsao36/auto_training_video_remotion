@@ -159,8 +159,8 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-[430px] max-w-[92vw] rounded-xl bg-[#0F1624] border border-slate-700/90 shadow-2xl shadow-black/60 z-50 overflow-hidden">
-            <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between bg-[#131C30]">
+          <div className="absolute right-0 mt-2 w-[430px] max-w-[92vw] rounded-xl bg-[#151310] border border-slate-700/90 shadow-2xl shadow-black/60 z-50 overflow-hidden">
+            <div className="px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between bg-[#1A1713]">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-100">
                 <Film className="w-4 h-4 text-cyan-400" />
                 專案與草稿庫 ({projects.length})
@@ -176,7 +176,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
               </button>
             </div>
 
-            <div className="p-2.5 border-b border-slate-800/80 bg-[#0C1220] space-y-2">
+            <div className="p-2.5 border-b border-slate-800/80 bg-[#0F0D0B] space-y-2">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -369,7 +369,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
       {/* Quick Video Preview Modal */}
       {previewVideo && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl rounded-2xl bg-[#0F1624] border border-slate-700 overflow-hidden shadow-2xl">
+          <div className="w-full max-w-4xl rounded-2xl bg-[#151310] border border-slate-700 overflow-hidden shadow-2xl">
             <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-bold text-white truncate">
                 <Film className="w-4 h-4 text-cyan-400 shrink-0" />

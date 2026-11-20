@@ -298,10 +298,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="source-wizard-title"
-        className="w-full max-w-3xl rounded-2xl border border-slate-700/80 bg-[#0F1624] shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl rounded-2xl border border-slate-700/80 bg-[#151310] shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#131B2E]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#1A1713]">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
               <Wand2 className="w-5 h-5" />
@@ -508,7 +508,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                     onClick={() => setDomain(key)}
                     className={`text-left p-3 rounded-xl border transition flex items-start gap-2.5 ${
                       active
-                        ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_rgba(0,194,255,0.12)]'
+                        ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_rgba(201,164,92,0.14)]'
                         : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
                     }`}
                   >
@@ -653,7 +653,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
         {/* Project Creation Progress Bar */}
         {isProcessing && (
-          <div className="px-6 py-3 border-t border-slate-800 bg-[#0D1422] space-y-2">
+          <div className="px-6 py-3 border-t border-slate-800 bg-[#100F0D] space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-2 text-cyan-300 font-semibold">
                 <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
@@ -673,7 +673,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-800 bg-[#131B2E]">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-800 bg-[#1A1713]">
           <button
             type="button"
             onClick={onClose}
