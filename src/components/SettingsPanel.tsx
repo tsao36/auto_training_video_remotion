@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Cpu, Loader2, Mic, Pencil, Sliders, Star, Trash2, Upload, X } from 'lucide-react';
-import { CONTENT_LANGUAGES, ContentLanguage, DEFAULT_CONTENT_LANGUAGE, VoiceProfile } from '../types/training';
+import { Check, Cpu, Loader2, Mic, Pencil, Sliders, Sparkles, Star, Trash2, Upload, X } from 'lucide-react';
+import {
+  CONTENT_LANGUAGES,
+  ContentLanguage,
+  DEFAULT_CONTENT_LANGUAGE,
+  VoiceProfile,
+  VoiceProfileProvider,
+} from '../types/training';
 import { loadTtsSettings, saveTtsSettings, TtsSettings } from '../utils/ttsSettingsStorage';
 import {
   createVoiceProfile,
@@ -8,9 +14,10 @@ import {
   listVoiceProfiles,
   renameVoiceProfile,
   toCustomVoice,
+  trainVoiceProfile,
   voiceProfileAudioUrl,
 } from '../utils/voiceProfiles';
-import { VoiceRecorderModal } from './VoiceRecorderModal';
+import { RecordedVoiceSubmission, VoiceRecorderModal } from './VoiceRecorderModal';
 
 const inputCls =
   'w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400';
@@ -30,11 +37,37 @@ export const SettingsPanel: React.FC = () => {
   const [message, setMessage] = useState<{ kind: 'error' | 'ok'; text: string } | null>(null);
   const [newName, setNewName] = useState('');
   const [scriptLanguage, setScriptLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
+  const [trainProvider, setTrainProvider] = useState<VoiceProfileProvider>(() => loadTtsSettings().defaultProvider);
   const [recorderOpen, setRecorderOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [trainingId, setTrainingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [ofHealth, setOfHealth] = useState<{ checking: boolean; ok?: boolean; detail?: string }>({
+    checking: false,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const checkOpenFormosaHealth = async (baseUrl = settings.openformosa.baseUrl) => {
+    setOfHealth({ checking: true });
+    try {
+      const resp = await fetch(`/api/tts/health?baseUrl=${encodeURIComponent(baseUrl)}`);
+      const data = await resp.json();
+      if (data.ok) {
+        const mode = data.centroid_supported ? '支援語者向量抽取' : '參考音檔克隆模式';
+        setOfHealth({ checking: false, ok: true, detail: `已連線 (${data.device || 'cpu'} · ${mode})` });
+      } else {
+        setOfHealth({ checking: false, ok: false, detail: data.error || '無法連線' });
+      }
+    } catch {
+      setOfHealth({ checking: false, ok: false, detail: '無法檢查連線狀態' });
+    }
+  };
+
+  useEffect(() => {
+    void checkOpenFormosaHealth(settings.openformosa.baseUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateSettings = (patch: Partial<TtsSettings>) => {
     setSettings((prev) => {
@@ -51,20 +84,69 @@ export const SettingsPanel: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const addProfile = async (file: File): Promise<boolean> => {
+  const addProfile = async (
+    file: File,
+    opts?: { name?: string; provider?: VoiceProfileProvider; trainNow?: boolean; referenceText?: string }
+  ): Promise<boolean> => {
     setCreating(true);
     setMessage(null);
+    const chosenProvider = opts?.provider ?? trainProvider;
+    const chosenName = opts?.name ?? newName;
     try {
-      const profile = await createVoiceProfile(file, newName);
+      let profile = await createVoiceProfile(file, {
+        name: chosenName,
+        provider: chosenProvider,
+        referenceText: opts?.referenceText,
+      });
+      if (opts?.trainNow !== false) {
+        profile = await trainVoiceProfile(profile.id, {
+          provider: chosenProvider,
+          openformosa: settings.openformosa,
+          mingTts: settings.mingTts,
+          referenceText: opts?.referenceText,
+          language: scriptLanguage,
+        });
+      }
       setProfiles((prev) => [...prev, profile]);
       setNewName('');
-      setMessage({ kind: 'ok', text: `已建立聲線「${profile.name}」` });
+      setMessage({
+        kind: 'ok',
+        text: profile.trainingNote
+          ? `已建立聲線「${profile.name}」：${profile.trainingNote}`
+          : `已建立聲線「${profile.name}」`,
+      });
       return true;
     } catch (err) {
       setMessage({ kind: 'error', text: err instanceof Error ? err.message : '建立聲線失敗' });
       return false;
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleTrainExisting = async (profile: VoiceProfile, provider: VoiceProfileProvider) => {
+    setTrainingId(profile.id);
+    setMessage(null);
+    try {
+      const updated = await trainVoiceProfile(profile.id, {
+        provider,
+        openformosa: settings.openformosa,
+        mingTts: settings.mingTts,
+        referenceText: profile.referenceText,
+        language: scriptLanguage,
+      });
+      setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      if (settings.defaultVoice?.profileId === updated.id) {
+        updateSettings({ defaultVoice: toCustomVoice(updated) });
+      }
+      setMessage({
+        kind: 'ok',
+        text: `聲線「${updated.name}」：${updated.trainingNote || '已完成訓練'}`,
+      });
+    } catch (err) {
+      setMessage({ kind: 'error', text: err instanceof Error ? err.message : '訓練聲線失敗' });
+    } finally {
+      setTrainingId(null);
     }
   };
 
@@ -121,11 +203,26 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
-              <Sliders className="w-4 h-4" /> OpenFormosa
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                <Sliders className="w-4 h-4" /> OpenFormosa (BlueMagpie-TTS)
+              </div>
+              <button
+                type="button"
+                disabled={ofHealth.checking}
+                onClick={() => void checkOpenFormosaHealth()}
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] text-slate-200 transition disabled:opacity-50"
+              >
+                {ofHealth.checking ? '檢查中...' : '檢查連線'}
+              </button>
             </div>
+            {ofHealth.detail && (
+              <div className={`text-[10px] ${ofHealth.ok ? 'text-emerald-300' : 'text-amber-300'}`}>
+                {ofHealth.detail}
+              </div>
+            )}
             <div>
-              <label htmlFor="set-of-endpoint" className={labelCls}>API Endpoint</label>
+              <label htmlFor="set-of-endpoint" className={labelCls}>本地推論伺服器 URL</label>
               <input
                 id="set-of-endpoint"
                 type="text"
@@ -236,12 +333,12 @@ export const SettingsPanel: React.FC = () => {
             <Mic className="w-4 h-4 text-cyan-400" /> 自訂聲線管理
           </h2>
           <p className="mt-1 text-[11px] text-slate-400">
-            上傳或錄製約 10 秒的人聲建立聲線；標為「預設」的聲線會套用到新專案，也可在編輯器中逐專案切換。
+            上傳或錄製約 10–15 秒的人聲並選擇 TTS 模型訓練專屬聲線；標為「預設」的聲線會套用到新專案，也可在編輯器中跨專案重複使用。
           </p>
         </div>
 
         <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-wrap items-end gap-3">
-          <div className="w-56">
+          <div className="w-52">
             <label htmlFor="new-voice-name" className={labelCls}>聲線名稱</label>
             <input
               id="new-voice-name"
@@ -264,6 +361,18 @@ export const SettingsPanel: React.FC = () => {
               {CONTENT_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
+            </select>
+          </div>
+          <div className="w-40">
+            <label htmlFor="new-voice-provider" className={labelCls}>訓練用 TTS 模型</label>
+            <select
+              id="new-voice-provider"
+              value={trainProvider}
+              onChange={(e) => setTrainProvider(e.target.value as VoiceProfileProvider)}
+              className={inputCls}
+            >
+              <option value="openformosa">OpenFormosa</option>
+              <option value="ming-3.0">Ming-3.0-TTS</option>
             </select>
           </div>
           <button
@@ -358,8 +467,23 @@ export const SettingsPanel: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-slate-100 truncate" title={p.name}>{p.name}</span>
+                        {p.provider && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-200 shrink-0">
+                            {p.provider === 'ming-3.0' ? 'Ming-3.0-TTS' : 'OpenFormosa'}
+                          </span>
+                        )}
+                        {p.trainingStatus === 'trained' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 shrink-0">
+                            已訓練
+                          </span>
+                        )}
+                        {p.trainingStatus === 'reference-only' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 shrink-0">
+                            參考聲線
+                          </span>
+                        )}
                         {isDefault && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 shrink-0">
                             預設
@@ -369,12 +493,32 @@ export const SettingsPanel: React.FC = () => {
                     )}
                     <div className="mt-0.5 text-[11px] text-slate-400">
                       {p.durationSec ? `${p.durationSec.toFixed(1)} 秒 · ` : ''}建立於 {formatCreatedAt(p.createdAt)}
+                      {p.remoteVoiceId ? ` · ID: ${p.remoteVoiceId}` : ''}
                     </div>
+                    {p.trainingNote && (
+                      <div className="mt-0.5 text-[10px] text-slate-500 line-clamp-1" title={p.trainingNote}>
+                        {p.trainingNote}
+                      </div>
+                    )}
                   </div>
 
                   <audio controls preload="none" src={voiceProfileAudioUrl(p.id)} className="h-8 w-56 max-w-full" />
 
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={trainingId === p.id}
+                      onClick={() => void handleTrainExisting(p, trainProvider)}
+                      title={`使用 ${trainProvider === 'ming-3.0' ? 'Ming-3.0-TTS' : 'OpenFormosa'} 訓練此聲線`}
+                      className="px-2 py-1.5 rounded-md text-[11px] font-semibold flex items-center gap-1 border bg-indigo-500/15 border-indigo-500/40 text-indigo-200 hover:bg-indigo-500/25 transition disabled:opacity-50"
+                    >
+                      {trainingId === p.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      {p.trainingStatus === 'trained' ? '重訓' : '訓練'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => updateSettings({ defaultVoice: isDefault ? undefined : toCustomVoice(p) })}
@@ -418,11 +562,22 @@ export const SettingsPanel: React.FC = () => {
       {recorderOpen && (
         <VoiceRecorderModal
           language={scriptLanguage}
+          initialName={newName}
+          initialProvider={trainProvider}
           uploading={creating}
           serverError={message?.kind === 'error' ? message.text : null}
           onClose={() => setRecorderOpen(false)}
-          onUseRecording={async (file) => {
-            if (await addProfile(file)) setRecorderOpen(false);
+          onUseRecording={async (sub: RecordedVoiceSubmission) => {
+            if (
+              await addProfile(sub.file, {
+                name: sub.name,
+                provider: sub.provider,
+                trainNow: sub.trainNow,
+                referenceText: sub.referenceText,
+              })
+            ) {
+              setRecorderOpen(false);
+            }
           }}
           onPickFile={() => {
             setRecorderOpen(false);

@@ -20,6 +20,8 @@ import {
   SavedProjectRecord,
   SavedProjectSummary,
   TrainingProject,
+  VoiceProfile,
+  VoiceProfileProvider,
 } from '../src/types/training';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -345,15 +347,7 @@ app.post('/api/parse-document', upload.single('file'), async (req, res) => {
   }
 });
 
-// Voice profiles: named ~10s reference recordings used for voice cloning
-interface VoiceProfile {
-  id: string;
-  name: string;
-  fileName: string;
-  durationSec?: number;
-  createdAt: string;
-}
-
+// Voice profiles: named ~10–15s reference recordings trained or used for voice cloning
 const VOICE_PROFILES_FILE = path.join(VOICE_SAMPLES_DIR, 'profiles.json');
 
 function readVoiceProfiles(): VoiceProfile[] {
@@ -373,6 +367,38 @@ function cleanVoiceName(raw: unknown, fallback: string): string {
   const name = typeof raw === 'string' ? raw.trim().slice(0, 40) : '';
   return name || fallback;
 }
+
+const DEFAULT_OPENFORMOSA_URL = 'http://127.0.0.1:8001/v1/tts';
+
+function resolveOpenFormosaUrl(raw?: string): string {
+  const trimmed = (raw || '').trim();
+  // Migrate legacy placeholder URL to the local OpenFormosa/BlueMagpie-TTS server.
+  if (!trimmed || /^https?:\/\/openformosa\.com\/api\/v1\/tts\/?$/i.test(trimmed)) {
+    return DEFAULT_OPENFORMOSA_URL;
+  }
+  return trimmed;
+}
+
+app.get('/api/tts/health', async (req, res) => {
+  const rawUrl = typeof req.query.baseUrl === 'string' ? req.query.baseUrl : '';
+  const baseUrl = resolveOpenFormosaUrl(rawUrl);
+  const healthUrl = baseUrl.replace(/\/v1\/tts\/?$/i, '/health').replace(/\/+$/, '');
+  try {
+    const resp = await fetch(healthUrl, { signal: AbortSignal.timeout(3000) });
+    if (!resp.ok) {
+      res.json({ ok: false, baseUrl, error: `HTTP ${resp.status}` });
+      return;
+    }
+    const data = await resp.json().catch(() => ({}));
+    res.json({ ok: true, baseUrl, ...data });
+  } catch {
+    res.json({
+      ok: false,
+      baseUrl,
+      error: '本地 BlueMagpie-TTS 伺服器未啟動，請執行專案根目錄的 start-bluemagpie.bat',
+    });
+  }
+});
 
 app.get('/api/voice-profiles', (_req, res) => {
   res.json({ profiles: readVoiceProfiles() });
@@ -403,17 +429,152 @@ app.post('/api/voice-profiles', upload.single('file'), (req, res) => {
     const id = crypto.randomBytes(8).toString('hex');
     const fileName = `${id}.${ext}`;
     fs.writeFileSync(path.join(VOICE_SAMPLES_DIR, fileName), file.buffer);
+    const rawProvider = req.body?.provider;
+    const provider: VoiceProfileProvider | undefined =
+      rawProvider === 'openformosa' || rawProvider === 'ming-3.0' ? rawProvider : undefined;
+    const referenceText =
+      typeof req.body?.referenceText === 'string' && req.body.referenceText.trim()
+        ? req.body.referenceText.trim().slice(0, 500)
+        : undefined;
     const profile: VoiceProfile = {
       id,
       name: cleanVoiceName(req.body?.name, path.basename(file.originalname, path.extname(file.originalname))),
       fileName,
       durationSec: durationSec ?? undefined,
       createdAt: new Date().toISOString(),
+      provider,
+      trainingStatus: 'untrained',
+      referenceText,
     };
     writeVoiceProfiles([...readVoiceProfiles(), profile]);
     res.json({ ok: true, profile });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : '上傳失敗' });
+  }
+});
+
+// Train / enroll a voice profile against the user's chosen TTS model (with local zero-shot fallback)
+app.post('/api/voice-profiles/:id/train', async (req, res) => {
+  try {
+    const list = readVoiceProfiles();
+    const profile = list.find((p) => p.id === req.params.id);
+    if (!profile || !VOICE_SAMPLE_FILE_RE.test(profile.fileName)) {
+      res.status(404).json({ error: '找不到此聲線' });
+      return;
+    }
+    const samplePath = path.join(VOICE_SAMPLES_DIR, profile.fileName);
+    if (!fs.existsSync(samplePath)) {
+      res.status(404).json({ error: '找不到聲線音檔' });
+      return;
+    }
+
+    const {
+      provider = 'openformosa',
+      openformosa,
+      mingTts,
+      referenceText,
+      language = DEFAULT_CONTENT_LANGUAGE,
+    } = req.body as {
+      provider?: VoiceProfileProvider;
+      openformosa?: { baseUrl?: string; apiKey?: string; model?: string; voice?: string };
+      mingTts?: { baseUrl?: string; apiKey?: string; model?: string; speaker?: string; style?: string };
+      referenceText?: string;
+      language?: string;
+    };
+
+    const chosenProvider: VoiceProfileProvider = provider === 'ming-3.0' ? 'ming-3.0' : 'openformosa';
+    const audioBase64 = fs.readFileSync(samplePath).toString('base64');
+    const audioFormat = path.extname(samplePath).slice(1);
+    const refText = (typeof referenceText === 'string' && referenceText.trim()) || profile.referenceText || undefined;
+    const ttsLanguage = getContentLanguage(language).value;
+
+    const modelName =
+      chosenProvider === 'ming-3.0'
+        ? mingTts?.model || 'inclusionAI/Ming-3.0-tts'
+        : openformosa?.model || 'OpenFormosa/BlueMagpie-TTS';
+
+    let remoteVoiceId: string | undefined;
+    let trainingStatus: VoiceProfile['trainingStatus'] = 'reference-only';
+    let trainingNote = '';
+
+    const baseUrl =
+      chosenProvider === 'ming-3.0'
+        ? mingTts?.baseUrl?.trim()
+        : resolveOpenFormosaUrl(openformosa?.baseUrl);
+    const apiKey = chosenProvider === 'ming-3.0' ? mingTts?.apiKey?.trim() : openformosa?.apiKey?.trim();
+
+    if (baseUrl) {
+      const cloneUrl = `${baseUrl.replace(/\/+$/, '')}/voices/clone`;
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+        const body =
+          chosenProvider === 'ming-3.0'
+            ? {
+                name: profile.name,
+                speaker_name: profile.name,
+                model: modelName,
+                language: ttsLanguage,
+                reference_audio: audioBase64,
+                reference_audio_format: audioFormat,
+                ...(refText ? { reference_text: refText } : {}),
+              }
+            : {
+                voice_id: `bm-${profile.id}`,
+                name: profile.name,
+                model: modelName,
+                language: ttsLanguage,
+                audio: audioBase64,
+                audio_format: audioFormat,
+                reference_audio: audioBase64,
+                reference_audio_format: audioFormat,
+                ...(refText ? { reference_text: refText } : {}),
+              };
+        const resp = await fetch(cloneUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(60000),
+        });
+        if (resp.ok) {
+          const data = (await resp.json().catch(() => ({}))) as Record<string, unknown>;
+          const returnedId =
+            (typeof data.voice_id === 'string' && data.voice_id) ||
+            (typeof data.speaker_id === 'string' && data.speaker_id) ||
+            (typeof data.voice === 'string' && data.voice) ||
+            (typeof data.id === 'string' && data.id) ||
+            undefined;
+          remoteVoiceId = returnedId || `vp-${profile.id}`;
+          trainingStatus = 'trained';
+          trainingNote =
+            (typeof data.note === 'string' && data.note) ||
+            `已透過 ${chosenProvider === 'ming-3.0' ? 'Ming-3.0-TTS' : 'OpenFormosa (BlueMagpie-TTS)'} 完成聲線訓練`;
+        } else {
+          const errData = (await resp.json().catch(() => ({}))) as { error?: string };
+          trainingNote = `${chosenProvider === 'ming-3.0' ? 'Ming-3.0-TTS' : 'OpenFormosa (BlueMagpie-TTS)'} 訓練端點回應 HTTP ${resp.status}${errData.error ? ` (${errData.error})` : ''}，已改用本地參考聲線模式`;
+        }
+      } catch {
+        trainingNote =
+          chosenProvider === 'openformosa'
+            ? `無法連線至本地 BlueMagpie-TTS (${baseUrl})，請先執行 start-bluemagpie.bat；目前暫存為本地參考聲線`
+            : `無法連線至 Ming-3.0-TTS 訓練端點 (${baseUrl})，已改用本地參考聲線模式`;
+      }
+    } else {
+      trainingNote = '尚未設定 TTS API 端點，已建立本地參考聲線（設定端點後合成時將自動附帶錄音）';
+    }
+
+    profile.provider = chosenProvider;
+    profile.model = modelName;
+    profile.trainingStatus = trainingStatus;
+    profile.remoteVoiceId = remoteVoiceId;
+    profile.trainedAt = new Date().toISOString();
+    profile.trainingNote = trainingNote;
+    if (refText) profile.referenceText = refText;
+
+    writeVoiceProfiles(list);
+    res.json({ ok: true, profile });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '訓練聲線失敗' });
   }
 });
 
@@ -474,18 +635,33 @@ app.post('/api/tts/synthesize', async (req, res) => {
       durationSeconds?: number;
       openformosa?: { baseUrl?: string; apiKey?: string; model?: string; voice?: string };
       mingTts?: { baseUrl?: string; apiKey?: string; model?: string; speaker?: string; style?: string };
-      customVoice?: { fileName?: string };
+      customVoice?: {
+        profileId?: string;
+        fileName?: string;
+        provider?: VoiceProfileProvider;
+        remoteVoiceId?: string;
+      };
     };
 
+    const storedProfile = customVoice?.profileId
+      ? readVoiceProfiles().find((p) => p.id === customVoice.profileId)
+      : undefined;
+    const resolvedFileName = storedProfile?.fileName || customVoice?.fileName;
+    const resolvedRemoteVoiceId =
+      (storedProfile?.provider === provider ? storedProfile?.remoteVoiceId : undefined) ||
+      (customVoice?.provider === provider ? customVoice?.remoteVoiceId : undefined);
+    const resolvedRefText = storedProfile?.referenceText;
+
     const voiceSampleFile =
-      customVoice?.fileName && VOICE_SAMPLE_FILE_RE.test(customVoice.fileName)
-        ? path.join(VOICE_SAMPLES_DIR, customVoice.fileName)
+      resolvedFileName && VOICE_SAMPLE_FILE_RE.test(resolvedFileName)
+        ? path.join(VOICE_SAMPLES_DIR, resolvedFileName)
         : null;
     const referenceAudio =
       voiceSampleFile && fs.existsSync(voiceSampleFile)
         ? {
             reference_audio: fs.readFileSync(voiceSampleFile).toString('base64'),
             reference_audio_format: path.extname(voiceSampleFile).slice(1),
+            ...(resolvedRefText ? { reference_text: resolvedRefText } : {}),
           }
         : null;
 
@@ -494,7 +670,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
     const cacheHash = crypto
       .createHash('sha1')
       .update(
-        `${provider}|${ttsLanguage}|${voiceId || ''}|${referenceAudio ? customVoice?.fileName : ''}|${speed}|${text || ''}`
+        `${provider}|${ttsLanguage}|${resolvedRemoteVoiceId || voiceId || ''}|${referenceAudio ? resolvedFileName : ''}|${speed}|${text || ''}`
       )
       .digest('hex')
       .slice(0, 14);
@@ -522,20 +698,21 @@ app.post('/api/tts/synthesize', async (req, res) => {
     let mode: 'openformosa' | 'ming-3.0' | 'neural-fallback' | 'local-fallback' = 'local-fallback';
     let note = '';
 
+    const openformosaUrl = resolveOpenFormosaUrl(openformosa?.baseUrl);
     if (
       provider === 'openformosa' &&
-      openformosa?.baseUrl &&
+      openformosaUrl &&
       (ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US')
     ) {
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (openformosa.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
-        const resp = await fetch(openformosa.baseUrl, {
+        if (openformosa?.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
+        const resp = await fetch(openformosaUrl, {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            model: openformosa.model || 'formosa-tts-v1',
-            voice: voiceId || openformosa.voice || 'formosa-pro-tw',
+            model: openformosa?.model || 'OpenFormosa/BlueMagpie-TTS',
+            voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || 'hung_yi_lee',
             input: text,
             speed,
             response_format: 'wav',
@@ -547,10 +724,10 @@ app.post('/api/tts/synthesize', async (req, res) => {
           fs.writeFileSync(wavFilePath, arr);
           mode = 'openformosa';
         } else {
-          note = `OpenFormosa HTTP ${resp.status} — 已使用神經網路語音合成`;
+          note = `OpenFormosa (BlueMagpie-TTS) HTTP ${resp.status} — 已使用神經網路語音合成`;
         }
       } catch (e) {
-        note = `OpenFormosa 無法連線 (${e instanceof Error ? e.message : 'network'}) — 已使用神經網路語音合成`;
+        note = `OpenFormosa (BlueMagpie-TTS) 本地端點未啟動 (${openformosaUrl}) — 已使用神經網路語音合成`;
       }
     } else if (provider === 'ming-3.0' && mingTts?.baseUrl) {
       try {
@@ -562,7 +739,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
           body: JSON.stringify({
             model: mingTts.model || 'inclusionAI/Ming-3.0-tts',
             text,
-            speaker: voiceId || mingTts.speaker || 'ming-tech-zh-en',
+            speaker: resolvedRemoteVoiceId || voiceId || mingTts.speaker || 'ming-tech-zh-en',
             style: mingTts.style || 'professional-training',
             language: ttsLanguage,
             speed,

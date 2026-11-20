@@ -262,10 +262,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         ttsConfig: {
           defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
           openformosa: {
-            baseUrl: 'https://openformosa.com/api/v1/tts',
+            baseUrl: 'http://127.0.0.1:8001/v1/tts',
             apiKey: '',
-            model: 'formosa-tts-v1',
-            voice: 'formosa-pro-tw',
+            model: 'OpenFormosa/BlueMagpie-TTS',
+            voice: 'hung_yi_lee',
           },
           mingTts: {
             baseUrl: 'http://localhost:8000/v1/tts',

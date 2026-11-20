@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, Mic, RefreshCw, Square, Upload, X } from 'lucide-react';
-import { ContentLanguage } from '../types/training';
+import { Loader2, Mic, RefreshCw, Sparkles, Square, Upload, X } from 'lucide-react';
+import { ContentLanguage, VoiceProfileProvider } from '../types/training';
 
 const MAX_RECORD_SECONDS = 15;
 const MIN_RECORD_SECONDS = 3;
 
 // Each script is ~15s at a natural pace and mixes tones/vowels/consonants and a number for TTS cloning.
-const READING_SCRIPTS: Record<ContentLanguage, string> = {
+export const READING_SCRIPTS: Record<ContentLanguage, string> = {
   'zh-TW':
     '今天天氣很好，我想跟大家分享一個小故事。清晨六點，陽光穿過窗簾，咖啡的香氣慢慢散開。無論遇到什麼挑戰，只要保持耐心，一步一步來，總能找到解決的辦法。',
   'zh-CN':
@@ -19,12 +19,22 @@ const READING_SCRIPTS: Record<ContentLanguage, string> = {
     '오늘은 날씨가 정말 좋네요. 아침 여섯 시, 창문으로 햇살이 들어오고 커피 향이 천천히 퍼집니다. 어떤 어려움이 있어도 차분하게 한 걸음씩 나아가면 반드시 해결책을 찾을 수 있습니다.',
 };
 
+export interface RecordedVoiceSubmission {
+  file: File;
+  name: string;
+  provider: VoiceProfileProvider;
+  trainNow: boolean;
+  referenceText: string;
+}
+
 interface VoiceRecorderModalProps {
   language: ContentLanguage;
+  initialName?: string;
+  initialProvider?: VoiceProfileProvider;
   uploading: boolean;
   serverError?: string | null;
   onClose: () => void;
-  onUseRecording: (file: File) => Promise<void> | void;
+  onUseRecording: (submission: RecordedVoiceSubmission) => Promise<void> | void;
   onPickFile: () => void;
 }
 
@@ -32,6 +42,8 @@ type Phase = 'idle' | 'recording' | 'recorded';
 
 export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
   language,
+  initialName = '',
+  initialProvider = 'openformosa',
   uploading,
   serverError,
   onClose,
@@ -42,6 +54,9 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [recording, setRecording] = useState<{ file: File; url: string } | null>(null);
+  const [profileName, setProfileName] = useState(initialName);
+  const [provider, setProvider] = useState<VoiceProfileProvider>(initialProvider);
+  const [trainNow, setTrainNow] = useState(true);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -171,7 +186,50 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
         </div>
 
         {recording && phase === 'recorded' && (
-          <audio controls src={recording.url} className="mt-3 w-full h-9" />
+          <>
+            <audio controls src={recording.url} className="mt-3 w-full h-9" />
+            <div className="mt-3 p-3 rounded-lg bg-slate-950/90 border border-slate-800 space-y-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label htmlFor="rec-voice-name" className="block text-[11px] text-slate-400 mb-1">
+                    聲線名稱（供跨專案重複使用）
+                  </label>
+                  <input
+                    id="rec-voice-name"
+                    type="text"
+                    maxLength={40}
+                    placeholder="例如：Jonathan 教學聲線"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="rec-tts-model" className="block text-[11px] text-slate-400 mb-1">
+                    訓練用 TTS 模型
+                  </label>
+                  <select
+                    id="rec-tts-model"
+                    value={provider}
+                    onChange={(e) => setProvider(e.target.value as VoiceProfileProvider)}
+                    className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="openformosa">OpenFormosa</option>
+                    <option value="ming-3.0">Ming-3.0-TTS</option>
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={trainNow}
+                  onChange={(e) => setTrainNow(e.target.checked)}
+                  className="accent-cyan-400 rounded"
+                />
+                立即使用所選 TTS 模型訓練並建立專屬聲線檔案
+              </label>
+            </div>
+          </>
         )}
         {tooShort && (
           <p className="mt-2 text-[11px] text-amber-300">錄音少於 {MIN_RECORD_SECONDS} 秒，請重錄。</p>
@@ -209,19 +267,39 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
               <>
                 <button
                   type="button"
+                  disabled={uploading}
                   onClick={retake}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> 重錄
                 </button>
                 <button
                   type="button"
                   disabled={tooShort || uploading}
-                  onClick={() => recording && void onUseRecording(recording.file)}
+                  onClick={() =>
+                    recording &&
+                    void onUseRecording({
+                      file: recording.file,
+                      name: profileName.trim(),
+                      provider,
+                      trainNow,
+                      referenceText: READING_SCRIPTS[language],
+                    })
+                  }
                   className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  使用此錄音
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      {trainNow ? '訓練聲線中...' : '建立中...'}
+                    </>
+                  ) : trainNow ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" /> 訓練並建立聲線
+                    </>
+                  ) : (
+                    '儲存聲線'
+                  )}
                 </button>
               </>
             )}

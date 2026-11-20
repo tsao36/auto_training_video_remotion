@@ -1,5 +1,7 @@
 node_modules/
 .venv/
+.venv312/
+__pycache__/
 dist/
 output/
 .playwright-mcp/

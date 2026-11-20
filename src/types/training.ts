@@ -253,8 +253,13 @@ export interface TtsEngineConfig {
     fileName: string;
     name: string;
     durationSec?: number;
+    provider?: 'openformosa' | 'ming-3.0';
+    remoteVoiceId?: string;
   };
 }
+
+export type VoiceProfileProvider = 'openformosa' | 'ming-3.0';
+export type VoiceProfileTrainingStatus = 'untrained' | 'trained' | 'reference-only' | 'failed';
 
 export interface VoiceProfile {
   id: string;
@@ -262,6 +267,13 @@ export interface VoiceProfile {
   fileName: string;
   durationSec?: number;
   createdAt: string;
+  provider?: VoiceProfileProvider;
+  model?: string;
+  trainingStatus?: VoiceProfileTrainingStatus;
+  remoteVoiceId?: string;
+  trainedAt?: string;
+  trainingNote?: string;
+  referenceText?: string;
 }
 
 export interface TrainingProject {

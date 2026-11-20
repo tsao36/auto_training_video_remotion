@@ -27,7 +27,7 @@ import {
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { SourceWizardModal } from './components/SourceWizardModal';
-import { VoiceRecorderModal } from './components/VoiceRecorderModal';
+import { RecordedVoiceSubmission, VoiceRecorderModal } from './components/VoiceRecorderModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
   DOMAIN_META,
@@ -46,9 +46,10 @@ import {
   VIDEO_FPS,
   VisualTemplate,
   VoiceProfile,
+  VoiceProfileProvider,
 } from './types/training';
 import { applyTtsSettings, loadTtsSettings } from './utils/ttsSettingsStorage';
-import { createVoiceProfile, listVoiceProfiles, toCustomVoice } from './utils/voiceProfiles';
+import { createVoiceProfile, listVoiceProfiles, toCustomVoice, trainVoiceProfile } from './utils/voiceProfiles';
 import {
   DEFAULT_GNAI_CONFIG,
   loadStoredLlmConfig,
@@ -347,23 +348,56 @@ export function App() {
     // Existing audio was made with the old voice, so mark it for regeneration.
     setProject((prev) => ({
       ...prev,
-      ttsConfig: { ...prev.ttsConfig, customVoice },
+      ttsConfig: {
+        ...prev.ttsConfig,
+        defaultProvider: customVoice?.provider ?? prev.ttsConfig.defaultProvider,
+        customVoice,
+      },
       scenes: prev.scenes.map((sc) => ({
         ...sc,
-        tts: { ...sc.tts, status: 'idle', audioUrl: undefined, error: undefined },
+        tts: {
+          ...sc.tts,
+          provider:
+            customVoice?.provider && sc.tts.provider !== 'browser-fallback'
+              ? customVoice.provider
+              : sc.tts.provider,
+          status: 'idle',
+          audioUrl: undefined,
+          error: undefined,
+        },
       })),
     }));
   };
 
-  const uploadVoiceSample = async (file: File): Promise<boolean> => {
+  const uploadVoiceSample = async (
+    file: File,
+    opts?: { name?: string; provider?: VoiceProfileProvider; trainNow?: boolean; referenceText?: string }
+  ): Promise<boolean> => {
     setVoiceUploading(true);
     setVoiceError(null);
     setAiNotice(null);
     try {
-      const profile = await createVoiceProfile(file);
+      let profile = await createVoiceProfile(file, {
+        name: opts?.name,
+        provider: opts?.provider,
+        referenceText: opts?.referenceText,
+      });
+      if (opts?.trainNow && opts.provider) {
+        profile = await trainVoiceProfile(profile.id, {
+          provider: opts.provider,
+          openformosa: project.ttsConfig.openformosa,
+          mingTts: project.ttsConfig.mingTts,
+          referenceText: opts.referenceText,
+          language: project.language || DEFAULT_CONTENT_LANGUAGE,
+        });
+      }
       setVoiceProfiles((prev) => [...prev, profile]);
       setCustomVoice(toCustomVoice(profile));
-      setAiNotice('已建立並套用自訂聲線，請重新生成 TTS 音軌；可在總覽頁「設定」管理聲線');
+      setAiNotice(
+        profile.trainingNote
+          ? `已套用聲線「${profile.name}」：${profile.trainingNote}。請重新生成 TTS 音軌`
+          : `已建立並套用聲線「${profile.name}」，請重新生成 TTS 音軌；可在總覽頁「設定」管理聲線`
+      );
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : '上傳失敗';
@@ -1294,11 +1328,23 @@ export function App() {
                       {voiceRecorderOpen && (
                         <VoiceRecorderModal
                           language={project.language || DEFAULT_CONTENT_LANGUAGE}
+                          initialProvider={
+                            selectedScene.tts.provider === 'ming-3.0' ? 'ming-3.0' : 'openformosa'
+                          }
                           uploading={voiceUploading}
                           serverError={voiceError}
                           onClose={() => setVoiceRecorderOpen(false)}
-                          onUseRecording={async (file) => {
-                            if (await uploadVoiceSample(file)) setVoiceRecorderOpen(false);
+                          onUseRecording={async (sub: RecordedVoiceSubmission) => {
+                            if (
+                              await uploadVoiceSample(sub.file, {
+                                name: sub.name,
+                                provider: sub.provider,
+                                trainNow: sub.trainNow,
+                                referenceText: sub.referenceText,
+                              })
+                            ) {
+                              setVoiceRecorderOpen(false);
+                            }
                           }}
                           onPickFile={() => {
                             setVoiceRecorderOpen(false);
@@ -1351,11 +1397,17 @@ export function App() {
                                 {project.ttsConfig.customVoice.name}
                               </option>
                             )}
-                          {voiceProfiles.map((p) => (
-                            <option key={p.id} value={p.fileName}>
-                              {p.name}
-                            </option>
-                          ))}
+                          {voiceProfiles.map((p) => {
+                            const tag = p.provider
+                              ? ` (${p.provider === 'ming-3.0' ? 'Ming-3.0' : 'OpenFormosa'}${p.trainingStatus === 'trained' ? ' · 已訓練' : ''})`
+                              : '';
+                            return (
+                              <option key={p.id} value={p.fileName}>
+                                {p.name}
+                                {tag}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                     )}
