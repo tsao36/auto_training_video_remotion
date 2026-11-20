@@ -40,7 +40,7 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
                   globalFrame={globalFrame}
                   totalFrames={durationInFrames}
                 />
-                <SceneRenderer scene={scene} />
+                <SceneRenderer scene={scene} assetBaseUrl={audioBaseUrl} />
                 {resolvedAudio && <Audio src={resolvedAudio} />}
               </AbsoluteFill>
             </Series.Sequence>

@@ -10,12 +10,18 @@ import {
   SceneTransitionWrapper,
   SvgFlowConnector,
 } from '../components/DynamicPrimitives';
+import { PptxSlideRenderer } from './PptxSlideRenderer';
 
 interface SceneRendererProps {
   scene: SceneSpec;
+  assetBaseUrl?: string;
 }
 
-export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene }) => {
+export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUrl = '' }) => {
+  if (scene.template === 'pptx-slide' && scene.pptxSlide) {
+    return <PptxSlideRenderer slide={scene.pptxSlide} assetBaseUrl={assetBaseUrl} />;
+  }
+
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const meta = DOMAIN_META[scene.domain];

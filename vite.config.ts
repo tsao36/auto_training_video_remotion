@@ -15,6 +15,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/pptx-media': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/output': {
         target: 'http://localhost:3001',
         changeOrigin: true,

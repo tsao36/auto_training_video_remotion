@@ -7,7 +7,8 @@ export type VisualTemplate =
   | 'protocol-timeline'
   | 'comparison-matrix'
   | 'debug-checklist'
-  | 'summary-takeaways';
+  | 'summary-takeaways'
+  | 'pptx-slide';
 
 export type TtsProvider = 'openformosa' | 'ming-3.0' | 'browser-fallback';
 
@@ -135,6 +136,84 @@ export interface SentenceEffectCue {
   rationale: string;
 }
 
+export interface PptxFill {
+  type: 'solid' | 'gradient' | 'image' | 'none';
+  color?: string;
+  opacity?: number;
+  gradientAngleDeg?: number;
+  gradientStops?: { position: number; color: string }[];
+  imageUrl?: string;
+}
+
+export interface PptxTextRun {
+  text: string;
+  fontSizePx?: number;
+  fontFamily?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+}
+
+export interface PptxTextParagraph {
+  align?: 'left' | 'center' | 'right' | 'justify';
+  bullet?: string;
+  level?: number;
+  spaceBeforePx?: number;
+  spaceAfterPx?: number;
+  lineHeight?: number;
+  runs: PptxTextRun[];
+}
+
+export interface PptxTableCell {
+  textParagraphs: PptxTextParagraph[];
+  fill?: PptxFill;
+  borderColor?: string;
+  borderWidthPx?: number;
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  colSpan?: number;
+  rowSpan?: number;
+  skip?: boolean;
+}
+
+export interface PptxElement {
+  id: string;
+  kind: 'shape' | 'image' | 'table' | 'connector';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotationDeg?: number;
+  flipH?: boolean;
+  flipV?: boolean;
+  shapeType?: string;
+  fill?: PptxFill;
+  strokeColor?: string;
+  strokeWidthPx?: number;
+  strokeDash?: string;
+  headArrow?: boolean;
+  tailArrow?: boolean;
+  imageUrl?: string;
+  cropRect?: { left: number; top: number; right: number; bottom: number };
+  paragraphs?: PptxTextParagraph[];
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  paddingPx?: { top: number; right: number; bottom: number; left: number };
+  tableColWidths?: number[];
+  tableRows?: { height: number; cells: PptxTableCell[] }[];
+}
+
+export interface PptxSlideData {
+  slideNumber: number;
+  slideWidthPx: number;
+  slideHeightPx: number;
+  background: PptxFill;
+  elements: PptxElement[];
+  title: string;
+  bodyText: string;
+  notes?: string;
+}
+
 export interface SceneSpec {
   id: string;
   index: number;
@@ -147,6 +226,8 @@ export interface SceneSpec {
   script: string;
   visualDescription?: string;
   diagramData?: SceneDiagramData;
+  pptxSlide?: PptxSlideData;
+  pptxNotes?: string;
   tts: SceneTtsState;
   animation: SceneAnimationConfig;
   sentenceCues?: SentenceEffectCue[];
@@ -276,6 +357,7 @@ export const TEMPLATE_LABELS: Record<VisualTemplate, string> = {
   'comparison-matrix': '技術規格對照表',
   'debug-checklist': '除錯決策檢查表',
   'summary-takeaways': '重點總結與實作',
+  'pptx-slide': 'PowerPoint 原版投影片',
 };
 
 export const EFFECT_LABELS: Record<RemotionEffect, string> = {

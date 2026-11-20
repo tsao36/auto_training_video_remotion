@@ -147,6 +147,7 @@ export function analyzeSentencePairEffect(
     'comparison-matrix': 'zoom-focus',
     'debug-checklist': 'sweep-scan',
     'summary-takeaways': beatIndex === 0 ? 'cascade-reveal' : 'zoom-focus',
+    'pptx-slide': 'zoom-focus',
   };
 
   const chosen = templateFallback[template] || fallbackEffect;

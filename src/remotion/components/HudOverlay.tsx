@@ -69,40 +69,46 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
     });
   };
 
+  const isPptxSlide = scene.template === 'pptx-slide' && Boolean(scene.pptxSlide);
+
   return (
-    <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      {/* Tech Grid Background */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: '#070B14',
-          backgroundImage: `
-            linear-gradient(to right, rgba(56, 189, 248, 0.045) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px)
-          `,
-          backgroundSize: '48px 48px',
-          backgroundPosition: `${gridOffset}px ${gridOffset}px`,
-          zIndex: 0,
-        }}
-      />
+    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: isPptxSlide ? 20 : undefined }}>
+      {/* Tech Grid Background (hidden on 1:1 PowerPoint slides) */}
+      {!isPptxSlide && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: '#070B14',
+            backgroundImage: `
+              linear-gradient(to right, rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px)
+            `,
+            backgroundSize: '48px 48px',
+            backgroundPosition: `${gridOffset}px ${gridOffset}px`,
+            zIndex: 0,
+          }}
+        />
+      )}
 
-      {/* Ambient Radial Glow */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -220,
-          right: -180,
-          width: 720,
-          height: 720,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
-          zIndex: 0,
-        }}
-      />
+      {/* Ambient Radial Glow (hidden on 1:1 PowerPoint slides) */}
+      {!isPptxSlide && (
+        <div
+          style={{
+            position: 'absolute',
+            top: -220,
+            right: -180,
+            width: 720,
+            height: 720,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
+            zIndex: 0,
+          }}
+        />
+      )}
 
-      {/* Top HUD Bar */}
-      {scene.animation.showProgressHud && (
+      {/* Top HUD Bar (hidden on 1:1 PowerPoint slides so slide content is 100% unobstructed) */}
+      {!isPptxSlide && scene.animation.showProgressHud && (
         <div
           style={{
             position: 'absolute',

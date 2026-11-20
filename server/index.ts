@@ -12,21 +12,25 @@ import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, regenerateSceneWithLlm } from './llmGenerator';
+import { parsePptxBuffer } from './pptxParser';
 import { DEFAULT_CONTENT_LANGUAGE, getContentLanguage } from '../src/types/training';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
+const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
 
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
+fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use('/audio', express.static(AUDIO_DIR));
+app.use('/pptx-media', express.static(PPTX_MEDIA_DIR));
 app.use('/output', express.static(OUTPUT_DIR));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -94,7 +98,7 @@ app.get('/api/health', (_req, res) => {
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, defaultTtsProvider, language, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -104,6 +108,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       durationSeconds: Number(durationSeconds) || 60,
       domain: domain || 'debug-logic',
       rawText,
+      pptxSlides,
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       llmConfig,
@@ -149,37 +154,13 @@ app.post('/api/parse-document', upload.single('file'), async (req, res) => {
     const baseTitle = path.basename(req.file.originalname, ext);
 
     if (ext === '.pptx') {
-      const zip = await JSZip.loadAsync(req.file.buffer);
-      const slideFiles = Object.keys(zip.files)
-        .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
-        .sort((a, b) => {
-          const na = parseInt(a.match(/(\d+)/)?.[1] || '0', 10);
-          const nb = parseInt(b.match(/(\d+)/)?.[1] || '0', 10);
-          return na - nb;
-        });
-
-      const slides: { title: string; body: string; notes?: string }[] = [];
-      for (const sPath of slideFiles) {
-        const idx = sPath.match(/(\d+)/)?.[1] || '1';
-        const slideXml = await zip.files[sPath].async('string');
-        const texts = (slideXml.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) || [])
-          .map((m) => m.replace(/<[^>]+>/g, '').trim())
-          .filter(Boolean);
-
-        const notePath = `ppt/notesSlides/notesSlide${idx}.xml`;
-        let notes = '';
-        if (zip.files[notePath]) {
-          const noteXml = await zip.files[notePath].async('string');
-          notes = extractXmlText(noteXml);
-        }
-
-        const title = texts[0] || `Slide ${idx}`;
-        const body = texts.slice(1).join('。') || title;
-        slides.push({ title, body, notes });
-      }
-
-      const rawText = slides.map((s, i) => `# ${i + 1}. ${s.title}\n${s.body}\n${s.notes || ''}`).join('\n\n');
-      res.json({ title: baseTitle, slides, rawText });
+      const parsedPptx = await parsePptxBuffer(req.file.buffer, req.file.originalname, PPTX_MEDIA_DIR);
+      res.json({
+        title: parsedPptx.title,
+        slides: parsedPptx.slides,
+        rawText: parsedPptx.rawText,
+        isPptx: true,
+      });
       return;
     }
 

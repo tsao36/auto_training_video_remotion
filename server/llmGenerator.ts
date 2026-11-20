@@ -5,6 +5,7 @@ import {
   DOMAIN_META,
   getContentLanguage,
   LlmConfig,
+  PptxSlideData,
   RemotionEffect,
   SceneDiagramData,
   SceneSpec,
@@ -18,6 +19,7 @@ export interface GeneratePlanParams {
   durationSeconds: number;
   domain: TechDomain;
   rawText?: string;
+  pptxSlides?: PptxSlideData[];
   defaultTtsProvider?: TtsProvider;
   language?: ContentLanguage;
   llmConfig?: Partial<LlmConfig>;
@@ -567,6 +569,183 @@ function toSceneSpecs(
   });
 }
 
+function buildPptxFallbackScript(slide: PptxSlideData): string {
+  if (slide.notes && slide.notes.trim().length > 5) {
+    return slide.notes.trim();
+  }
+  const bodyLines = slide.bodyText
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l && l !== slide.title);
+  if (bodyLines.length === 0) {
+    return slide.title;
+  }
+  return `${slide.title}。${bodyLines.join('；')}`;
+}
+
+function buildPptxKeyPoints(slide: PptxSlideData): string[] {
+  const lines = slide.bodyText
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l && l !== slide.title);
+  if (lines.length === 0) return [slide.title.slice(0, 48)];
+  return lines.slice(0, 4).map((l) => l.slice(0, 48));
+}
+
+async function generatePptxPlan(
+  params: GeneratePlanParams,
+  pptxSlides: PptxSlideData[],
+  cfg: LlmConfig,
+  canCallLlm: boolean
+): Promise<{
+  title: string;
+  subtitle: string;
+  scenes: SceneSpec[];
+  mode: 'llm' | 'smart-fallback';
+  note: string;
+}> {
+  const provider = params.defaultTtsProvider || 'openformosa';
+  const language = getContentLanguage(params.language || DEFAULT_CONTENT_LANGUAGE);
+  const meta = DOMAIN_META[params.domain];
+  const voiceId = provider === 'ming-3.0' ? 'ming-tech-zh-en' : 'formosa-pro-tw';
+  const targetDuration = Math.max(
+    pptxSlides.length * 3,
+    Math.min(1800, Math.round(params.durationSeconds || pptxSlides.length * 10))
+  );
+
+  let llmScripts: { slideNumber: number; script: string; durationSeconds?: number; effect?: RemotionEffect }[] = [];
+  let mode: 'llm' | 'smart-fallback' = 'smart-fallback';
+  let note = '已依 PowerPoint 原版投影片 1:1 還原視覺，並依投影片內容生成對應旁白腳本';
+
+  if (canCallLlm) {
+    try {
+      const systemPrompt = `You are a technical presentation narrator and Remotion video director.
+The user imported a PowerPoint (.pptx) deck. Remotion will render EVERY slide 100% identically to the PowerPoint slide.
+Your job is to generate the spoken narration script for EACH slide in exact order.
+
+CRITICAL RULES:
+1. You MUST return exactly ${pptxSlides.length} items in "slides", one for each slide (slideNumber 1..${pptxSlides.length}).
+2. STRICT CONTENT MATCHING: Every slide's "script" MUST accurately match, cover, and explain the exact content shown on THAT slide (title, bullets, tables, numbers, terminology, and speaker notes). Do NOT invent unrelated topics or skip the slide's key points.
+3. If speaker notes ("notes") are provided for a slide, faithfully incorporate them into the spoken script.
+4. Write all scripts in ${language.promptName}. Preserve technical acronyms, numbers, units, and product/component names as written on the slide.
+5. Spoken ${language.promptName} runs at ~${language.charsPerSecond} characters per second. Aim for total duration across all slides near ${targetDuration} seconds (each slide >= 3 seconds).
+6. Choose a matching subtle Remotion effect from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"].
+
+Return strict JSON:
+{
+  "title": "string",
+  "subtitle": "string",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "durationSeconds": number,
+      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan",
+      "script": "Natural spoken narration matching this exact slide's content"
+    }
+  ]
+}`;
+
+      const slideSummaries = pptxSlides.map((s) => ({
+        slideNumber: s.slideNumber,
+        title: s.title,
+        content: s.bodyText.slice(0, 1200),
+        notes: s.notes ? s.notes.slice(0, 800) : undefined,
+      }));
+
+      const userPrompt = `Output language: ${language.promptName}
+Deck Title: ${params.topic}
+Target Total Duration: ${targetDuration} seconds
+Slides:
+${JSON.stringify(slideSummaries, null, 2)}`;
+
+      const raw = (await callChatCompletionJson(cfg, systemPrompt, userPrompt)) as {
+        title?: string;
+        subtitle?: string;
+        slides?: { slideNumber: number; script: string; durationSeconds?: number; effect?: RemotionEffect }[];
+      };
+
+      if (raw && Array.isArray(raw.slides) && raw.slides.length > 0) {
+        llmScripts = raw.slides;
+        mode = 'llm';
+        note = `已由 LLM (${cfg.model}) 依每張 PowerPoint 投影片內容精準生成對應腳本，並 100% 還原投影片視覺`;
+      }
+    } catch (err) {
+      console.warn('LLM PPTX script generation failed, using slide content fallback:', err);
+      if (language.value !== DEFAULT_CONTENT_LANGUAGE) {
+        throw new Error(`無法以${language.label}生成投影片腳本，請確認 LLM 服務可用後重試。`);
+      }
+      note = `LLM 連線失敗，已直接依 PowerPoint 投影片文字與備忘稿生成對應腳本`;
+    }
+  }
+
+  const now = Date.now();
+  const rawScenes = pptxSlides.map((slide, idx) => {
+    const matched = llmScripts.find((item) => item.slideNumber === slide.slideNumber) || llmScripts[idx];
+    const script = (matched?.script || buildPptxFallbackScript(slide)).trim();
+    const estDuration = Math.max(3, Math.ceil(script.length / Math.max(1, language.charsPerSecond) + 1));
+    const durationSeconds = matched?.durationSeconds
+      ? Math.max(3, Math.round(matched.durationSeconds))
+      : estDuration;
+    const effect = clampEffect(matched?.effect, 'pptx-slide', script);
+
+    return {
+      slide,
+      script,
+      durationSeconds,
+      effect,
+    };
+  });
+
+  const balancedDurations = normalizeDurationsToTarget(
+    rawScenes.map((r) => ({
+      title: r.slide.title,
+      durationSeconds: r.durationSeconds,
+      template: 'pptx-slide',
+      effect: r.effect,
+      visualDescription: '',
+      keyPoints: [],
+      script: r.script,
+    })),
+    targetDuration
+  );
+
+  const scenes: SceneSpec[] = rawScenes.map((r, idx) => ({
+    id: `scene-${now}-${idx}`,
+    index: idx,
+    title: r.slide.title,
+    subtitle: `SLIDE ${r.slide.slideNumber} / ${pptxSlides.length}`,
+    domain: params.domain,
+    template: 'pptx-slide',
+    durationSeconds: balancedDurations[idx],
+    keyPoints: buildPptxKeyPoints(r.slide),
+    script: r.script,
+    visualDescription: `100% 還原 PowerPoint 第 ${r.slide.slideNumber} 頁原始版面、文字、圖形、表格與圖片`,
+    pptxSlide: r.slide,
+    pptxNotes: r.slide.notes,
+    tts: {
+      provider,
+      voiceId,
+      speed: 1.05,
+      status: 'idle',
+    },
+    animation: {
+      motionStyle: 'smooth-sweep',
+      effect: r.effect,
+      accentColor: meta.accentColor,
+      showSubtitles: true,
+      showProgressHud: true,
+    },
+  }));
+
+  return {
+    title: params.topic || pptxSlides[0]?.title || `${meta.shortLabel} PowerPoint 課程`,
+    subtitle: `${pptxSlides.length} 張投影片 • 100% 原版視覺還原`,
+    scenes,
+    mode,
+    note,
+  };
+}
+
 export async function generateVideoPlanWithLlm(params: GeneratePlanParams): Promise<{
   title: string;
   subtitle: string;
@@ -584,6 +763,11 @@ export async function generateVideoPlanWithLlm(params: GeneratePlanParams): Prom
 
   if (!canCallLlm && language.value !== DEFAULT_CONTENT_LANGUAGE) {
     throw new Error('其他語言需要可用的 LLM。請先設定 GNAI Token 或本機 LLM 服務。');
+  }
+
+  // Dedicated 1:1 PowerPoint slide mode
+  if (params.pptxSlides && params.pptxSlides.length > 0) {
+    return generatePptxPlan(params, params.pptxSlides, cfg, canCallLlm);
   }
 
   if (canCallLlm) {
@@ -686,6 +870,42 @@ export async function regenerateSceneWithLlm(params: RegenerateSceneParams): Pro
 
   if (!canCallLlm && language.value !== DEFAULT_CONTENT_LANGUAGE) {
     throw new Error('其他語言的腳本重寫需要可用的 LLM。請先設定 GNAI Token 或本機 LLM 服務。');
+  }
+
+  // Keep PowerPoint 100% slide fidelity when regenerating a PPTX scene
+  if (scene.template === 'pptx-slide' && scene.pptxSlide) {
+    if (canCallLlm) {
+      try {
+        const systemPrompt = `You are a technical presentation narrator.
+Return strict JSON rewriting the spoken narration script for this PowerPoint slide.
+CRITICAL:
+- Write in ${language.promptName}. Preserve acronyms, numbers, and product names.
+- The script MUST strictly match and explain the exact content on this PowerPoint slide (title, bodyText, and speaker notes).`;
+        const userPrompt = `Slide Title: ${scene.pptxSlide.title}
+Slide Content: ${scene.pptxSlide.bodyText}
+Speaker Notes: ${scene.pptxSlide.notes || 'None'}
+Current Script: ${scene.script}
+Return JSON: { "script": "..." }`;
+        const res = (await callChatCompletionJson(cfg, systemPrompt, userPrompt)) as { script?: string };
+        if (res?.script) {
+          return {
+            scenePatch: { script: res.script.trim() },
+            mode: 'llm',
+            note: `已依投影片原內容透過 LLM (${cfg.model}) 更新腳本（保留 100% 原版投影片視覺）`,
+          };
+        }
+      } catch (err) {
+        if (language.value !== DEFAULT_CONTENT_LANGUAGE) {
+          throw new Error(`無法以${language.label}更新投影片腳本，請確認 LLM 服務可用後重試。`);
+        }
+        console.warn('LLM PPTX scene regenerate failed, using slide fallback:', err);
+      }
+    }
+    return {
+      scenePatch: { script: buildPptxFallbackScript(scene.pptxSlide) },
+      mode: 'smart-fallback',
+      note: '已依 PowerPoint 投影片原內容重設腳本（保留 100% 原版投影片視覺）',
+    };
   }
 
   if (canCallLlm) {

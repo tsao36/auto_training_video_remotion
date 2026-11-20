@@ -159,6 +159,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       }
 
       let rawTextForLlm = researchText.trim();
+      let pptxSlidesForLlm: unknown[] | undefined;
       let resolvedTopic = topic.trim();
       let sourceType: TrainingProject['sourceType'] = 'topic-llm';
       let sourceFileName: string | undefined;
@@ -179,6 +180,9 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         if (!parseResp.ok) throw new Error(parseData.error || '文件解析失敗');
 
         rawTextForLlm = parseData.rawText || '';
+        if (parseData.isPptx && Array.isArray(parseData.slides) && parseData.slides.length > 0) {
+          pptxSlidesForLlm = parseData.slides;
+        }
         resolvedTopic = resolvedTopic || parseData.title || selectedFile.name;
         sourceType = selectedFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'pptx';
         sourceFileName = selectedFile.name;
@@ -217,6 +221,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           durationSeconds: targetSec,
           domain,
           rawText: rawTextForLlm,
+          pptxSlides: pptxSlidesForLlm,
           defaultTtsProvider: ttsProvider,
           language,
           llmConfig,
@@ -459,7 +464,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                     點擊上傳 PowerPoint (.pptx) 或 PDF (.pdf)
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
-                    系統將解析文件並交由 LLM 改寫為不照唸畫面的口語台詞與對應 Remotion 動態特效
+                    匯入 .pptx 將 100% 還原每張投影片原始版面、圖片、表格與文字，並生成完全對應投影片內容的旁白腳本
                   </div>
                 </>
               )}
