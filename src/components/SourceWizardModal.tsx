@@ -14,7 +14,10 @@ import {
   Check,
 } from 'lucide-react';
 import {
+  CONTENT_LANGUAGES,
   DOMAIN_META,
+  DEFAULT_CONTENT_LANGUAGE,
+  ContentLanguage,
   LlmConfig,
   TechDomain,
   TrainingProject,
@@ -53,6 +56,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 }) => {
   const [domain, setDomain] = useState<TechDomain>('debug-logic');
   const [ttsProvider, setTtsProvider] = useState<TtsProvider>('openformosa');
+  const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload' | 'preset'>('topic-llm');
   const [topic, setTopic] = useState('');
   const [durationSeconds, setDurationSeconds] = useState<number>(60);
@@ -112,6 +116,35 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         setCreateProgress(60);
         setCreateStage('載入 10 分鐘工程培訓標準範本...');
         const proj = createPresetProject(domain);
+        if (language !== DEFAULT_CONTENT_LANGUAGE) {
+          setCreateStage('正在依所選語言生成範本內容...');
+          const localizedResp = await fetch('/api/llm/generate-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: proj.title,
+              durationSeconds: proj.targetDurationSeconds,
+              domain,
+              rawText: [
+                proj.rawSourceText,
+                ...proj.scenes.map(
+                  (scene) => `${scene.title}\n${scene.keyPoints.join('、')}\n${scene.script}`
+                ),
+              ].join('\n\n'),
+              defaultTtsProvider: ttsProvider,
+              language,
+              llmConfig,
+            }),
+          });
+          const localizedData = await localizedResp.json();
+          if (!localizedResp.ok) {
+            throw new Error(localizedData.error || '無法依所選語言生成範本');
+          }
+          proj.title = localizedData.title || proj.title;
+          proj.subtitle = localizedData.subtitle || proj.subtitle;
+          proj.scenes = localizedData.scenes;
+        }
+        proj.language = language;
         proj.ttsConfig.defaultProvider = ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa';
         proj.llmConfig = llmConfig;
         proj.scenes = proj.scenes.map((s) => ({
@@ -185,6 +218,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           domain,
           rawText: rawTextForLlm,
           defaultTtsProvider: ttsProvider,
+          language,
           llmConfig,
         }),
       });
@@ -200,6 +234,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         id: `proj-${Date.now()}`,
         title: data.title || resolvedTopic,
         subtitle: data.subtitle || meta.description,
+        language,
         topic: resolvedTopic,
         domain,
         targetDurationSeconds: targetSec,
@@ -309,6 +344,27 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                 <Sparkles className="w-4 h-4" /> 載入 10 分鐘標準範本
               </button>
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="content-language"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"
+            >
+              內容與 TTS 語言
+            </label>
+            <select
+              id="content-language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as ContentLanguage)}
+              className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
+            >
+              {CONTENT_LANGUAGES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Step 2: Topic & Duration (for topic-llm & upload) */}

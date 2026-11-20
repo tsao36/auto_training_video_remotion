@@ -1,6 +1,9 @@
 import https from 'node:https';
 import {
+  ContentLanguage,
+  DEFAULT_CONTENT_LANGUAGE,
   DOMAIN_META,
+  getContentLanguage,
   LlmConfig,
   RemotionEffect,
   SceneDiagramData,
@@ -16,6 +19,7 @@ export interface GeneratePlanParams {
   domain: TechDomain;
   rawText?: string;
   defaultTtsProvider?: TtsProvider;
+  language?: ContentLanguage;
   llmConfig?: Partial<LlmConfig>;
 }
 
@@ -23,6 +27,7 @@ export interface RegenerateSceneParams {
   topic: string;
   scene: SceneSpec;
   action: 'sync-visual-to-script' | 'rewrite-script-no-read' | 'regenerate-both';
+  language?: ContentLanguage;
   llmConfig?: Partial<LlmConfig>;
 }
 
@@ -571,10 +576,15 @@ export async function generateVideoPlanWithLlm(params: GeneratePlanParams): Prom
 }> {
   const cfg = resolveLlmConfig(params.llmConfig);
   const provider = params.defaultTtsProvider || 'openformosa';
+  const language = getContentLanguage(params.language || DEFAULT_CONTENT_LANGUAGE);
   const targetDuration = Math.max(15, Math.min(1800, Math.round(params.durationSeconds || 60)));
   const recommendedScenes = Math.max(3, Math.min(24, Math.round(targetDuration / 10)));
 
   const canCallLlm = Boolean(cfg.apiKey || isLocalLlmEndpoint(cfg.baseUrl));
+
+  if (!canCallLlm && language.value !== DEFAULT_CONTENT_LANGUAGE) {
+    throw new Error('其他語言需要可用的 LLM。請先設定 GNAI Token 或本機 LLM 服務。');
+  }
 
   if (canCallLlm) {
     try {
@@ -583,12 +593,12 @@ Given a topic, total video duration (in seconds), and optional reference notes, 
 
 CRITICAL RULES:
 1. Total sum of all scenes' durationSeconds MUST equal ${targetDuration} seconds. Aim for ~${recommendedScenes} scenes (each 5–20 seconds).
-2. SPEECH PACING RULE (VERY IMPORTANT — AVOID CUTOFF):
-   - Spoken Traditional Chinese with English engineering terms runs at ~4.0 characters per second.
-   - Keep each scene's "script" length strictly proportional to its "durationSeconds": target ~(durationSeconds * 3.6) characters (e.g., an 8s scene should have ~26-32 characters, a 12s scene ~40-46 characters) so the voiceover finishes cleanly before the scene ends.
+2. LANGUAGE AND SPEECH PACING (VERY IMPORTANT):
+  - Write ALL video content in ${language.promptName}: titles, subtitles, narration, key points, visual descriptions, and diagram labels. Translate reference notes when necessary. Preserve technical acronyms, model numbers, units, and product names.
+  - Spoken ${language.promptName} runs at approximately ${language.charsPerSecond} characters per second. Keep each script near ${Math.round(language.charsPerSecond * 0.9)} characters per second of scene duration so the narration finishes cleanly.
 3. SCRIPT vs GRAPHIC SEPARATION (VERY IMPORTANT):
    - "keyPoints" and "diagramData" labels MUST be short, scannable visual anchors (keywords, component names, metrics, 2–8 words max).
-   - "script" (台詞, spoken narration in natural Traditional Chinese with English engineering terms) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
+  - "script" (spoken narration) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
 3. EFFECT-TO-SCRIPT ALIGNMENT:
    - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "summary-takeaways"].
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline"; if script talks about comparing options, use "zoom-focus" + "comparison-matrix"; if script talks about probing/checking, use "sweep-scan").
@@ -618,7 +628,8 @@ Return JSON schema:
   ]
 }`;
 
-      const userPrompt = `Topic: ${params.topic}
+      const userPrompt = `Output language: ${language.promptName}
+    Topic: ${params.topic}
 Target Duration: ${targetDuration} seconds
 Domain: ${DOMAIN_META[params.domain].label}
 ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
@@ -639,6 +650,9 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
       }
     } catch (err) {
       console.warn('LLM plan generation failed, falling back to smart generator:', err);
+      if (language.value !== DEFAULT_CONTENT_LANGUAGE) {
+        throw new Error(`無法以${language.label}生成內容，請確認 LLM 服務可用後重試。`);
+      }
       const fallback = generateFallbackPlan({ ...params, durationSeconds: targetDuration });
       return {
         title: fallback.title,
@@ -667,13 +681,19 @@ export async function regenerateSceneWithLlm(params: RegenerateSceneParams): Pro
 }> {
   const { topic, scene, action } = params;
   const cfg = resolveLlmConfig(params.llmConfig);
+  const language = getContentLanguage(params.language || DEFAULT_CONTENT_LANGUAGE);
   const canCallLlm = Boolean(cfg.apiKey || isLocalLlmEndpoint(cfg.baseUrl));
+
+  if (!canCallLlm && language.value !== DEFAULT_CONTENT_LANGUAGE) {
+    throw new Error('其他語言的腳本重寫需要可用的 LLM。請先設定 GNAI Token 或本機 LLM 服務。');
+  }
 
   if (canCallLlm) {
     try {
       const systemPrompt = `You are a Remotion motion-graphics director and technical scriptwriter.
 Return strict JSON updating a single scene.
 CRITICAL:
+- Write any regenerated narration and visual text in ${language.promptName}. Preserve technical acronyms and identifiers.
 - The spoken "script" (台詞) MUST NOT just read the "keyPoints" or diagram labels. Script explains WHY/HOW; graphics show concise visual anchors.
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
 Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","summary-takeaways"]
@@ -689,7 +709,8 @@ Return JSON:
   "diagramData": { ... }
 }`;
 
-      const userPrompt = `Action: ${action}
+      const userPrompt = `Output language: ${language.promptName}
+    Action: ${action}
 Video Topic: ${topic}
 Scene Title: ${scene.title}
 Current Script (台詞): ${scene.script}
@@ -736,6 +757,9 @@ ${
         note: `已透過 LLM (${cfg.model}) 完成更新`,
       };
     } catch (err) {
+      if (language.value !== DEFAULT_CONTENT_LANGUAGE) {
+        throw new Error(`無法以${language.label}更新場景，請確認 LLM 服務可用後重試。`);
+      }
       console.warn('LLM scene regenerate failed, using smart fallback:', err);
     }
   }

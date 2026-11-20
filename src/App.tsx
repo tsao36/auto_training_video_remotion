@@ -26,7 +26,9 @@ import { SourceWizardModal } from './components/SourceWizardModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
   DOMAIN_META,
+  DEFAULT_CONTENT_LANGUAGE,
   EFFECT_LABELS,
+  getContentLanguage,
   MotionStyle,
   RemotionEffect,
   SceneSpec,
@@ -114,6 +116,7 @@ export function App() {
   const handleDomainSwitch = (domain: TechDomain) => {
     setProject((prev) => ({
       ...createPresetProject(domain),
+      language: DEFAULT_CONTENT_LANGUAGE,
       llmConfig: prev.llmConfig || loadStoredLlmConfig(),
     }));
     setSelectedSceneIdx(0);
@@ -143,6 +146,7 @@ export function App() {
           topic: project.topic || project.title,
           scene,
           action,
+          language: project.language || DEFAULT_CONTENT_LANGUAGE,
           llmConfig: project.llmConfig,
         }),
       });
@@ -217,6 +221,7 @@ export function App() {
           text: scene.script,
           provider: scene.tts.provider,
           voiceId: scene.tts.voiceId,
+          language: project.language || DEFAULT_CONTENT_LANGUAGE,
           speed: scene.tts.speed,
           durationSeconds: scene.durationSeconds,
           openformosa: project.ttsConfig.openformosa,
@@ -269,6 +274,7 @@ export function App() {
     targetProjectId: string,
     scenesSnapshot: SceneSpec[],
     ttsConfigSnapshot: TrainingProject['ttsConfig'],
+    languageSnapshot: TrainingProject['language'],
     onlyMissing = true
   ) => {
     const queue = scenesSnapshot
@@ -297,6 +303,7 @@ export function App() {
               text: s.script,
               provider: s.tts.provider,
               voiceId: s.tts.voiceId,
+              language: languageSnapshot || DEFAULT_CONTENT_LANGUAGE,
               speed: s.tts.speed,
               durationSeconds: s.durationSeconds,
               openformosa: ttsConfigSnapshot.openformosa,
@@ -347,19 +354,31 @@ export function App() {
   };
 
   useEffect(() => {
-    void synthesizeScenesConcurrent(project.id, project.scenes, project.ttsConfig, true);
+    void synthesizeScenesConcurrent(
+      project.id,
+      project.scenes,
+      project.ttsConfig,
+      project.language,
+      true
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id]);
 
   const synthesizeAllScenes = async () => {
-    await synthesizeScenesConcurrent(project.id, project.scenes, project.ttsConfig, false);
+    await synthesizeScenesConcurrent(
+      project.id,
+      project.scenes,
+      project.ttsConfig,
+      project.language,
+      false
+    );
   };
 
   const previewBrowserSpeech = (text: string) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'zh-TW';
+    utter.lang = getContentLanguage(project.language).value;
     utter.rate = selectedScene?.tts.speed || 1.0;
     window.speechSynthesis.speak(utter);
   };

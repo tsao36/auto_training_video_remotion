@@ -11,6 +11,51 @@ export type VisualTemplate =
 
 export type TtsProvider = 'openformosa' | 'ming-3.0' | 'browser-fallback';
 
+export const CONTENT_LANGUAGES = [
+  {
+    value: 'en-US',
+    label: 'English',
+    promptName: 'English',
+    edgeVoice: 'en-US-JennyNeural',
+    charsPerSecond: 14,
+  },
+  {
+    value: 'zh-TW',
+    label: '繁體中文（台灣）',
+    promptName: 'Traditional Chinese as used in Taiwan',
+    edgeVoice: 'zh-TW-HsiaoChenNeural',
+    charsPerSecond: 4,
+  },
+  {
+    value: 'zh-CN',
+    label: '简体中文（中国）',
+    promptName: 'Simplified Chinese as used in mainland China',
+    edgeVoice: 'zh-CN-XiaoxiaoNeural',
+    charsPerSecond: 4,
+  },
+  {
+    value: 'ja-JP',
+    label: '日本語',
+    promptName: 'Japanese',
+    edgeVoice: 'ja-JP-NanamiNeural',
+    charsPerSecond: 7,
+  },
+  {
+    value: 'ko-KR',
+    label: '한국어',
+    promptName: 'Korean',
+    edgeVoice: 'ko-KR-SunHiNeural',
+    charsPerSecond: 7,
+  },
+] as const;
+
+export type ContentLanguage = (typeof CONTENT_LANGUAGES)[number]['value'];
+export const DEFAULT_CONTENT_LANGUAGE: ContentLanguage = 'zh-TW';
+
+export function getContentLanguage(language?: string) {
+  return CONTENT_LANGUAGES.find((item) => item.value === language) || CONTENT_LANGUAGES[1];
+}
+
 export type MotionStyle = 'spring-snappy' | 'smooth-sweep' | 'step-reveal';
 
 export type RemotionEffect =
@@ -128,6 +173,7 @@ export interface TrainingProject {
   id: string;
   title: string;
   subtitle: string;
+  language?: ContentLanguage;
   topic?: string;
   domain: TechDomain;
   targetDurationSeconds: number;

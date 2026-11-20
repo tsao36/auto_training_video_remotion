@@ -12,6 +12,7 @@ import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, regenerateSceneWithLlm } from './llmGenerator';
+import { DEFAULT_CONTENT_LANGUAGE, getContentLanguage } from '../src/types/training';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,7 +94,7 @@ app.get('/api/health', (_req, res) => {
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, defaultTtsProvider, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, rawText, defaultTtsProvider, language, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -104,6 +105,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       domain: domain || 'debug-logic',
       rawText,
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
+      language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       llmConfig,
     });
     res.json(result);
@@ -116,7 +118,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
 // LLM Edit Logic: sync Remotion graphics/effects to edited script, or rewrite script without reading graphic
 app.post('/api/llm/regenerate-scene', async (req, res) => {
   try {
-    const { topic, scene, action, llmConfig } = req.body;
+    const { topic, scene, action, language, llmConfig } = req.body;
     if (!scene) {
       res.status(400).json({ error: 'Missing scene payload' });
       return;
@@ -125,6 +127,7 @@ app.post('/api/llm/regenerate-scene', async (req, res) => {
       topic: topic || scene.title || 'Technical Training',
       scene,
       action: action || 'sync-visual-to-script',
+      language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       llmConfig,
     });
     res.json(result);
@@ -215,6 +218,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
       text,
       provider,
       voiceId,
+      language = DEFAULT_CONTENT_LANGUAGE,
       speed = 1.0,
       durationSeconds = 60,
       openformosa,
@@ -224,16 +228,18 @@ app.post('/api/tts/synthesize', async (req, res) => {
       text: string;
       provider: 'openformosa' | 'ming-3.0' | 'browser-fallback';
       voiceId?: string;
+      language?: string;
       speed?: number;
       durationSeconds?: number;
       openformosa?: { baseUrl?: string; apiKey?: string; model?: string; voice?: string };
       mingTts?: { baseUrl?: string; apiKey?: string; model?: string; speaker?: string; style?: string };
     };
 
+    const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
     const cacheHash = crypto
       .createHash('sha1')
-      .update(`${provider}|${voiceId || ''}|${speed}|${text || ''}`)
+      .update(`${provider}|${ttsLanguage}|${voiceId || ''}|${speed}|${text || ''}`)
       .digest('hex')
       .slice(0, 14);
     const cachedMp3 = `tts-${cacheHash}.mp3`;
@@ -260,7 +266,11 @@ app.post('/api/tts/synthesize', async (req, res) => {
     let mode: 'openformosa' | 'ming-3.0' | 'neural-fallback' | 'local-fallback' = 'local-fallback';
     let note = '';
 
-    if (provider === 'openformosa' && openformosa?.baseUrl) {
+    if (
+      provider === 'openformosa' &&
+      openformosa?.baseUrl &&
+      (ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US')
+    ) {
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (openformosa.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
@@ -297,6 +307,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
             text,
             speaker: voiceId || mingTts.speaker || 'ming-tech-zh-en',
             style: mingTts.style || 'professional-training',
+            language: ttsLanguage,
             speed,
           }),
         });
@@ -313,20 +324,20 @@ app.post('/api/tts/synthesize', async (req, res) => {
     } else {
       note =
         provider === 'openformosa'
-          ? 'OpenFormosa API Key 未設定，已自動啟用內建繁中/英文神經網路語音合成'
-          : 'Ming-3.0-TTS 本地端點未連線，已自動啟用內建繁中/英文神經網路語音合成';
+          ? ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US'
+            ? 'OpenFormosa API 未設定或無法連線，已切換至所選語言的神經網路語音'
+            : 'OpenFormosa 不支援此語言，已切換至對應的神經網路語音'
+          : 'Ming-3.0-TTS 本地端點未連線，已切換至所選語言的神經網路語音';
     }
 
     if (mode === 'local-fallback') {
       try {
-        const edgeVoice =
-          provider === 'ming-3.0' ? 'zh-TW-HsiaoYuNeural' : 'zh-TW-HsiaoChenNeural';
+        const edgeVoice = getContentLanguage(ttsLanguage).edgeVoice;
         const tts = new MsEdgeTTS();
         await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
         const ratePct = Math.round((speed - 1) * 100);
         const rateStr = ratePct >= 0 ? `+${ratePct}%` : `${ratePct}%`;
         const sanitizedText = (text || '')
-          .replace(/&/g, ' and ')
           .replace(/</g, ' ')
           .replace(/>/g, ' ')
           .trim() || '請輸入旁白內容';
