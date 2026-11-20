@@ -83,6 +83,8 @@ export function App() {
 
   const playerRef = useRef<PlayerRef>(null);
   const activeProjectIdRef = useRef<string>(project.id);
+  const deletedProjectIdsRef = useRef<Set<string>>(new Set());
+  const saveChainRef = useRef<Promise<void>>(Promise.resolve());
   activeProjectIdRef.current = project.id;
 
   const fetchSavedProjects = async () => {
@@ -99,26 +101,36 @@ export function App() {
     }
   };
 
-  const saveProjectToDisk = async (targetProject: TrainingProject, showNotice = false) => {
-    setSavingProject(true);
-    try {
-      const resp = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project: targetProject }),
-      });
-      if (!resp.ok) throw new Error('儲存專案失敗');
-      await fetchSavedProjects();
-      if (showNotice) {
-        setAiNotice(`已儲存專案「${targetProject.title}」至專案 / 草稿庫`);
+  const saveProjectToDisk = (targetProject: TrainingProject, showNotice = false) => {
+    const run = async () => {
+      if (deletedProjectIdsRef.current.has(targetProject.id)) return;
+      setSavingProject(true);
+      try {
+        const resp = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project: targetProject }),
+        });
+        if (deletedProjectIdsRef.current.has(targetProject.id)) {
+          await fetch(`/api/projects/${encodeURIComponent(targetProject.id)}`, { method: 'DELETE' });
+          return;
+        }
+        if (!resp.ok) throw new Error('儲存專案失敗');
+        await fetchSavedProjects();
+        if (showNotice) {
+          setAiNotice(`已儲存專案「${targetProject.title}」至專案 / 草稿庫`);
+        }
+      } catch (err) {
+        if (showNotice) {
+          setAiNotice(err instanceof Error ? err.message : '儲存專案失敗');
+        }
+      } finally {
+        setSavingProject(false);
       }
-    } catch (err) {
-      if (showNotice) {
-        setAiNotice(err instanceof Error ? err.message : '儲存專案失敗');
-      }
-    } finally {
-      setSavingProject(false);
-    }
+    };
+    const next = saveChainRef.current.then(run, run);
+    saveChainRef.current = next;
+    return next;
   };
 
   const handleSelectSavedProject = async (projectId: string) => {
@@ -141,10 +153,30 @@ export function App() {
   };
 
   const handleDeleteSavedProject = async (projectId: string) => {
-    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: 'DELETE',
-    });
-    if (resp.ok) {
+    deletedProjectIdsRef.current.add(projectId);
+    setSavedProjects((prev) => prev.filter((item) => item.id !== projectId));
+    try {
+      await saveChainRef.current;
+      const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+        method: 'DELETE',
+      });
+      if (!resp.ok && resp.status !== 404) {
+        const body = (await resp.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || '刪除專案失敗');
+      }
+      if (activeProjectIdRef.current === projectId) {
+        setProject((prev) => ({
+          ...createPresetProject(prev.domain),
+          llmConfig: prev.llmConfig || loadStoredLlmConfig(),
+        }));
+        setSelectedSceneIdx(0);
+        playerRef.current?.seekTo(0);
+      }
+      setAiNotice('已從專案庫移除');
+      await fetchSavedProjects();
+    } catch (err) {
+      deletedProjectIdsRef.current.delete(projectId);
+      setAiNotice(err instanceof Error ? err.message : '刪除專案失敗');
       await fetchSavedProjects();
     }
   };
@@ -159,6 +191,7 @@ export function App() {
   );
 
   useEffect(() => {
+    if (deletedProjectIdsRef.current.has(project.id)) return;
     if (project.sourceType === 'preset' && !isCurrentProjectSaved) return;
     const timer = setTimeout(() => {
       void saveProjectToDisk(project, false);
@@ -618,7 +651,10 @@ export function App() {
           />
 
           <button
-            onClick={() => void saveProjectToDisk(project, true)}
+            onClick={() => {
+              deletedProjectIdsRef.current.delete(project.id);
+              void saveProjectToDisk(project, true);
+            }}
             disabled={savingProject}
             title="手動儲存目前專案至草稿庫"
             className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"

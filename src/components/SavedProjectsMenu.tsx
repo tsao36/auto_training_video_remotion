@@ -247,8 +247,13 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => void onDeleteProject(item.id)}
-                          className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void onDeleteProject(item.id);
+                          }}
+                          className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer shrink-0"
                           title="從專案庫移除"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

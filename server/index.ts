@@ -225,7 +225,20 @@ app.delete('/api/projects/:id', (req, res) => {
       res.status(404).json({ error: '找不到指定的專案' });
       return;
     }
-    fs.unlinkSync(filePath);
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        fs.unlinkSync(filePath);
+        lastError = undefined;
+        break;
+      } catch (err) {
+        lastError = err;
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code !== 'EBUSY' && code !== 'EPERM' && code !== 'EACCES') throw err;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 80);
+      }
+    }
+    if (lastError) throw lastError;
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : '刪除專案失敗' });
