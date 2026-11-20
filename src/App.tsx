@@ -1,0 +1,1354 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Player, PlayerRef } from '@remotion/player';
+import {
+  Activity,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Cpu,
+  Download,
+  Film,
+  Layers,
+  Loader2,
+  Mic,
+  Plus,
+  RefreshCw,
+  Settings,
+  Sliders,
+  Sparkles,
+  Trash2,
+  Upload,
+  Volume2,
+  Wand2,
+} from 'lucide-react';
+import { SourceWizardModal } from './components/SourceWizardModal';
+import { TechTrainingVideo } from './remotion/TechTrainingVideo';
+import {
+  DOMAIN_META,
+  EFFECT_LABELS,
+  MotionStyle,
+  RemotionEffect,
+  SceneSpec,
+  TEMPLATE_LABELS,
+  TechDomain,
+  TrainingProject,
+  TtsProvider,
+  VIDEO_FPS,
+  VisualTemplate,
+} from './types/training';
+import {
+  DEFAULT_GNAI_CONFIG,
+  loadStoredLlmConfig,
+  saveStoredLlmConfig,
+} from './utils/llmConfigStorage';
+import {
+  balanceScenesToDuration,
+  computeRichnessDuration,
+  createPresetProject,
+  formatDuration,
+  getDefaultDiagramData,
+} from './utils/planGenerator';
+
+type InspectorTab = 'script-tts' | 'motion-visual' | 'engine-config';
+
+export function App() {
+  const [project, setProject] = useState<TrainingProject>(() => ({
+    ...createPresetProject('debug-logic'),
+    llmConfig: loadStoredLlmConfig(),
+  }));
+  const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [batchTtsRunning, setBatchTtsRunning] = useState(false);
+  const [sceneAiLoading, setSceneAiLoading] = useState<string | null>(null);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
+  const [copiedDebugKey, setCopiedDebugKey] = useState<string | null>(null);
+  const [renderState, setRenderState] = useState<{
+    active: boolean;
+    progress: number;
+    status: string;
+    outputUrl?: string;
+    error?: string;
+  }>({ active: false, progress: 0, status: 'idle' });
+
+  const playerRef = useRef<PlayerRef>(null);
+  const activeProjectIdRef = useRef<string>(project.id);
+  activeProjectIdRef.current = project.id;
+
+  const selectedScene = project.scenes[selectedSceneIdx] || project.scenes[0];
+  const readyTtsCount = useMemo(
+    () => project.scenes.filter((s) => s.tts.status === 'ready' && s.tts.audioUrl).length,
+    [project.scenes]
+  );
+
+  const totalSeconds = useMemo(
+    () => project.scenes.reduce((sum, s) => sum + s.durationSeconds, 0),
+    [project.scenes]
+  );
+  const totalFrames = Math.max(VIDEO_FPS, Math.round(totalSeconds * VIDEO_FPS));
+
+  const sceneStartFrames = useMemo(() => {
+    const starts: number[] = [];
+    let acc = 0;
+    for (const s of project.scenes) {
+      starts.push(acc);
+      acc += Math.round(s.durationSeconds * VIDEO_FPS);
+    }
+    return starts;
+  }, [project.scenes]);
+
+  const jumpToScene = (idx: number) => {
+    setSelectedSceneIdx(idx);
+    const frame = sceneStartFrames[idx] ?? 0;
+    playerRef.current?.seekTo(frame);
+  };
+
+  const updateScene = (idx: number, patch: Partial<SceneSpec>) => {
+    setProject((prev) => ({
+      ...prev,
+      scenes: prev.scenes.map((s, i) => (i === idx ? { ...s, ...patch } : s)),
+    }));
+  };
+
+  const handleDomainSwitch = (domain: TechDomain) => {
+    setProject((prev) => ({
+      ...createPresetProject(domain),
+      llmConfig: prev.llmConfig || loadStoredLlmConfig(),
+    }));
+    setSelectedSceneIdx(0);
+    playerRef.current?.seekTo(0);
+  };
+
+  const handleAutoBalance = () => {
+    setProject((prev) => ({
+      ...prev,
+      scenes: balanceScenesToDuration(prev.scenes, prev.targetDurationSeconds),
+    }));
+  };
+
+  const regenerateSceneWithAi = async (
+    idx: number,
+    action: 'sync-visual-to-script' | 'rewrite-script-no-read' | 'regenerate-both'
+  ) => {
+    const scene = project.scenes[idx];
+    if (!scene) return;
+    setSceneAiLoading(action);
+    setAiNotice(null);
+    try {
+      const resp = await fetch('/api/llm/regenerate-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: project.topic || project.title,
+          scene,
+          action,
+          llmConfig: project.llmConfig,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'AI 更新失敗');
+      updateScene(idx, data.scenePatch);
+      if (data.note) setAiNotice(data.note);
+    } catch (err) {
+      setAiNotice(err instanceof Error ? err.message : 'AI 更新失敗');
+    } finally {
+      setSceneAiLoading(null);
+    }
+  };
+
+  const handleAddScene = () => {
+    const meta = DOMAIN_META[project.domain];
+    const newScene: SceneSpec = {
+      id: `scene-${Date.now()}`,
+      index: project.scenes.length,
+      title: `新技術章節 ${project.scenes.length + 1}`,
+      subtitle: `${meta.badge} • SCENE ${project.scenes.length + 1}`,
+      domain: project.domain,
+      template: 'architecture-flow',
+      durationSeconds: 6,
+      keyPoints: ['關鍵硬體架構解析', '訊號量測與除錯要點'],
+      script: '請在此輸入此場景的 TTS 旁白講稿內容。',
+      diagramData: getDefaultDiagramData(project.domain, 'architecture-flow'),
+      tts: {
+        provider: project.ttsConfig.defaultProvider,
+        voiceId:
+          project.ttsConfig.defaultProvider === 'ming-3.0'
+            ? project.ttsConfig.mingTts.speaker
+            : project.ttsConfig.openformosa.voice,
+        speed: 1.0,
+        status: 'idle',
+      },
+      animation: {
+        motionStyle: 'spring-snappy',
+        effect: 'signal-pulse',
+        accentColor: meta.accentColor,
+        showSubtitles: true,
+        showProgressHud: true,
+      },
+    };
+    const nextScenes = balanceScenesToDuration(
+      [...project.scenes, newScene],
+      project.targetDurationSeconds
+    );
+    setProject((prev) => ({ ...prev, scenes: nextScenes }));
+    setSelectedSceneIdx(nextScenes.length - 1);
+  };
+
+  const handleDeleteScene = (idx: number) => {
+    if (project.scenes.length <= 2) return;
+    const filtered = project.scenes.filter((_, i) => i !== idx);
+    const balanced = balanceScenesToDuration(filtered, project.targetDurationSeconds);
+    setProject((prev) => ({ ...prev, scenes: balanced }));
+    setSelectedSceneIdx(Math.max(0, Math.min(selectedSceneIdx, balanced.length - 1)));
+  };
+
+  const synthesizeSceneTts = async (idx: number) => {
+    const scene = project.scenes[idx];
+    if (!scene) return;
+    updateScene(idx, { tts: { ...scene.tts, status: 'generating', error: undefined } });
+
+    try {
+      const resp = await fetch('/api/tts/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sceneId: scene.id,
+          text: scene.script,
+          provider: scene.tts.provider,
+          voiceId: scene.tts.voiceId,
+          speed: scene.tts.speed,
+          durationSeconds: scene.durationSeconds,
+          openformosa: project.ttsConfig.openformosa,
+          mingTts: project.ttsConfig.mingTts,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'TTS failed');
+      const actualDur = typeof data.durationSec === 'number' && data.durationSec > 0 ? data.durationSec : undefined;
+      setProject((prev) => ({
+        ...prev,
+        scenes: prev.scenes.map((sc, i) =>
+          i === idx
+            ? {
+                ...sc,
+                durationSeconds: actualDur
+                  ? Math.max(3, Math.ceil(actualDur + 0.5))
+                  : sc.durationSeconds,
+                tts: {
+                  ...sc.tts,
+                  status: 'ready',
+                  audioUrl: data.audioUrl,
+                  actualDurationSec: actualDur ?? sc.tts.actualDurationSec,
+                  error: data.note || undefined,
+                },
+              }
+            : sc
+        ),
+      }));
+    } catch (err) {
+      setProject((prev) => ({
+        ...prev,
+        scenes: prev.scenes.map((sc, i) =>
+          i === idx
+            ? {
+                ...sc,
+                tts: {
+                  ...sc.tts,
+                  status: 'error',
+                  error: err instanceof Error ? err.message : 'TTS synthesis failed',
+                },
+              }
+            : sc
+        ),
+      }));
+    }
+  };
+
+  const synthesizeScenesConcurrent = async (
+    targetProjectId: string,
+    scenesSnapshot: SceneSpec[],
+    ttsConfigSnapshot: TrainingProject['ttsConfig'],
+    onlyMissing = true
+  ) => {
+    const queue = scenesSnapshot
+      .map((s, idx) => ({ s, idx }))
+      .filter(({ s }) => (!onlyMissing ? true : s.tts.status !== 'ready' || !s.tts.audioUrl));
+
+    if (queue.length === 0) return;
+    setBatchTtsRunning(true);
+
+    let cursor = 0;
+    const workerCount = 6;
+
+    const worker = async () => {
+      while (cursor < queue.length) {
+        if (activeProjectIdRef.current !== targetProjectId) return;
+        const item = queue[cursor++];
+        if (!item) return;
+        const { s, idx } = item;
+
+        try {
+          const resp = await fetch('/api/tts/synthesize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sceneId: s.id,
+              text: s.script,
+              provider: s.tts.provider,
+              voiceId: s.tts.voiceId,
+              speed: s.tts.speed,
+              durationSeconds: s.durationSeconds,
+              openformosa: ttsConfigSnapshot.openformosa,
+              mingTts: ttsConfigSnapshot.mingTts,
+            }),
+          });
+          const data = await resp.json();
+          if (activeProjectIdRef.current !== targetProjectId) return;
+          if (resp.ok && data.audioUrl) {
+            const actualDur =
+              typeof data.durationSec === 'number' && data.durationSec > 0
+                ? data.durationSec
+                : undefined;
+            setProject((prev) => {
+              if (prev.id !== targetProjectId) return prev;
+              return {
+                ...prev,
+                scenes: prev.scenes.map((sc, i) =>
+                  i === idx
+                    ? {
+                        ...sc,
+                        durationSeconds: actualDur
+                          ? Math.max(3, Math.ceil(actualDur + 0.5))
+                          : sc.durationSeconds,
+                        tts: {
+                          ...sc.tts,
+                          status: 'ready',
+                          audioUrl: data.audioUrl,
+                          actualDurationSec: actualDur ?? sc.tts.actualDurationSec,
+                          error: data.note || undefined,
+                        },
+                      }
+                    : sc
+                ),
+              };
+            });
+          }
+        } catch {
+          // Keep going for remaining scenes
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    if (activeProjectIdRef.current === targetProjectId) {
+      setBatchTtsRunning(false);
+    }
+  };
+
+  useEffect(() => {
+    void synthesizeScenesConcurrent(project.id, project.scenes, project.ttsConfig, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id]);
+
+  const synthesizeAllScenes = async () => {
+    await synthesizeScenesConcurrent(project.id, project.scenes, project.ttsConfig, false);
+  };
+
+  const previewBrowserSpeech = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-TW';
+    utter.rate = selectedScene?.tts.speed || 1.0;
+    window.speechSynthesis.speak(utter);
+  };
+
+  const startRender = async (previewOnlySceneIndex?: number) => {
+    setRenderState({ active: true, progress: 5, status: 'bundling' });
+    try {
+      const resp = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectTitle: project.title,
+          scenes: project.scenes,
+          previewOnlySceneIndex,
+        }),
+      });
+      const { jobId, error } = await resp.json();
+      if (!resp.ok) throw new Error(error || '無法啟動 Remotion 輸出');
+
+      const timer = setInterval(async () => {
+        try {
+          const poll = await fetch(`/api/render/${jobId}`);
+          const job = await poll.json();
+          if (job.status === 'done') {
+            clearInterval(timer);
+            setRenderState({
+              active: false,
+              progress: 100,
+              status: 'done',
+              outputUrl: job.outputUrl,
+            });
+          } else if (job.status === 'error') {
+            clearInterval(timer);
+            setRenderState({
+              active: false,
+              progress: 0,
+              status: 'error',
+              error: job.error,
+            });
+          } else {
+            setRenderState({
+              active: true,
+              progress: job.progress || 10,
+              status: job.status,
+            });
+          }
+        } catch {
+          clearInterval(timer);
+          setRenderState({ active: false, progress: 0, status: 'error', error: '輪詢進度失敗' });
+        }
+      }, 1200);
+    } catch (err) {
+      setRenderState({
+        active: false,
+        progress: 0,
+        status: 'error',
+        error: err instanceof Error ? err.message : '輸出失敗',
+      });
+    }
+  };
+
+  const copyDebugMessage = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedDebugKey(key);
+      setTimeout(() => setCopiedDebugKey((curr) => (curr === key ? null : curr)), 2000);
+    } catch {
+      // Clipboard API may be blocked in non-HTTPS contexts
+    }
+  };
+
+  const isExactTargetDuration = totalSeconds === project.targetDurationSeconds;
+
+  return (
+    <div className="h-screen w-screen flex flex-col bg-[#0B0F19] text-slate-100 overflow-hidden select-none">
+      {/* Top Studio Header */}
+      <header className="h-14 shrink-0 border-b border-slate-800/90 bg-[#0F1624] px-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Film className="w-4 h-4 text-slate-950" />
+          </div>
+          <div className="min-w-0">
+            <input
+              type="text"
+              value={project.title}
+              onChange={(e) => setProject((p) => ({ ...p, title: e.target.value }))}
+              className="bg-transparent text-sm font-bold text-white focus:outline-none focus:border-b focus:border-cyan-400 w-72 lg:w-96 truncate"
+            />
+            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+              <span>Remotion 4.0 • 1920×1080 @ 30fps</span>
+              <span>•</span>
+              <span className="text-cyan-400 font-medium">{DOMAIN_META[project.domain].shortLabel}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center Domain Quick Switcher */}
+        <div className="hidden xl:flex items-center gap-2">
+          {(Object.keys(DOMAIN_META) as TechDomain[]).map((d) => (
+            <button
+              key={d}
+              onClick={() => handleDomainSwitch(d)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                project.domain === d
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
+              }`}
+            >
+              {DOMAIN_META[d].shortLabel}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Controls */}
+        <div className="flex items-center gap-2.5">
+          {/* Target Duration Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold tabular-nums ${
+              isExactTargetDuration
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-amber-500/10 border-amber-500/40 text-amber-300'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>
+              {formatDuration(totalSeconds)} / {formatDuration(project.targetDurationSeconds)}
+            </span>
+            {!isExactTargetDuration && (
+              <button
+                onClick={handleAutoBalance}
+                className="ml-1 underline hover:text-white"
+                title={`自動平衡各場景時間至目標時長 (${project.targetDurationSeconds}秒)`}
+              >
+                校正時長
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsWizardOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
+          >
+            <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
+            AI 主題生成 / 匯入
+          </button>
+
+          <button
+            onClick={synthesizeAllScenes}
+            disabled={batchTtsRunning}
+            className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-xs font-semibold text-indigo-200 flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            {batchTtsRunning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Mic className="w-3.5 h-3.5" />
+            )}
+            {batchTtsRunning
+              ? `配音中 (${readyTtsCount}/${project.scenes.length})`
+              : readyTtsCount === project.scenes.length
+              ? `語音就緒 (${readyTtsCount}/${project.scenes.length})`
+              : `全部配音 (${readyTtsCount}/${project.scenes.length})`}
+          </button>
+
+          <button
+            onClick={() => startRender(selectedSceneIdx)}
+            disabled={renderState.active}
+            title="快速輸出當前選取場景為 MP4 預覽"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            輸出單幕預覽
+          </button>
+
+          <button
+            onClick={() => startRender(undefined)}
+            disabled={renderState.active}
+            className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            {renderState.active ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                輸出中 {renderState.progress}%
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5" />
+                輸出 {formatDuration(totalSeconds)} MP4
+              </>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* AI Notice Banner */}
+      {aiNotice && (
+        <div className="px-4 py-1.5 bg-cyan-950/60 border-b border-cyan-500/30 flex items-center justify-between gap-3 text-xs text-cyan-200">
+          <span className="flex items-center gap-2 min-w-0">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="break-all select-text">{aiNotice}</span>
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => void copyDebugMessage('ai-notice', aiNotice)}
+              className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 hover:text-white flex items-center gap-1 transition cursor-pointer"
+              title="複製除錯訊息"
+            >
+              {copiedDebugKey === 'ai-notice' ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400" /> 已複製
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" /> 複製訊息
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiNotice(null)}
+              className="text-cyan-400 hover:text-white cursor-pointer"
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Render Status Banner */}
+      {(renderState.active || renderState.outputUrl || renderState.error) && (
+        <div className="px-4 py-2 bg-[#131C31] border-b border-slate-800 flex items-center justify-between text-xs">
+          {renderState.active && (
+            <div className="flex items-center gap-3 w-full">
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
+              <span className="text-slate-200 font-medium">
+                Remotion 正在{renderState.status === 'bundling' ? '打包專案' : '算圖編碼 H.264 MP4'}... ({renderState.progress}%)
+              </span>
+              <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden max-w-md">
+                <div
+                  className="h-full bg-cyan-400 transition-all duration-300"
+                  style={{ width: `${renderState.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {renderState.outputUrl && !renderState.active && (
+            <div className="flex items-center justify-between w-full text-emerald-300">
+              <span className="flex items-center gap-2 font-semibold">
+                <CheckCircle2 className="w-4 h-4" /> Remotion MP4 輸出完成！
+              </span>
+              <a
+                href={renderState.outputUrl}
+                download
+                className="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition"
+              >
+                下載 MP4 影片
+              </a>
+            </div>
+          )}
+          {renderState.error && (
+            <div className="flex items-center justify-between gap-3 w-full text-rose-300 font-medium">
+              <span className="break-all select-text">輸出錯誤：{renderState.error}</span>
+              <button
+                type="button"
+                onClick={() => void copyDebugMessage('render-error', renderState.error || '')}
+                className="px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-200 flex items-center gap-1 shrink-0 transition cursor-pointer"
+              >
+                {copiedDebugKey === 'render-error' ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-400" /> 已複製
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" /> 複製訊息
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main 3-Pane Studio Workspace */}
+      <div className="flex-1 flex min-h-0">
+        {/* LEFT PANE: Scene Outline */}
+        <aside className="w-72 shrink-0 border-r border-slate-800/90 bg-[#0E1422] flex flex-col">
+          <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+              <Layers className="w-4 h-4 text-cyan-400" />
+              場景大綱 ({project.scenes.length})
+            </div>
+            <button
+              onClick={handleAddScene}
+              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition"
+              title="新增場景"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+            {project.scenes.map((scene, idx) => {
+              const active = idx === selectedSceneIdx;
+              return (
+                <div
+                  key={scene.id}
+                  onClick={() => jumpToScene(idx)}
+                  className={`group p-3 rounded-xl border cursor-pointer transition ${
+                    active
+                      ? 'bg-cyan-500/10 border-cyan-400/70 shadow-sm'
+                      : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-cyan-400">
+                      SCENE {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          scene.tts.status === 'ready'
+                            ? 'bg-emerald-400'
+                            : scene.tts.status === 'generating'
+                            ? 'bg-amber-400 animate-pulse'
+                            : scene.tts.status === 'error'
+                            ? 'bg-rose-400'
+                            : 'bg-slate-600'
+                        }`}
+                        title={`TTS 狀態: ${scene.tts.status}`}
+                      />
+                      <span className="text-[11px] font-mono text-slate-400">
+                        {scene.durationSeconds}s
+                      </span>
+                      {project.scenes.length > 2 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteScene(idx);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-100 line-clamp-2">
+                    {scene.title}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
+                    <span>{TEMPLATE_LABELS[scene.template]}</span>
+                    <span>{scene.tts.provider === 'ming-3.0' ? 'Ming-3.0' : 'OpenFormosa'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-3 border-t border-slate-800/80 bg-[#0B101B]">
+            <button
+              onClick={handleAutoBalance}
+              className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+              自動平衡總長至 {formatDuration(project.targetDurationSeconds)} ({project.targetDurationSeconds}s)
+            </button>
+          </div>
+        </aside>
+
+        {/* CENTER PANE: Remotion Live Player + Timeline */}
+        <main className="flex-1 flex flex-col min-w-0 bg-[#080C15]">
+          <div className="flex-1 flex items-center justify-center p-5 min-h-0">
+            <div className="w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
+              <Player
+                ref={playerRef}
+                component={TechTrainingVideo as unknown as React.FC<Record<string, unknown>>}
+                inputProps={{
+                  projectTitle: project.title,
+                  scenes: project.scenes,
+                  audioBaseUrl: '',
+                }}
+                durationInFrames={totalFrames}
+                fps={VIDEO_FPS}
+                compositionWidth={1920}
+                compositionHeight={1080}
+                style={{ width: '100%', height: '100%' }}
+                controls
+                clickToPlay
+              />
+            </div>
+          </div>
+
+          {/* Master Interactive Scene Timeline */}
+          <div className="h-28 shrink-0 border-t border-slate-800/90 bg-[#0D1320] px-5 py-3 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-[11px] text-slate-400">
+              <span className="font-semibold text-slate-300">
+                {formatDuration(totalSeconds)} MASTER TIMELINE ({totalFrames.toLocaleString()} frames @ 30fps)
+              </span>
+              <span>點擊色塊可立即跳轉至該場景預覽</span>
+            </div>
+            <div className="flex h-11 gap-1 w-full rounded-lg overflow-hidden bg-slate-950 p-1 border border-slate-800">
+              {project.scenes.map((s, idx) => {
+                const widthPct = (s.durationSeconds / Math.max(1, totalSeconds)) * 100;
+                const active = idx === selectedSceneIdx;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => jumpToScene(idx)}
+                    title={`S${idx + 1}: ${s.title} (${s.durationSeconds}s)`}
+                    style={{ width: `${widthPct}%` }}
+                    className={`h-full min-w-[3px] rounded-sm px-0.5 flex flex-col justify-center text-left transition overflow-hidden ${
+                      active
+                        ? 'bg-cyan-400 text-slate-950'
+                        : 'bg-slate-800/80 hover:bg-cyan-500/40 text-slate-300'
+                    }`}
+                  >
+                    {project.scenes.length <= 24 && (
+                      <>
+                        <span className="text-[10px] font-bold truncate">S{idx + 1}: {s.title}</span>
+                        <span className="text-[9px] text-slate-400 font-mono">{s.durationSeconds}s</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </main>
+
+        {/* RIGHT PANE: Script, TTS & Motion Inspector */}
+        <aside className="w-96 shrink-0 border-l border-slate-800/90 bg-[#0E1422] flex flex-col">
+          {/* Inspector Tabs */}
+          <div className="grid grid-cols-3 border-b border-slate-800/90 bg-[#11192B]">
+            <button
+              onClick={() => setInspectorTab('script-tts')}
+              className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+                inspectorTab === 'script-tts'
+                  ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                  : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5" /> 腳本與 TTS
+            </button>
+            <button
+              onClick={() => setInspectorTab('motion-visual')}
+              className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+                inspectorTab === 'motion-visual'
+                  ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                  : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" /> 動畫視覺
+            </button>
+            <button
+              onClick={() => setInspectorTab('engine-config')}
+              className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+                inspectorTab === 'engine-config'
+                  ? 'border-cyan-400 text-cyan-300 bg-cyan-500/5'
+                  : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" /> TTS 設定
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {inspectorTab === 'script-tts' && selectedScene && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    場景標題
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedScene.title}
+                    onChange={(e) => updateScene(selectedSceneIdx, { title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-400">
+                      場景秒數 (3–180秒)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateScene(selectedSceneIdx, {
+                          durationSeconds: computeRichnessDuration(selectedScene),
+                        })
+                      }
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300"
+                    >
+                      依語音/內容重算
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    min={3}
+                    max={180}
+                    value={selectedScene.durationSeconds}
+                    onChange={(e) =>
+                      updateScene(selectedSceneIdx, {
+                        durationSeconds: Math.min(180, Math.max(3, Number(e.target.value) || 3)),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-cyan-400"
+                  />
+                  {selectedScene.tts.actualDurationSec ? (
+                    <div className="mt-1 flex items-center justify-between text-[10px]">
+                      <span
+                        className={
+                          selectedScene.durationSeconds < selectedScene.tts.actualDurationSec
+                            ? 'text-amber-400 font-semibold'
+                            : 'text-emerald-400'
+                        }
+                      >
+                        語音實測: {selectedScene.tts.actualDurationSec.toFixed(1)}s
+                        {selectedScene.durationSeconds < selectedScene.tts.actualDurationSec
+                          ? ' (會截斷!)'
+                          : ''}
+                      </span>
+                      {selectedScene.durationSeconds < selectedScene.tts.actualDurationSec && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateScene(selectedSceneIdx, {
+                              durationSeconds: Math.max(
+                                3,
+                                Math.ceil((selectedScene.tts.actualDurationSec || 3) + 0.5)
+                              ),
+                            })
+                          }
+                          className="text-amber-300 underline hover:text-white"
+                        >
+                          對齊
+                        </button>
+                      )}
+                    </div>
+                  ) : null}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      TTS 語音模型
+                    </label>
+                    <select
+                      value={selectedScene.tts.provider}
+                      onChange={(e) =>
+                        updateScene(selectedSceneIdx, {
+                          tts: { ...selectedScene.tts, provider: e.target.value as TtsProvider },
+                        })
+                      }
+                      className="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    >
+                      <option value="openformosa">OpenFormosa (預設)</option>
+                      <option value="ming-3.0">Ming-3.0-TTS (預設)</option>
+                      <option value="browser-fallback">瀏覽器即時試聽</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-400">
+                      TTS 旁白講稿 ({selectedScene.script.length} 字)
+                    </label>
+                    <button
+                      onClick={() => previewBrowserSpeech(selectedScene.script)}
+                      className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                    >
+                      <Volume2 className="w-3 h-3" /> 瀏覽器試聽
+                    </button>
+                  </div>
+                  <textarea
+                    rows={6}
+                    value={selectedScene.script}
+                    onChange={(e) => updateScene(selectedSceneIdx, { script: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 leading-relaxed focus:outline-none focus:border-cyan-400"
+                  />
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <button
+                      type="button"
+                      disabled={sceneAiLoading !== null}
+                      onClick={() => regenerateSceneWithAi(selectedSceneIdx, 'sync-visual-to-script')}
+                      className="py-1.5 px-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-[11px] font-semibold text-indigo-200 flex items-center justify-center gap-1 transition disabled:opacity-50"
+                      title="根據目前修改的台詞，自動更新 Remotion 畫面模板、圖表與動畫特效"
+                    >
+                      {sceneAiLoading === 'sync-visual-to-script' ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-3 h-3" />
+                      )}
+                      依台詞匹配畫面特效
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sceneAiLoading !== null}
+                      onClick={() => regenerateSceneWithAi(selectedSceneIdx, 'rewrite-script-no-read')}
+                      className="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold text-slate-200 flex items-center justify-center gap-1 transition disabled:opacity-50"
+                      title="改寫台詞為口語因果解說，避免只是照唸畫面文字"
+                    >
+                      {sceneAiLoading === 'rewrite-script-no-read' ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 text-cyan-400" />
+                      )}
+                      改寫台詞(不照唸畫面)
+                    </button>
+                  </div>
+                  {selectedScene.visualDescription && (
+                    <div className="mt-2 px-2.5 py-1.5 rounded bg-slate-900/80 border border-slate-800 text-[10px] text-slate-400 leading-snug">
+                      <span className="text-cyan-400 font-semibold">畫面對應：</span>
+                      {selectedScene.visualDescription}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      語音聲線 / Speaker
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedScene.tts.voiceId}
+                      onChange={(e) =>
+                        updateScene(selectedSceneIdx, {
+                          tts: { ...selectedScene.tts, voiceId: e.target.value },
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      語速 ({selectedScene.tts.speed.toFixed(1)}x)
+                    </label>
+                    <input
+                      type="range"
+                      min={0.7}
+                      max={1.4}
+                      step={0.1}
+                      value={selectedScene.tts.speed}
+                      onChange={(e) =>
+                        updateScene(selectedSceneIdx, {
+                          tts: { ...selectedScene.tts, speed: parseFloat(e.target.value) },
+                        })
+                      }
+                      className="w-full mt-2 accent-cyan-400"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => synthesizeSceneTts(selectedSceneIdx)}
+                  disabled={selectedScene.tts.status === 'generating'}
+                  className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
+                >
+                  {selectedScene.tts.status === 'generating' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> 合成語音中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" /> 生成此場景 TTS 音軌
+                    </>
+                  )}
+                </button>
+
+                {selectedScene.tts.audioUrl && (
+                  <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                    <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 音軌已綁定至 Remotion &lt;Audio&gt;
+                    </div>
+                    <audio controls src={selectedScene.tts.audioUrl} className="w-full h-8" />
+                    {selectedScene.tts.error && (
+                      <div className="text-[10px] text-amber-300/90 leading-snug">
+                        {selectedScene.tts.error}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {inspectorTab === 'motion-visual' && selectedScene && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Remotion 動態視覺模板
+                  </label>
+                  <select
+                    value={selectedScene.template}
+                    onChange={(e) => {
+                      const nextTpl = e.target.value as VisualTemplate;
+                      updateScene(selectedSceneIdx, {
+                        template: nextTpl,
+                        diagramData: getDefaultDiagramData(selectedScene.domain, nextTpl),
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    {(Object.keys(TEMPLATE_LABELS) as VisualTemplate[]).map((tpl) => (
+                      <option key={tpl} value={tpl}>
+                        {TEMPLATE_LABELS[tpl]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    動態物理曲線 (Spring Motion)
+                  </label>
+                  <select
+                    value={selectedScene.animation.motionStyle}
+                    onChange={(e) =>
+                      updateScene(selectedSceneIdx, {
+                        animation: {
+                          ...selectedScene.animation,
+                          motionStyle: e.target.value as MotionStyle,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="spring-snappy">Spring Snappy (工程簡報俐落彈入)</option>
+                    <option value="smooth-sweep">Smooth Sweep (平滑掃描過渡)</option>
+                    <option value="step-reveal">Step Reveal (逐項拆解顯示)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Remotion 動態特效 (配合台詞情境)
+                  </label>
+                  <select
+                    value={selectedScene.animation.effect || 'signal-pulse'}
+                    onChange={(e) =>
+                      updateScene(selectedSceneIdx, {
+                        animation: {
+                          ...selectedScene.animation,
+                          effect: e.target.value as RemotionEffect,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    {(Object.keys(EFFECT_LABELS) as RemotionEffect[]).map((eff) => (
+                      <option key={eff} value={eff}>
+                        {EFFECT_LABELS[eff]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    畫面設計與台詞對應說明
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedScene.visualDescription || ''}
+                    onChange={(e) =>
+                      updateScene(selectedSceneIdx, { visualDescription: e.target.value })
+                    }
+                    placeholder="說明 Remotion 畫面與特效如何呼應旁白台詞"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
+                    畫面精簡關鍵字 (僅視覺錨點，不與台詞重複)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={selectedScene.keyPoints.join('\n')}
+                    onChange={(e) =>
+                      updateScene(selectedSceneIdx, {
+                        keyPoints: e.target.value.split('\n').filter((l) => l.trim().length > 0),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 leading-relaxed focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer">
+                    <span className="text-xs text-slate-200">顯示底部同步字幕條</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedScene.animation.showSubtitles}
+                      onChange={(e) =>
+                        updateScene(selectedSceneIdx, {
+                          animation: { ...selectedScene.animation, showSubtitles: e.target.checked },
+                        })
+                      }
+                      className="accent-cyan-400"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer">
+                    <span className="text-xs text-slate-200">顯示右上角工程進度 HUD</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedScene.animation.showProgressHud}
+                      onChange={(e) =>
+                        updateScene(selectedSceneIdx, {
+                          animation: { ...selectedScene.animation, showProgressHud: e.target.checked },
+                        })
+                      }
+                      className="accent-cyan-400"
+                    />
+                  </label>
+                </div>
+              </>
+            )}
+
+            {inspectorTab === 'engine-config' && (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                      <Wand2 className="w-4 h-4" /> Intel GNAI LLM 引擎
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      {project.llmConfig?.apiKey ? '已儲存於本機' : '未設定 Token'}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">GNAI_URL</label>
+                    <input
+                      type="text"
+                      value={project.llmConfig?.baseUrl ?? DEFAULT_GNAI_CONFIG.baseUrl}
+                      onChange={(e) => {
+                        const next = {
+                          baseUrl: e.target.value,
+                          apiKey: project.llmConfig?.apiKey || '',
+                          model: project.llmConfig?.model || DEFAULT_GNAI_CONFIG.model,
+                        };
+                        saveStoredLlmConfig(next);
+                        setProject((p) => ({ ...p, llmConfig: next }));
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
+                      <input
+                        type="password"
+                        placeholder="貼上 GNAI Token"
+                        value={project.llmConfig?.apiKey || ''}
+                        onChange={(e) => {
+                          const next = {
+                            baseUrl: project.llmConfig?.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
+                            apiKey: e.target.value,
+                            model: project.llmConfig?.model || DEFAULT_GNAI_CONFIG.model,
+                          };
+                          saveStoredLlmConfig(next);
+                          setProject((p) => ({ ...p, llmConfig: next }));
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">GNAI_MODEL</label>
+                      <input
+                        type="text"
+                        value={project.llmConfig?.model ?? DEFAULT_GNAI_CONFIG.model}
+                        onChange={(e) => {
+                          const next = {
+                            baseUrl: project.llmConfig?.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
+                            apiKey: project.llmConfig?.apiKey || '',
+                            model: e.target.value,
+                          };
+                          saveStoredLlmConfig(next);
+                          setProject((p) => ({ ...p, llmConfig: next }));
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                    <Sliders className="w-4 h-4" /> OpenFormosa TTS (openformosa.com)
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">API Endpoint</label>
+                    <input
+                      type="text"
+                      value={project.ttsConfig.openformosa.baseUrl}
+                      onChange={(e) =>
+                        setProject((p) => ({
+                          ...p,
+                          ttsConfig: {
+                            ...p.ttsConfig,
+                            openformosa: { ...p.ttsConfig.openformosa, baseUrl: e.target.value },
+                          },
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">API Key</label>
+                    <input
+                      type="password"
+                      placeholder="填入 OpenFormosa API Key"
+                      value={project.ttsConfig.openformosa.apiKey}
+                      onChange={(e) =>
+                        setProject((p) => ({
+                          ...p,
+                          ttsConfig: {
+                            ...p.ttsConfig,
+                            openformosa: { ...p.ttsConfig.openformosa, apiKey: e.target.value },
+                          },
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
+                    <Cpu className="w-4 h-4" /> Ming-3.0-TTS (inclusionAI/Ming-3.0-tts)
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">推論伺服器 URL</label>
+                    <input
+                      type="text"
+                      value={project.ttsConfig.mingTts.baseUrl}
+                      onChange={(e) =>
+                        setProject((p) => ({
+                          ...p,
+                          ttsConfig: {
+                            ...p.ttsConfig,
+                            mingTts: { ...p.ttsConfig.mingTts, baseUrl: e.target.value },
+                          },
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">Speaker / Style</label>
+                    <input
+                      type="text"
+                      value={project.ttsConfig.mingTts.speaker}
+                      onChange={(e) =>
+                        setProject((p) => ({
+                          ...p,
+                          ttsConfig: {
+                            ...p.ttsConfig,
+                            mingTts: { ...p.ttsConfig.mingTts, speaker: e.target.value },
+                          },
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-400 leading-relaxed bg-slate-900/50 p-3 rounded-lg border border-slate-800/80">
+                  提示：若尚未填入 OpenFormosa Key 或啟動本地 Ming-3.0-TTS 伺服器，系統會自動生成相容的本地時序音軌供 Remotion 預覽與輸出測試，確保流程不中斷。
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+
+      <SourceWizardModal
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        initialLlmConfig={project.llmConfig}
+        onProjectCreated={(newProj, notice) => {
+          setProject(newProj);
+          setSelectedSceneIdx(0);
+          if (notice) setAiNotice(notice);
+          playerRef.current?.seekTo(0);
+        }}
+      />
+    </div>
+  );
+}
+
+export default App;

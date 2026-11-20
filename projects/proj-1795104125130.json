@@ -1,0 +1,240 @@
+{
+  "id": "proj-1795104125130",
+  "createdAt": "2026-11-19T16:02:05.135Z",
+  "updatedAt": "2026-11-19T16:02:05.135Z",
+  "renders": [],
+  "project": {
+    "id": "proj-1795104125130",
+    "title": "Wi‑Fi 8: finer MCS 快速導覽",
+    "subtitle": "解析更細緻 MCS 對吞吐與穩定性的影響（802.11be）",
+    "topic": "wifi 8 finer mcs",
+    "domain": "wifi",
+    "targetDurationSeconds": 30,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "sourceType": "topic-llm",
+    "rawSourceText": "",
+    "llmConfig": {
+      "baseUrl": "https://gnai.intel.com/api/providers/openai/v1",
+      "apiKey": "",
+      "model": "gpt-5-mini"
+    },
+    "ttsConfig": {
+      "defaultProvider": "openformosa",
+      "openformosa": {
+        "baseUrl": "https://openformosa.com/api/v1/tts",
+        "apiKey": "",
+        "model": "formosa-tts-v1",
+        "voice": "formosa-pro-tw"
+      },
+      "mingTts": {
+        "baseUrl": "http://localhost:8000/v1/tts",
+        "apiKey": "",
+        "model": "inclusionAI/Ming-3.0-tts",
+        "speaker": "ming-tech-zh-en",
+        "style": "professional-training"
+      }
+    },
+    "scenes": [
+      {
+        "id": "scene-1795104125126-0",
+        "index": 0,
+        "title": "概念速覽",
+        "subtitle": "為何需要 finer MCS？",
+        "domain": "wifi",
+        "template": "title-hero",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "更細速率階梯",
+          "降低 retransmit",
+          "提升頻譜效率"
+        ],
+        "script": "WiFi 8 的 finer MCS 讓速率更精準。高密度場域少了 retransmit。",
+        "visualDescription": "大型主標題置中顯示「finer MCS」，右側卡片列出三個短語（Granularity / Retransmit / Spectral Efficiency）。zoom-focus 會在念到關鍵句時放大主標題或右側卡片，強化聽覺與視覺的連結，讓觀眾立刻理解主題重點。",
+        "diagramData": {
+          "visualCaption": "finer MCS：更細的速率階梯，改善可靠度與效率"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "idle"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "zoom-focus",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        },
+        "sentenceCues": [
+          {
+            "id": "cue-0",
+            "beatIndex": 0,
+            "sentences": [
+              "WiFi 8 的 finer MCS 讓速率更精準。",
+              "高密度場域少了 retransmit。"
+            ],
+            "startRatio": 0,
+            "endRatio": 1,
+            "effect": "zoom-focus",
+            "targetIndex": 0,
+            "rationale": "兩句講述主題與效益，zoom-focus 放大標題或右側重點卡，視覺對齊語意強調「什麼」與「為何重要」。"
+          }
+        ]
+      },
+      {
+        "id": "scene-1795104125126-1",
+        "index": 1,
+        "title": "技術流程",
+        "subtitle": "finer MCS 如何融入 rate control？",
+        "domain": "wifi",
+        "template": "architecture-flow",
+        "durationSeconds": 12,
+        "keyPoints": [
+          "Channel Estimator",
+          "AP Rate Control",
+          "STA Scheduler"
+        ],
+        "script": "傳統 MCS 步階粗，SINR 邊緣易跳變。finer MCS 增中階，平滑速率決策。AP 用更細決策減少 retransmit。",
+        "visualDescription": "三節點流程圖：Channel Estimator → AP Rate Control → STA Scheduler。signal-pulse 會沿著連線在節點間傳遞脈衝，模擬 SINR 資訊流與速率決策的傳遞，強調資訊從量測到決策再到排程的因果關係。",
+        "diagramData": {
+          "nodes": [
+            {
+              "id": "chan",
+              "label": "Channel Estimator",
+              "sublabel": "SINR → CQI",
+              "color": "#4A90E2"
+            },
+            {
+              "id": "ap",
+              "label": "AP Rate Control",
+              "sublabel": "link adaptation",
+              "color": "#50E3C2"
+            },
+            {
+              "id": "sta",
+              "label": "STA Scheduler",
+              "sublabel": "MU‑MIMO / OFDMA",
+              "color": "#F5A623"
+            }
+          ],
+          "highlightNodeIndex": 1,
+          "visualCaption": "資訊從量測到決策再到排程，finer MCS 提供更多速率選項"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "idle"
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "signal-pulse",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        },
+        "sentenceCues": [
+          {
+            "id": "cue-0",
+            "beatIndex": 0,
+            "sentences": [
+              "傳統 MCS 步階粗，SINR 邊緣易跳變。",
+              "finer MCS 增中階，平滑速率決策。"
+            ],
+            "startRatio": 0,
+            "endRatio": 0.6667,
+            "effect": "signal-pulse",
+            "targetIndex": 0,
+            "rationale": "這兩句描述由量測到決策的因果，signal-pulse 從 Channel Estimator 發出脈衝，視覺化 SINR 資訊如何影響後端決策。"
+          },
+          {
+            "id": "cue-1",
+            "beatIndex": 1,
+            "sentences": [
+              "AP 用更細決策減少 retransmit。"
+            ],
+            "startRatio": 0.6667,
+            "endRatio": 1,
+            "effect": "signal-pulse",
+            "targetIndex": 1,
+            "rationale": "句子聚焦在 AP 的 rate control 動作，讓脈衝停留在 AP 節點以突顯決策影響與減少重傳的效果。"
+          }
+        ]
+      },
+      {
+        "id": "scene-1795104125126-2",
+        "index": 2,
+        "title": "實務差異比較",
+        "subtitle": "Legacy MCS vs finer MCS 的效益",
+        "domain": "wifi",
+        "template": "comparison-matrix",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "Granularity",
+          "Retransmit",
+          "Throughput"
+        ],
+        "script": "在 MU‑MIMO/OFDMA 下，finer MCS 提升資源利用。實際增益視場域與實作，稠密場域最明顯。",
+        "visualDescription": "左右對照矩陣：左為 Legacy MCS，右為 Finer MCS。當講到每一項優勢時，zoom-focus 放大右側欄位（Finer MCS）相對應的數列或數值，清楚呈現哪一方受益。",
+        "diagramData": {
+          "comparisonHeaders": [
+            "Legacy MCS",
+            "Finer MCS"
+          ],
+          "comparisonRows": [
+            {
+              "metric": "Granularity",
+              "optionA": "粗步階",
+              "optionB": "更多中階",
+              "highlight": "B"
+            },
+            {
+              "metric": "Retransmit",
+              "optionA": "較高",
+              "optionB": "較低",
+              "highlight": "B"
+            },
+            {
+              "metric": "Throughput",
+              "optionA": "波動較大",
+              "optionB": "更穩定、較高",
+              "highlight": "B"
+            }
+          ],
+          "visualCaption": "Finer MCS 在高密度 MU 場景可帶來更高頻譜利用與穩定性"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.05,
+          "status": "idle"
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "zoom-focus",
+          "accentColor": "#38BDF8",
+          "showSubtitles": true,
+          "showProgressHud": true
+        },
+        "sentenceCues": [
+          {
+            "id": "cue-0",
+            "beatIndex": 0,
+            "sentences": [
+              "在 MU‑MIMO/OFDMA 下，finer MCS 提升資源利用。",
+              "實際增益視場域與實作，稠密場域最明顯。"
+            ],
+            "startRatio": 0,
+            "endRatio": 1,
+            "effect": "zoom-focus",
+            "targetIndex": 1,
+            "rationale": "兩句說明比較與情境差異，zoom-focus 放大 Finer MCS 欄位強調實際效益，並提示場域差異會影響結果。"
+          }
+        ]
+      }
+    ]
+  }
+}
