@@ -49,7 +49,14 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [open]);
 
   const filtered = useMemo(() => {
@@ -97,6 +104,8 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
       <div className="relative" ref={containerRef}>
         <button
           type="button"
+          aria-expanded={open}
+          aria-haspopup="true"
           onClick={() => {
             const next = !open;
             setOpen(next);
@@ -127,7 +136,8 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
               <button
                 type="button"
                 onClick={onRefresh}
-                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition cursor-pointer"
+                aria-label="重新整理專案列表"
+                className="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition cursor-pointer"
                 title="重新整理專案列表"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -139,6 +149,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  aria-label="搜尋專案或草稿"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜尋專案或草稿名稱..."
@@ -156,6 +167,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
                   <button
                     key={tab.key}
                     type="button"
+                    aria-pressed={filterMode === tab.key}
                     onClick={() => setFilterMode(tab.key)}
                     className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                       filterMode === tab.key
@@ -215,7 +227,7 @@ export const SavedProjectsMenu: React.FC<SavedProjectsMenuProps> = ({
                                 編輯中
                               </span>
                             )}
-                            <span className="text-[10px] text-slate-500 font-mono">
+                            <span className="text-[11px] text-slate-400 font-mono">
                               {item.renders.length > 0
                                 ? `${item.renders.length} 個影片版本`
                                 : '草稿（尚未輸出 MP4）'}

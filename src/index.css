@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "IBM Plex Sans", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
 @layer base {
+  button:not(:disabled),
+  [role="button"],
+  [role="tab"],
+  select,
+  label:has(input[type="checkbox"]) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -14,5 +30,21 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #334155;
+  }
+}
+
+/* Unlayered so it wins over Tailwind's focus:outline-none utilities. */
+:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

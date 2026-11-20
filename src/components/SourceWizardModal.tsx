@@ -94,6 +94,14 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     }
   }, [isOpen, initialLlmConfig]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isProcessing) onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, isProcessing, onClose]);
   const updateLlmConfig = (patch: Partial<LlmConfig>) => {
     setLlmConfig((prev) => {
       const next = { ...prev, ...patch };
@@ -286,7 +294,12 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="w-full max-w-3xl rounded-2xl border border-slate-700/80 bg-[#0F1624] shadow-2xl overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="source-wizard-title"
+        className="w-full max-w-3xl rounded-2xl border border-slate-700/80 bg-[#0F1624] shadow-2xl overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#131B2E]">
           <div className="flex items-center gap-3">
@@ -294,15 +307,17 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               <Wand2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">AI 自動生成 Remotion 技術影片</h2>
+              <h2 id="source-wizard-title" className="text-lg font-bold text-white">AI 自動生成 Remotion 技術影片</h2>
               <p className="text-xs text-slate-400">
                 輸入主題與時長 • LLM 自動生成口語台詞（非照唸畫面）與完全匹配的 Remotion 動態圖表與特效
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            aria-label="關閉"
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
           </button>

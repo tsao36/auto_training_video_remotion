@@ -587,6 +587,7 @@ export function App() {
           <div className="min-w-0">
             <input
               type="text"
+              aria-label="專案標題"
               value={project.title}
               onChange={(e) => setProject((p) => ({ ...p, title: e.target.value }))}
               className="bg-transparent text-sm font-bold text-white focus:outline-none focus:border-b focus:border-cyan-400 w-72 lg:w-96 truncate"
@@ -604,6 +605,8 @@ export function App() {
           {(Object.keys(DOMAIN_META) as TechDomain[]).map((d) => (
             <button
               key={d}
+              type="button"
+              aria-pressed={project.domain === d}
               onClick={() => handleDomainSwitch(d)}
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                 project.domain === d
@@ -724,7 +727,10 @@ export function App() {
 
       {/* AI Notice Banner */}
       {aiNotice && (
-        <div className="px-4 py-1.5 bg-cyan-950/60 border-b border-cyan-500/30 flex items-center justify-between gap-3 text-xs text-cyan-200">
+        <div
+          role="status"
+          className="px-4 py-1.5 bg-cyan-950/60 border-b border-cyan-500/30 flex items-center justify-between gap-3 text-xs text-cyan-200"
+        >
           <span className="flex items-center gap-2 min-w-0">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="break-all select-text">{aiNotice}</span>
@@ -749,7 +755,7 @@ export function App() {
             <button
               type="button"
               onClick={() => setAiNotice(null)}
-              className="text-cyan-400 hover:text-white cursor-pointer"
+              className="px-1 rounded text-cyan-400 hover:text-white"
             >
               關閉
             </button>
@@ -759,14 +765,24 @@ export function App() {
 
       {/* Render Status Banner */}
       {(renderState.active || renderState.outputUrl || renderState.error) && (
-        <div className="px-4 py-2 bg-[#131C31] border-b border-slate-800 flex items-center justify-between text-xs">
+        <div
+          role={renderState.error ? 'alert' : 'status'}
+          className="px-4 py-2 bg-[#131C31] border-b border-slate-800 flex items-center justify-between text-xs"
+        >
           {renderState.active && (
             <div className="flex items-center gap-3 w-full">
               <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
               <span className="text-slate-200 font-medium">
                 Remotion 正在{renderState.status === 'bundling' ? '打包專案' : '算圖編碼 H.264 MP4'}... ({renderState.progress}%)
               </span>
-              <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden max-w-md">
+              <div
+                role="progressbar"
+                aria-label="輸出進度"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={renderState.progress}
+                className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden max-w-md"
+              >
                 <div
                   className="h-full bg-cyan-400 transition-all duration-300"
                   style={{ width: `${renderState.progress}%` }}
@@ -821,8 +837,10 @@ export function App() {
               場景大綱 ({project.scenes.length})
             </div>
             <button
+              type="button"
               onClick={handleAddScene}
-              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition"
+              aria-label="新增場景"
+              className="p-2 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition"
               title="新增場景"
             >
               <Plus className="w-4 h-4" />
@@ -835,7 +853,18 @@ export function App() {
               return (
                 <div
                   key={scene.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-current={active ? 'true' : undefined}
+                  aria-label={`場景 ${idx + 1}：${scene.title}`}
                   onClick={() => jumpToScene(idx)}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      jumpToScene(idx);
+                    }
+                  }}
                   className={`group p-3 rounded-xl border cursor-pointer transition ${
                     active
                       ? 'bg-cyan-500/10 border-cyan-400/70 shadow-sm'
@@ -843,7 +872,7 @@ export function App() {
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-[11px] font-bold text-cyan-400">
+                    <span className="text-[11px] font-bold font-mono text-cyan-400">
                       SCENE {String(idx + 1).padStart(2, '0')}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -864,11 +893,13 @@ export function App() {
                       </span>
                       {project.scenes.length > 2 && (
                         <button
+                          type="button"
+                          aria-label={`刪除場景 ${idx + 1}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteScene(idx);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition"
+                          className="p-1 -m-1 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 text-slate-400 hover:text-rose-400 transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -878,7 +909,7 @@ export function App() {
                   <div className="text-xs font-semibold text-slate-100 line-clamp-2">
                     {scene.title}
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
+                  <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400">
                     <span>{TEMPLATE_LABELS[scene.template]}</span>
                     <span>{scene.tts.provider === 'ming-3.0' ? 'Ming-3.0' : 'OpenFormosa'}</span>
                   </div>
@@ -936,6 +967,9 @@ export function App() {
                 return (
                   <button
                     key={s.id}
+                    type="button"
+                    aria-current={active ? 'true' : undefined}
+                    aria-label={`跳轉至場景 ${idx + 1}：${s.title}（${s.durationSeconds} 秒）`}
                     onClick={() => jumpToScene(idx)}
                     title={`S${idx + 1}: ${s.title} (${s.durationSeconds}s)`}
                     style={{ width: `${widthPct}%` }}
@@ -948,7 +982,11 @@ export function App() {
                     {project.scenes.length <= 24 && (
                       <>
                         <span className="text-[10px] font-bold truncate">S{idx + 1}: {s.title}</span>
-                        <span className="text-[9px] text-slate-400 font-mono">{s.durationSeconds}s</span>
+                        <span
+                          className={`text-[10px] font-mono ${active ? 'text-slate-800' : 'text-slate-400'}`}
+                        >
+                          {s.durationSeconds}s
+                        </span>
                       </>
                     )}
                   </button>
@@ -961,8 +999,11 @@ export function App() {
         {/* RIGHT PANE: Script, TTS & Motion Inspector */}
         <aside className="w-96 shrink-0 border-l border-slate-800/90 bg-[#0E1422] flex flex-col">
           {/* Inspector Tabs */}
-          <div className="grid grid-cols-3 border-b border-slate-800/90 bg-[#11192B]">
+          <div role="tablist" aria-label="場景編輯面板" className="grid grid-cols-3 border-b border-slate-800/90 bg-[#11192B]">
             <button
+              type="button"
+              role="tab"
+              aria-selected={inspectorTab === 'script-tts'}
               onClick={() => setInspectorTab('script-tts')}
               className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
                 inspectorTab === 'script-tts'
@@ -973,6 +1014,9 @@ export function App() {
               <Mic className="w-3.5 h-3.5" /> 腳本與 TTS
             </button>
             <button
+              type="button"
+              role="tab"
+              aria-selected={inspectorTab === 'motion-visual'}
               onClick={() => setInspectorTab('motion-visual')}
               className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
                 inspectorTab === 'motion-visual'
@@ -983,6 +1027,9 @@ export function App() {
               <Wand2 className="w-3.5 h-3.5" /> 動畫視覺
             </button>
             <button
+              type="button"
+              role="tab"
+              aria-selected={inspectorTab === 'engine-config'}
               onClick={() => setInspectorTab('engine-config')}
               className={`py-3 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
                 inspectorTab === 'engine-config'
@@ -998,10 +1045,11 @@ export function App() {
             {inspectorTab === 'script-tts' && selectedScene && (
               <>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label htmlFor="scene-title" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     場景標題
                   </label>
                   <input
+                    id="scene-title"
                     type="text"
                     value={selectedScene.title}
                     onChange={(e) => updateScene(selectedSceneIdx, { title: e.target.value })}
@@ -1012,7 +1060,7 @@ export function App() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-semibold text-slate-400">
+                    <label htmlFor="scene-duration" className="text-[11px] font-semibold text-slate-400">
                       場景秒數 (3–180秒)
                     </label>
                     <button
@@ -1028,6 +1076,7 @@ export function App() {
                     </button>
                   </div>
                   <input
+                    id="scene-duration"
                     type="number"
                     min={3}
                     max={180}
@@ -1073,10 +1122,11 @@ export function App() {
                   ) : null}
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    <label htmlFor="scene-tts-provider" className="block text-[11px] font-semibold text-slate-400 mb-1">
                       TTS 語音模型
                     </label>
                     <select
+                      id="scene-tts-provider"
                       value={selectedScene.tts.provider}
                       onChange={(e) =>
                         updateScene(selectedSceneIdx, {
@@ -1094,10 +1144,11 @@ export function App() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-semibold text-slate-400">
+                    <label htmlFor="scene-script" className="text-[11px] font-semibold text-slate-400">
                       TTS 旁白講稿 ({selectedScene.script.length} 字)
                     </label>
                     <button
+                      type="button"
                       onClick={() => previewBrowserSpeech(selectedScene.script)}
                       className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
                     >
@@ -1105,6 +1156,7 @@ export function App() {
                     </button>
                   </div>
                   <textarea
+                    id="scene-script"
                     rows={6}
                     value={selectedScene.script}
                     onChange={(e) => updateScene(selectedSceneIdx, { script: e.target.value })}
@@ -1150,10 +1202,11 @@ export function App() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    <label htmlFor="scene-voice" className="block text-[11px] font-semibold text-slate-400 mb-1">
                       語音聲線 / Speaker
                     </label>
                     <input
+                      id="scene-voice"
                       type="text"
                       value={selectedScene.tts.voiceId}
                       onChange={(e) =>
@@ -1165,10 +1218,11 @@ export function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    <label htmlFor="scene-speed" className="block text-[11px] font-semibold text-slate-400 mb-1">
                       語速 ({selectedScene.tts.speed.toFixed(1)}x)
                     </label>
                     <input
+                      id="scene-speed"
                       type="range"
                       min={0.7}
                       max={1.4}
@@ -1219,10 +1273,11 @@ export function App() {
             {inspectorTab === 'motion-visual' && selectedScene && (
               <>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label htmlFor="scene-template" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     Remotion 動態視覺模板
                   </label>
                   <select
+                    id="scene-template"
                     value={selectedScene.template}
                     onChange={(e) => {
                       const nextTpl = e.target.value as VisualTemplate;
@@ -1242,10 +1297,11 @@ export function App() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label htmlFor="scene-motion" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     動態物理曲線 (Spring Motion)
                   </label>
                   <select
+                    id="scene-motion"
                     value={selectedScene.animation.motionStyle}
                     onChange={(e) =>
                       updateScene(selectedSceneIdx, {
@@ -1264,10 +1320,11 @@ export function App() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label htmlFor="scene-effect" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     Remotion 動態特效 (配合台詞情境)
                   </label>
                   <select
+                    id="scene-effect"
                     value={selectedScene.animation.effect || 'signal-pulse'}
                     onChange={(e) =>
                       updateScene(selectedSceneIdx, {
@@ -1288,10 +1345,11 @@ export function App() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label htmlFor="scene-visual-desc" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     畫面設計與台詞對應說明
                   </label>
                   <input
+                    id="scene-visual-desc"
                     type="text"
                     value={selectedScene.visualDescription || ''}
                     onChange={(e) =>
@@ -1303,10 +1361,11 @@ export function App() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
+                  <label htmlFor="scene-keypoints" className="block text-[11px] font-semibold text-slate-400 mb-1.5">
                     畫面精簡關鍵字 (僅視覺錨點，不與台詞重複)
                   </label>
                   <textarea
+                    id="scene-keypoints"
                     rows={4}
                     value={selectedScene.keyPoints.join('\n')}
                     onChange={(e) =>
@@ -1361,8 +1420,9 @@ export function App() {
                     </span>
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">GNAI_URL</label>
+                    <label htmlFor="cfg-gnai-url" className="block text-[11px] text-slate-400 mb-1">GNAI_URL</label>
                     <input
+                      id="cfg-gnai-url"
                       type="text"
                       value={project.llmConfig?.baseUrl ?? DEFAULT_GNAI_CONFIG.baseUrl}
                       onChange={(e) => {
@@ -1379,8 +1439,9 @@ export function App() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
+                      <label htmlFor="cfg-gnai-token" className="block text-[11px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
                       <input
+                        id="cfg-gnai-token"
                         type="password"
                         placeholder="貼上 GNAI Token"
                         value={project.llmConfig?.apiKey || ''}
@@ -1397,8 +1458,9 @@ export function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">GNAI_MODEL</label>
+                      <label htmlFor="cfg-gnai-model" className="block text-[11px] text-slate-400 mb-1">GNAI_MODEL</label>
                       <input
+                        id="cfg-gnai-model"
                         type="text"
                         value={project.llmConfig?.model ?? DEFAULT_GNAI_CONFIG.model}
                         onChange={(e) => {
@@ -1420,8 +1482,9 @@ export function App() {
                     <Sliders className="w-4 h-4" /> OpenFormosa TTS (openformosa.com)
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">API Endpoint</label>
+                    <label htmlFor="cfg-of-endpoint" className="block text-[11px] text-slate-400 mb-1">API Endpoint</label>
                     <input
+                      id="cfg-of-endpoint"
                       type="text"
                       value={project.ttsConfig.openformosa.baseUrl}
                       onChange={(e) =>
@@ -1437,8 +1500,9 @@ export function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">API Key</label>
+                    <label htmlFor="cfg-of-key" className="block text-[11px] text-slate-400 mb-1">API Key</label>
                     <input
+                      id="cfg-of-key"
                       type="password"
                       placeholder="填入 OpenFormosa API Key"
                       value={project.ttsConfig.openformosa.apiKey}
@@ -1461,8 +1525,9 @@ export function App() {
                     <Cpu className="w-4 h-4" /> Ming-3.0-TTS (inclusionAI/Ming-3.0-tts)
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">推論伺服器 URL</label>
+                    <label htmlFor="cfg-ming-url" className="block text-[11px] text-slate-400 mb-1">推論伺服器 URL</label>
                     <input
+                      id="cfg-ming-url"
                       type="text"
                       value={project.ttsConfig.mingTts.baseUrl}
                       onChange={(e) =>
@@ -1478,8 +1543,9 @@ export function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Speaker / Style</label>
+                    <label htmlFor="cfg-ming-speaker" className="block text-[11px] text-slate-400 mb-1">Speaker / Style</label>
                     <input
+                      id="cfg-ming-speaker"
                       type="text"
                       value={project.ttsConfig.mingTts.speaker}
                       onChange={(e) =>
