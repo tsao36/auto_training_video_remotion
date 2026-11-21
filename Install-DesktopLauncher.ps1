@@ -1,0 +1,73 @@
+$ErrorActionPreference = 'Stop'
+
+$launcherPath = (Get-Item -LiteralPath (Join-Path $PSScriptRoot 'start.bat')).FullName
+$desktopPath = [Environment]::GetFolderPath('DesktopDirectory')
+if (-not (Test-Path -LiteralPath $desktopPath -PathType Container)) {
+    throw 'The Windows desktop folder could not be located.'
+}
+
+$assetPath = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'RemotionTrainingStudio'
+$iconPath = Join-Path $assetPath 'studio.ico'
+$shortcutPath = Join-Path $desktopPath 'Remotion Training Studio.lnk'
+New-Item -ItemType Directory -Path $assetPath -Force | Out-Null
+
+Add-Type -AssemblyName System.Drawing
+function New-StudioBrush([string]$Color) {
+    [Drawing.SolidBrush]::new([Drawing.ColorTranslator]::FromHtml($Color))
+}
+
+$bitmap = [Drawing.Bitmap]::new(256, 256)
+$graphics = [Drawing.Graphics]::FromImage($bitmap)
+$png = [IO.MemoryStream]::new()
+$background = New-StudioBrush '#14233A'
+$frame = New-StudioBrush '#30D8BF'
+$play = New-StudioBrush '#DFFF68'
+try {
+    $graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $graphics.FillPie($background, 8, 8, 240, 240, 0, 360)
+    $graphics.FillRectangle($frame, 44, 72, 168, 112)
+    $graphics.FillRectangle($background, 75, 84, 106, 88)
+    foreach ($top in 84, 116, 148) {
+        $graphics.FillRectangle($background, 53, $top, 13, 24)
+        $graphics.FillRectangle($background, 190, $top, 13, 24)
+    }
+    $graphics.FillPolygon($play, [Drawing.Point[]]@(
+        [Drawing.Point]::new(108, 98),
+        [Drawing.Point]::new(108, 158),
+        [Drawing.Point]::new(160, 128)
+    ))
+    $bitmap.Save($png, [Drawing.Imaging.ImageFormat]::Png)
+    $imageBytes = $png.ToArray()
+} finally {
+    $play.Dispose()
+    $frame.Dispose()
+    $background.Dispose()
+    $png.Dispose()
+    $graphics.Dispose()
+    $bitmap.Dispose()
+}
+
+# An ICO directory stores 256-pixel dimensions as zero and can point to a PNG image.
+$icon = [IO.BinaryWriter]::new([IO.File]::Create($iconPath))
+try {
+    $icon.Write([uint16]0)
+    $icon.Write([uint16]1)
+    $icon.Write([uint16]1)
+    $icon.Write([uint32]0)
+    $icon.Write([uint16]1)
+    $icon.Write([uint16]32)
+    $icon.Write([uint32]$imageBytes.Length)
+    $icon.Write([uint32]22)
+    $icon.Write($imageBytes)
+} finally {
+    $icon.Dispose()
+}
+
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $launcherPath
+$shortcut.WorkingDirectory = $PSScriptRoot
+$shortcut.IconLocation = "$iconPath,0"
+$shortcut.Description = 'Launch Remotion Training Studio'
+$shortcut.Save()
+Write-Output "Desktop shortcut created: $shortcutPath"
