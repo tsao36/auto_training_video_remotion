@@ -10,6 +10,7 @@
     "dev:tts": "node server/startBlueMagpie.mjs",
     "build": "vite build",
     "remotion:studio": "remotion studio src/remotion/index.ts",
+    "train:auto": "tsx scripts/auto-video.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -17,6 +18,7 @@
   "dependencies": {
     "@remotion/bundler": "^4.0.242",
     "@remotion/cli": "^4.0.242",
+    "@remotion/layout-utils": "^4.0.545",
     "@remotion/player": "^4.0.242",
     "@remotion/renderer": "^4.0.242",
     "@remotion/transitions": "^4.0.242",

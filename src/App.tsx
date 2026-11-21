@@ -8,6 +8,7 @@ import {
   Copy,
   Cpu,
   Download,
+  Eye,
   Film,
   LayoutGrid,
   Layers,
@@ -17,6 +18,8 @@ import {
   RefreshCw,
   Save,
   Settings,
+  ShieldAlert,
+  ShieldCheck,
   Sliders,
   Sparkles,
   Trash2,
@@ -26,6 +29,7 @@ import {
 } from 'lucide-react';
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { PreviewStillsState, QualityPreviewModal } from './components/QualityPreviewModal';
 import { SourceWizardModal } from './components/SourceWizardModal';
 import { RecordedVoiceSubmission, VoiceRecorderModal } from './components/VoiceRecorderModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
@@ -34,6 +38,7 @@ import {
   DEFAULT_CONTENT_LANGUAGE,
   EFFECT_LABELS,
   getContentLanguage,
+  MediaQaResult,
   MotionStyle,
   RemotionEffect,
   SavedProjectRecord,
@@ -48,6 +53,7 @@ import {
   VoiceProfile,
   VoiceProfileProvider,
 } from './types/training';
+import { evaluateProjectQuality } from './utils/qualityLinter';
 import { applyTtsSettings, loadTtsSettings } from './utils/ttsSettingsStorage';
 import { createVoiceProfile, listVoiceProfiles, toCustomVoice, trainVoiceProfile } from './utils/voiceProfiles';
 import {
@@ -88,11 +94,26 @@ export function App() {
     progress: number;
     status: string;
     outputUrl?: string;
+    mediaQa?: MediaQaResult;
     error?: string;
   }>({ active: false, progress: 0, status: 'idle' });
+  const [qualityModal, setQualityModal] = useState<{
+    open: boolean;
+    tab: 'quality' | 'stills';
+  }>({ open: false, tab: 'quality' });
+  const [stillsState, setStillsState] = useState<PreviewStillsState>({
+    active: false,
+    status: 'idle',
+    progress: 0,
+    totalScenes: 0,
+    completedScenes: 0,
+    stills: [],
+  });
   const [savedProjects, setSavedProjects] = useState<SavedProjectSummary[]>([]);
   const [savedProjectsLoading, setSavedProjectsLoading] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
+
+  const qualityReport = useMemo(() => evaluateProjectQuality(project), [project]);
 
   const playerRef = useRef<PlayerRef>(null);
   const activeProjectIdRef = useRef<string>(project.id);
@@ -595,6 +616,80 @@ export function App() {
     window.speechSynthesis.speak(utter);
   };
 
+  const startPreviewStills = async () => {
+    setQualityModal({ open: true, tab: 'stills' });
+    setStillsState({
+      active: true,
+      status: 'bundling',
+      progress: 5,
+      totalScenes: project.scenes.length,
+      completedScenes: 0,
+      stills: [],
+    });
+    try {
+      const resp = await fetch('/api/preview-stills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectTitle: project.title,
+          scenes: project.scenes,
+        }),
+      });
+      const { jobId, error } = await resp.json();
+      if (!resp.ok) throw new Error(error || '無法啟動場景靜態預覽');
+
+      const timer = setInterval(async () => {
+        try {
+          const poll = await fetch(`/api/preview-stills/${jobId}`);
+          const job = await poll.json();
+          if (job.status === 'done') {
+            clearInterval(timer);
+            setStillsState({
+              active: false,
+              status: 'done',
+              progress: 100,
+              totalScenes: job.totalScenes || project.scenes.length,
+              completedScenes: job.completedScenes || project.scenes.length,
+              stills: Array.isArray(job.stills) ? job.stills : [],
+            });
+          } else if (job.status === 'error') {
+            clearInterval(timer);
+            setStillsState((prev) => ({
+              ...prev,
+              active: false,
+              status: 'error',
+              error: job.error || '場景預覽算圖失敗',
+            }));
+          } else {
+            setStillsState({
+              active: true,
+              status: job.status || 'rendering',
+              progress: job.progress || 10,
+              totalScenes: job.totalScenes || project.scenes.length,
+              completedScenes: job.completedScenes || 0,
+              stills: Array.isArray(job.stills) ? job.stills : [],
+            });
+          }
+        } catch {
+          clearInterval(timer);
+          setStillsState((prev) => ({
+            ...prev,
+            active: false,
+            status: 'error',
+            error: '輪詢場景預覽進度失敗',
+          }));
+        }
+      }, 1000);
+    } catch (err) {
+      setStillsState((prev) => ({
+        ...prev,
+        active: false,
+        status: 'error',
+        error: err instanceof Error ? err.message : '場景預覽啟動失敗',
+      }));
+    }
+  };
+
   const startRender = async (previewOnlySceneIndex?: number) => {
     setRenderState({ active: true, progress: 5, status: 'bundling' });
     try {
@@ -622,6 +717,7 @@ export function App() {
               progress: 100,
               status: 'done',
               outputUrl: job.outputUrl,
+              mediaQa: job.mediaQa,
             });
             void fetchSavedProjects();
           } else if (job.status === 'error') {
@@ -870,6 +966,46 @@ export function App() {
           </button>
 
           <button
+            type="button"
+            onClick={() => setQualityModal({ open: true, tab: 'quality' })}
+            title="檢視專案品質檢查報告與逐場景靜態預覽"
+            className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition ${
+              qualityReport.errorCount > 0
+                ? 'bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/40 text-rose-200'
+                : qualityReport.warningCount > 0
+                ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-200'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-300'
+            }`}
+          >
+            {qualityReport.errorCount > 0 || qualityReport.warningCount > 0 ? (
+              <ShieldAlert className="w-3.5 h-3.5" />
+            ) : (
+              <ShieldCheck className="w-3.5 h-3.5" />
+            )}
+            品質
+            {qualityReport.errorCount > 0
+              ? ` (${qualityReport.errorCount}錯)`
+              : qualityReport.warningCount > 0
+              ? ` (${qualityReport.warningCount}警)`
+              : ' OK'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void startPreviewStills()}
+            disabled={stillsState.active}
+            title="一次輸出每一幕的中點 PNG 截圖，快速檢查排版"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            {stillsState.active ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+            ) : (
+              <Eye className="w-3.5 h-3.5 text-cyan-400" />
+            )}
+            靜態預覽
+          </button>
+
+          <button
             onClick={() => startRender(selectedSceneIdx)}
             disabled={renderState.active}
             title="快速輸出當前選取場景為 MP4 預覽"
@@ -947,7 +1083,13 @@ export function App() {
             <div className="flex items-center gap-3 w-full">
               <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
               <span className="text-slate-200 font-medium">
-                Remotion 正在{renderState.status === 'bundling' ? '打包專案' : '算圖編碼 H.264 MP4'}... ({renderState.progress}%)
+                Remotion 正在
+                {renderState.status === 'bundling'
+                  ? '打包專案'
+                  : renderState.status === 'qa'
+                  ? '執行音訊品質驗證 (Audio QA)'
+                  : '算圖編碼 H.264 MP4'}
+                ... ({renderState.progress}%)
               </span>
               <div
                 role="progressbar"
@@ -965,14 +1107,27 @@ export function App() {
             </div>
           )}
           {renderState.outputUrl && !renderState.active && (
-            <div className="flex items-center justify-between w-full text-emerald-300">
-              <span className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="w-4 h-4" /> Remotion MP4 輸出完成！
-              </span>
+            <div className="flex items-center justify-between w-full gap-3 text-emerald-300">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex items-center gap-2 font-semibold shrink-0">
+                  <CheckCircle2 className="w-4 h-4" /> Remotion MP4 輸出完成！
+                </span>
+                {renderState.mediaQa && (
+                  <span
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium truncate ${
+                      renderState.mediaQa.passed
+                        ? 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
+                    }`}
+                  >
+                    {renderState.mediaQa.summary}
+                  </span>
+                )}
+              </div>
               <a
                 href={renderState.outputUrl}
                 download
-                className="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition"
+                className="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition shrink-0"
               >
                 下載 MP4 影片
               </a>
@@ -1831,6 +1986,21 @@ export function App() {
                       }
                       className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
                     />
+      <QualityPreviewModal
+        isOpen={qualityModal.open}
+        initialTab={qualityModal.tab}
+        onClose={() => setQualityModal((prev) => ({ ...prev, open: false }))}
+        qualityReport={qualityReport}
+        stillsState={stillsState}
+        onGenerateStills={() => void startPreviewStills()}
+        onJumpToScene={(idx) => {
+          setSelectedSceneIdx(idx);
+          const frameOffset = project.scenes
+            .slice(0, idx)
+            .reduce((sum, s) => sum + Math.max(30, Math.round(s.durationSeconds * VIDEO_FPS)), 0);
+          playerRef.current?.seekTo(frameOffset);
+        }}
+      />
                   </div>
                 </div>
 

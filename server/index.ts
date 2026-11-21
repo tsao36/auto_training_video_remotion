@@ -9,17 +9,23 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, regenerateSceneWithLlm } from './llmGenerator';
+import { inspectRenderedMedia } from './mediaQa';
 import { parsePptxBuffer } from './pptxParser';
+import { evaluateProjectQuality } from '../src/utils/qualityLinter';
 import {
   DEFAULT_CONTENT_LANGUAGE,
   getContentLanguage,
+  MediaQaResult,
   RenderedVideoRecord,
   SavedProjectRecord,
   SavedProjectSummary,
+  ScenePreviewStill,
+  SceneSpec,
   TrainingProject,
+  VIDEO_FPS,
   VoiceProfile,
   VoiceProfileProvider,
 } from '../src/types/training';
@@ -30,6 +36,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
+const PREVIEW_STILLS_DIR = path.join(OUTPUT_DIR, 'previews');
 const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
 // Not served statically: voice samples are private reference recordings.
 const VOICE_SAMPLES_DIR = path.join(ROOT_DIR, 'voice-samples');
@@ -39,6 +46,7 @@ fs.mkdirSync(VOICE_SAMPLES_DIR, { recursive: true });
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
 fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(PREVIEW_STILLS_DIR, { recursive: true });
 fs.mkdirSync(PROJECTS_DIR, { recursive: true });
 
 const app = express();
@@ -52,13 +60,25 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 
 
 interface RenderJob {
   id: string;
-  status: 'bundling' | 'rendering' | 'done' | 'error';
+  status: 'bundling' | 'rendering' | 'qa' | 'done' | 'error';
   progress: number;
   outputUrl?: string;
+  mediaQa?: MediaQaResult;
+  error?: string;
+}
+
+interface PreviewStillsJob {
+  id: string;
+  status: 'bundling' | 'rendering' | 'done' | 'error';
+  progress: number;
+  totalScenes: number;
+  completedScenes: number;
+  stills: ScenePreviewStill[];
   error?: string;
 }
 
 const renderJobs = new Map<string, RenderJob>();
+const previewStillsJobs = new Map<string, PreviewStillsJob>();
 
 function extractXmlText(xml: string): string {
   const matches = xml.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) || [];
@@ -832,12 +852,161 @@ app.post('/api/tts/synthesize', async (req, res) => {
   }
 });
 
+// Validate project quality before preview/render
+app.post('/api/validate', (req, res) => {
+  try {
+    const body = req.body as {
+      project?: Pick<TrainingProject, 'scenes' | 'language' | 'title'>;
+      requireAudio?: boolean;
+    };
+    const project = body.project || (body as unknown as Pick<TrainingProject, 'scenes' | 'language' | 'title'>);
+    if (!project || !Array.isArray(project.scenes)) {
+      res.status(400).json({ error: '缺少有效的專案場景資料' });
+      return;
+    }
+    const report = evaluateProjectQuality(project, {
+      requireAudio: Boolean(body.requireAudio),
+    });
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '品質驗證失敗' });
+  }
+});
+
+// Render midpoint PNG preview stills for every scene
+app.post('/api/preview-stills', async (req, res) => {
+  try {
+    const { projectTitle, scenes } = req.body as {
+      projectTitle: string;
+      scenes: SceneSpec[];
+    };
+    if (!Array.isArray(scenes) || scenes.length === 0) {
+      res.status(400).json({ error: '沒有可預覽的場景' });
+      return;
+    }
+
+    const jobId = `stills-${Date.now()}`;
+    previewStillsJobs.set(jobId, {
+      id: jobId,
+      status: 'bundling',
+      progress: 0,
+      totalScenes: scenes.length,
+      completedScenes: 0,
+      stills: [],
+    });
+    res.json({ jobId });
+
+    (async () => {
+      try {
+        const entry = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
+        const bundleLocation = await bundle({
+          entryPoint: entry,
+          onProgress: (p) => {
+            const job = previewStillsJobs.get(jobId);
+            if (job) job.progress = Math.round(p * 20);
+          },
+        });
+
+        const inputProps = {
+          projectTitle: projectTitle || 'Technical Training',
+          scenes,
+          audioBaseUrl: 'http://localhost:3001',
+        };
+
+        const composition = await selectComposition({
+          serveUrl: bundleLocation,
+          id: 'TechTrainingVideo',
+          inputProps,
+        });
+
+        const jobDir = path.join(PREVIEW_STILLS_DIR, jobId);
+        fs.mkdirSync(jobDir, { recursive: true });
+
+        const job = previewStillsJobs.get(jobId);
+        if (job) {
+          job.status = 'rendering';
+          job.progress = 20;
+        }
+
+        const stills: ScenePreviewStill[] = [];
+        let cursor = 0;
+
+        for (let i = 0; i < scenes.length; i++) {
+          const scene = scenes[i];
+          const frames = Math.max(30, Math.round((Number(scene.durationSeconds) || 5) * VIDEO_FPS));
+          const midpointFrame = cursor + Math.floor(frames / 2);
+          cursor += frames;
+
+          const safeSceneId = (scene.id || `scene-${i + 1}`).replace(/[^a-zA-Z0-9_-]/g, '');
+          const fileName = `${String(i + 1).padStart(2, '0')}-${safeSceneId}.png`;
+          const outputPath = path.join(jobDir, fileName);
+
+          await renderStill({
+            composition,
+            serveUrl: bundleLocation,
+            output: outputPath,
+            frame: midpointFrame,
+            inputProps,
+            imageFormat: 'png',
+          });
+
+          stills.push({
+            sceneIndex: i,
+            sceneId: scene.id,
+            title: scene.title || `Scene ${i + 1}`,
+            frame: midpointFrame,
+            imageUrl: `/output/previews/${jobId}/${fileName}`,
+          });
+
+          const current = previewStillsJobs.get(jobId);
+          if (current) {
+            current.completedScenes = i + 1;
+            current.stills = [...stills];
+            current.progress = 20 + Math.round(((i + 1) / scenes.length) * 80);
+          }
+        }
+
+        previewStillsJobs.set(jobId, {
+          id: jobId,
+          status: 'done',
+          progress: 100,
+          totalScenes: scenes.length,
+          completedScenes: scenes.length,
+          stills,
+        });
+      } catch (err) {
+        console.error('Preview stills render failed:', err);
+        previewStillsJobs.set(jobId, {
+          id: jobId,
+          status: 'error',
+          progress: 0,
+          totalScenes: scenes.length,
+          completedScenes: 0,
+          stills: [],
+          error: err instanceof Error ? err.message : '場景靜態預覽產生失敗',
+        });
+      }
+    })();
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : '無法啟動場景預覽' });
+  }
+});
+
+app.get('/api/preview-stills/:jobId', (req, res) => {
+  const job = previewStillsJobs.get(req.params.jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Preview job not found' });
+    return;
+  }
+  res.json(job);
+});
+
 // Start Remotion MP4 Render Job
 app.post('/api/render', async (req, res) => {
   try {
     const { projectTitle, scenes, previewOnlySceneIndex, project } = req.body as {
       projectTitle: string;
-      scenes: Array<{ durationSeconds?: number }>;
+      scenes: SceneSpec[];
       previewOnlySceneIndex?: number;
       project?: TrainingProject;
     };
@@ -888,9 +1057,16 @@ app.post('/api/render', async (req, res) => {
           inputProps,
           onProgress: ({ progress }) => {
             const job = renderJobs.get(jobId);
-            if (job) job.progress = 20 + Math.round(progress * 80);
+            if (job) job.progress = 20 + Math.round(progress * 75);
           },
         });
+
+        // Post-render audio QA verification
+        renderJobs.set(jobId, { id: jobId, status: 'qa', progress: 97 });
+        const expectAudio = selectedScenes.some(
+          (s) => Boolean(s?.tts?.audioUrl && s?.tts?.status === 'ready')
+        );
+        const mediaQa = inspectRenderedMedia(outputLocation, { expectAudio });
 
         const outputUrl = `/output/${outFile}`;
         if (project?.id) {
@@ -907,6 +1083,7 @@ app.post('/api/render', async (req, res) => {
               sceneCount: selectedScenes.length,
               isPreview,
               previewSceneIndex: isPreview ? previewOnlySceneIndex : undefined,
+              mediaQa,
             });
           } catch (saveErr) {
             console.warn('Failed to persist rendered project record:', saveErr);
@@ -918,6 +1095,7 @@ app.post('/api/render', async (req, res) => {
           status: 'done',
           progress: 100,
           outputUrl,
+          mediaQa,
         });
       } catch (err) {
         console.error('Remotion render failed:', err);

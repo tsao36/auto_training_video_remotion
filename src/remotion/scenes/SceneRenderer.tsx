@@ -1,6 +1,34 @@
 import React from 'react';
+import { fitText } from '@remotion/layout-utils';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { DOMAIN_META, EFFECT_LABELS, SceneSpec } from '../../types/training';
+
+const HEADLINE_FONT_FAMILY = 'Inter, "Noto Sans TC", system-ui, sans-serif';
+
+function computeFittedFontSize(
+  text: string,
+  withinWidth: number,
+  fontWeight: number,
+  minPx: number,
+  maxPx: number
+): number {
+  const cleaned = (text || '').trim();
+  if (!cleaned) return maxPx;
+  try {
+    const fitted = fitText({
+      text: cleaned,
+      withinWidth,
+      fontFamily: HEADLINE_FONT_FAMILY,
+      fontWeight,
+    });
+    if (Number.isFinite(fitted.fontSize) && fitted.fontSize > 0) {
+      return Math.max(minPx, Math.min(maxPx, Math.floor(fitted.fontSize)));
+    }
+  } catch {
+    // Fallback to heuristic if canvas text measurement is unavailable
+  }
+  return maxPx;
+}
 import { getActiveSentenceCue } from '../../utils/sentenceEffects';
 import {
   AnimatedComparisonBar,
@@ -61,6 +89,9 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
   const headerY = interpolate(headerProgress, [0, 1], [18, 0]);
   const headerOpacity = interpolate(frame, [0, 7], [0, 1], { extrapolateRight: 'clamp' });
 
+  const headerTitleFontSize = computeFittedFontSize(scene.title, 1180, 800, 32, 52);
+  const heroTitleFontSize = computeFittedFontSize(scene.title, 1450, 900, 44, 74);
+
   const renderHeader = () => (
     <div
       style={{
@@ -73,7 +104,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         gap: 24,
       }}
     >
-      <div>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <div
           style={{
             color: accent,
@@ -89,7 +120,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         <div
           style={{
             color: '#F8FAFC',
-            fontSize: 52,
+            fontSize: headerTitleFontSize,
             fontWeight: 800,
             lineHeight: 1.15,
             letterSpacing: '-0.02em',
@@ -178,7 +209,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
             </div>
             <h1
               style={{
-                fontSize: 74,
+                fontSize: heroTitleFontSize,
                 fontWeight: 900,
                 color: '#FFFFFF',
                 lineHeight: 1.12,

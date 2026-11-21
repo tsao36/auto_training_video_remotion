@@ -295,6 +295,40 @@ export interface TrainingProject {
   scenes: SceneSpec[];
 }
 
+export interface MediaQaResult {
+  audioExpected: boolean;
+  audioStream: boolean;
+  maxVolumeDb: number | null;
+  passed: boolean;
+  summary: string;
+}
+
+export type QualityIssueLevel = 'error' | 'warning' | 'info';
+
+export interface QualityIssue {
+  level: QualityIssueLevel;
+  code: string;
+  message: string;
+  sceneIndex?: number;
+  sceneId?: string;
+}
+
+export interface QualityReport {
+  passed: boolean;
+  errorCount: number;
+  warningCount: number;
+  infoCount: number;
+  issues: QualityIssue[];
+}
+
+export interface ScenePreviewStill {
+  sceneIndex: number;
+  sceneId: string;
+  title: string;
+  frame: number;
+  imageUrl: string;
+}
+
 export interface RenderedVideoRecord {
   jobId: string;
   outputUrl: string;
@@ -303,6 +337,7 @@ export interface RenderedVideoRecord {
   sceneCount: number;
   isPreview?: boolean;
   previewSceneIndex?: number;
+  mediaQa?: MediaQaResult;
 }
 
 export interface SavedProjectSummary {
