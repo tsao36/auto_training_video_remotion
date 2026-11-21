@@ -146,6 +146,11 @@ export function analyzeSentencePairEffect(
     'protocol-timeline': 'cascade-reveal',
     'comparison-matrix': 'zoom-focus',
     'debug-checklist': 'sweep-scan',
+    'packet-frame': beatIndex % 2 === 0 ? 'sweep-scan' : 'zoom-focus',
+    'state-machine': beatIndex % 2 === 0 ? 'cascade-reveal' : 'signal-pulse',
+    'code-log': beatIndex % 2 === 0 ? 'sweep-scan' : 'glitch-alert',
+    'kpi-metrics': 'zoom-focus',
+    'fault-tree': beatIndex % 2 === 0 ? 'cascade-reveal' : 'glitch-alert',
     'summary-takeaways': beatIndex === 0 ? 'cascade-reveal' : 'zoom-focus',
     'pptx-slide': 'zoom-focus',
   };

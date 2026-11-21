@@ -12,6 +12,7 @@ import {
   Wand2,
   Copy,
   Check,
+  Mic,
 } from 'lucide-react';
 import {
   CONTENT_LANGUAGES,
@@ -22,9 +23,12 @@ import {
   TechDomain,
   TrainingProject,
   TtsProvider,
+  VoiceProfile,
 } from '../types/training';
-import { loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
+import { DomainChoice, isTechDomain } from '../utils/domainInference';
+import { DEFAULT_GNAI_CONFIG, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
+import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
 import { createPresetProject } from '../utils/planGenerator';
 
 interface SourceWizardModalProps {
@@ -55,8 +59,13 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   initialLlmConfig,
   onProjectCreated,
 }) => {
-  const [domain, setDomain] = useState<TechDomain>('debug-logic');
+  const [domainChoice, setDomainChoice] = useState<DomainChoice>('auto');
   const [ttsProvider, setTtsProvider] = useState<TtsProvider>(() => loadTtsSettings().defaultProvider);
+  const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfile[]>([]);
+  const [voiceProfilesLoading, setVoiceProfilesLoading] = useState(false);
+  const [selectedVoiceFileName, setSelectedVoiceFileName] = useState<string>(
+    () => loadTtsSettings().defaultVoice?.fileName ?? ''
+  );
   const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload' | 'preset'>('topic-llm');
   const [topic, setTopic] = useState('');
@@ -66,7 +75,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [llmConfig, setLlmConfig] = useState<LlmConfig>(() =>
     initialLlmConfig?.apiKey ? initialLlmConfig : loadStoredLlmConfig()
   );
-  const [showLlmConfig, setShowLlmConfig] = useState<boolean>(() => !loadStoredLlmConfig().apiKey);
+  const [envLlmStatus, setEnvLlmStatus] = useState<{ configured: boolean; baseUrl?: string; model?: string }>({
+    configured: false,
+  });
+  const [useBrowserLlmOverride, setUseBrowserLlmOverride] = useState<boolean>(false);
+  const [showLlmConfig, setShowLlmConfig] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [createProgress, setCreateProgress] = useState(0);
   const [createStage, setCreateStage] = useState('');
@@ -74,6 +87,9 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [copiedError, setCopiedError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const progressTimerRef = useRef<number | null>(null);
+
+  const usingEnvLlm = envLlmStatus.configured && !useBrowserLlmOverride;
+  const selectedVoiceProfile = voiceProfiles.find((p) => p.fileName === selectedVoiceFileName);
 
   const stopProgressTimer = () => {
     if (progressTimerRef.current !== null) {
@@ -87,12 +103,53 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      const stored = loadStoredLlmConfig();
-      const merged = initialLlmConfig?.apiKey ? initialLlmConfig : stored;
-      setLlmConfig(merged);
-      if (!merged.apiKey) setShowLlmConfig(true);
-    }
+    if (!isOpen) return;
+    const stored = loadStoredLlmConfig();
+    const merged = initialLlmConfig?.apiKey ? initialLlmConfig : stored;
+    setLlmConfig(merged);
+
+    const ttsSettings = loadTtsSettings();
+    setTtsProvider(ttsSettings.defaultProvider);
+    setSelectedVoiceFileName(ttsSettings.defaultVoice?.fileName ?? '');
+
+    let cancelled = false;
+    fetch('/api/llm/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((status: { configured?: boolean; baseUrl?: string; model?: string } | null) => {
+        if (cancelled) return;
+        const envConfigured = Boolean(status?.configured);
+        setEnvLlmStatus({
+          configured: envConfigured,
+          baseUrl: status?.baseUrl,
+          model: status?.model,
+        });
+        // Prefer project .env automatically whenever server .env has GNAI_TOKEN configured.
+        setUseBrowserLlmOverride(!envConfigured);
+        setShowLlmConfig(!envConfigured && !merged.apiKey);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEnvLlmStatus({ configured: false });
+          setUseBrowserLlmOverride(true);
+          if (!merged.apiKey) setShowLlmConfig(true);
+        }
+      });
+
+    setVoiceProfilesLoading(true);
+    listVoiceProfiles()
+      .then((profiles) => {
+        if (!cancelled) setVoiceProfiles(profiles);
+      })
+      .catch(() => {
+        if (!cancelled) setVoiceProfiles([]);
+      })
+      .finally(() => {
+        if (!cancelled) setVoiceProfilesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, initialLlmConfig]);
 
   useEffect(() => {
@@ -121,7 +178,24 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     setCreateStage('初始化 Remotion 專案參數...');
 
     try {
+      const requestLlmConfig = usingEnvLlm ? undefined : llmConfig;
+      const projectLlmConfig: LlmConfig = usingEnvLlm
+        ? {
+            baseUrl: envLlmStatus.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
+            apiKey: '',
+            model: envLlmStatus.model || DEFAULT_GNAI_CONFIG.model,
+          }
+        : llmConfig;
+      const selectedCustomVoice = selectedVoiceProfile ? toCustomVoice(selectedVoiceProfile) : undefined;
+
       if (inputMode === 'preset') {
+        if (!isTechDomain(domainChoice)) {
+          setError('載入標準範本時請先手動選擇技術領域；AI 自動判斷只適用於主題或文件生成。');
+          setIsProcessing(false);
+          setCreateProgress(0);
+          return;
+        }
+        const domain = domainChoice;
         setCreateProgress(60);
         setCreateStage('載入 10 分鐘工程培訓標準範本...');
         const proj = createPresetProject(domain);
@@ -142,7 +216,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               ].join('\n\n'),
               defaultTtsProvider: ttsProvider,
               language,
-              llmConfig,
+              llmConfig: requestLlmConfig,
             }),
           });
           const localizedData = await localizedResp.json();
@@ -155,7 +229,8 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         }
         proj.language = language;
         proj.ttsConfig.defaultProvider = ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa';
-        proj.llmConfig = llmConfig;
+        proj.ttsConfig.customVoice = selectedCustomVoice;
+        proj.llmConfig = projectLlmConfig;
         proj.scenes = proj.scenes.map((s) => ({
           ...s,
           tts: { ...s.tts, provider: ttsProvider },
@@ -212,9 +287,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           if (prev >= 88) return prev;
           const step = prev < 50 ? 4 : prev < 75 ? 2 : 1;
           const next = Math.min(88, prev + step);
-          if (next >= 72) {
+          if (next >= 78) {
+            setCreateStage('正在進行區域語言技術術語校對與潤飾...');
+          } else if (next >= 62) {
             setCreateStage('正在為每 2 句台詞匹配 Remotion 動態特效與圖表...');
-          } else if (next >= 48) {
+          } else if (next >= 44) {
             setCreateStage('正在設計硬體拓撲、波形與時序結構...');
           }
           return next;
@@ -228,12 +305,12 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         body: JSON.stringify({
           topic: resolvedTopic,
           durationSeconds: targetSec,
-          domain,
+          domain: domainChoice,
           rawText: rawTextForLlm,
           pptxSlides: pptxSlidesForLlm,
           defaultTtsProvider: ttsProvider,
           language,
-          llmConfig,
+          llmConfig: requestLlmConfig,
         }),
       });
       const data = await resp.json();
@@ -243,14 +320,20 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       setCreateProgress(94);
       setCreateStage('正在建構 Remotion 專案與儲存草稿...');
 
-      const meta = DOMAIN_META[domain];
+      const apiDomain: unknown = data.domain;
+      const fallbackDomain: TechDomain = isTechDomain(domainChoice) ? domainChoice : 'debug-logic';
+      const resolvedDomain: TechDomain = isTechDomain(apiDomain) ? apiDomain : fallbackDomain;
+      const meta = DOMAIN_META[resolvedDomain];
+      const domainNote = data.domainReason
+        ? `視覺風格：${meta.shortLabel}（${data.domainSource === 'manual' ? '手動指定' : 'AI 判斷'}）`
+        : undefined;
       const proj: TrainingProject = {
         id: `proj-${Date.now()}`,
         title: data.title || resolvedTopic,
         subtitle: data.subtitle || meta.description,
         language,
         topic: resolvedTopic,
-        domain,
+        domain: resolvedDomain,
         targetDurationSeconds: targetSec,
         fps: 30,
         width: 1920,
@@ -258,7 +341,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         sourceType,
         sourceFileName,
         rawSourceText: rawTextForLlm,
-        llmConfig,
+        llmConfig: projectLlmConfig,
         ttsConfig: {
           defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
           openformosa: {
@@ -274,13 +357,14 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             speaker: 'ming-tech-zh-en',
             style: 'professional-training',
           },
+          customVoice: selectedCustomVoice,
         },
         scenes: data.scenes,
       };
 
       setCreateProgress(100);
       setCreateStage('專案建立完成！');
-      onProjectCreated(proj, data.note);
+      onProjectCreated(proj, [domainNote, data.note].filter(Boolean).join(' • '));
       onClose();
     } catch (err) {
       stopProgressTimer();
@@ -489,7 +573,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
           {inputMode === 'preset' && (
             <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-              將立即載入 <span className="text-cyan-300 font-semibold">{DOMAIN_META[domain].label}</span> 的完整 10 分鐘（600 秒）PC 筆電工程培訓範本。
+              將立即載入{' '}
+              <span className="text-cyan-300 font-semibold">
+                {isTechDomain(domainChoice) ? DOMAIN_META[domainChoice].label : '所選技術領域'}
+              </span>{' '}
+              的完整 10 分鐘（600 秒）PC 筆電工程培訓範本。AI 自動判斷不適用於標準範本。
             </div>
           )}
 
@@ -498,15 +586,41 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               3. 技術領域視覺風格
             </label>
+            <p className="text-[11px] text-slate-500 mb-2">
+              預設由 AI 依主題或文件內容判斷。只有想固定風格時才手動覆寫。
+            </p>
             <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDomainChoice('auto')}
+                className={`text-left p-3 rounded-xl border transition flex items-start gap-2.5 ${
+                  domainChoice === 'auto'
+                    ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_rgba(201,164,92,0.14)]'
+                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                }`}
+              >
+                <div
+                  className={`p-1.5 rounded-lg ${
+                    domainChoice === 'auto' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white">AI 自動判斷（建議）</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                    依主題與補充筆記選擇視覺風格
+                  </div>
+                </div>
+              </button>
               {(Object.keys(DOMAIN_META) as TechDomain[]).map((key) => {
                 const m = DOMAIN_META[key];
-                const active = domain === key;
+                const active = domainChoice === key;
                 return (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setDomain(key)}
+                    onClick={() => setDomainChoice(key)}
                     className={`text-left p-3 rounded-xl border transition flex items-start gap-2.5 ${
                       active
                         ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_rgba(201,164,92,0.14)]'
@@ -530,7 +644,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </div>
           </div>
 
-          {/* GNAI LLM Config (Saved Locally) */}
+          {/* GNAI LLM Config (Prefers project .env, optional browser override) */}
           {inputMode !== 'preset' && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
               <button
@@ -539,9 +653,13 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                 className="w-full flex items-center justify-between text-xs font-semibold text-slate-300 hover:text-white"
               >
                 <span>
-                  Intel GNAI LLM 設定（金鑰將儲存於本機瀏覽器）
-                  {llmConfig.apiKey ? (
-                    <span className="ml-2 text-emerald-400">• 已設定 Token</span>
+                  Intel GNAI LLM 設定（支援專案 .env 自動載入或瀏覽器覆寫）
+                  {usingEnvLlm ? (
+                    <span className="ml-2 text-emerald-400">
+                      • 已由本機 .env 載入{envLlmStatus.model ? ` (${envLlmStatus.model})` : ''}
+                    </span>
+                  ) : llmConfig.apiKey ? (
+                    <span className="ml-2 text-emerald-400">• 已設定 Token（瀏覽器覆寫）</span>
                   ) : (
                     <span className="ml-2 text-amber-400">• 尚未填入 GNAI_TOKEN</span>
                   )}
@@ -549,46 +667,107 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                 <span className="text-cyan-400">{showLlmConfig ? '收起 ▲' : '展開設定 ▼'}</span>
               </button>
               {showLlmConfig && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-3">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">GNAI_URL</label>
-                    <input
-                      type="text"
-                      value={llmConfig.baseUrl}
-                      onChange={(e) => updateLlmConfig({ baseUrl: e.target.value })}
-                      placeholder="https://gnai.intel.com/api/providers/openai/v1"
-                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
-                    <input
-                      type="password"
-                      value={llmConfig.apiKey}
-                      onChange={(e) => updateLlmConfig({ apiKey: e.target.value })}
-                      placeholder="貼上您的 GNAI Token"
-                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">GNAI_MODEL</label>
-                    <input
-                      type="text"
-                      value={llmConfig.model}
-                      onChange={(e) => updateLlmConfig({ model: e.target.value })}
-                      placeholder="gpt-5-mini"
-                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
-                    />
-                  </div>
+                <div className="mt-3 space-y-3">
+                  {envLlmStatus.configured && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setUseBrowserLlmOverride(false)}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition ${
+                            usingEnvLlm
+                              ? 'border-emerald-400/70 bg-emerald-500/15 text-emerald-200'
+                              : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          使用本機 .env（預設）
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUseBrowserLlmOverride(true)}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition ${
+                            !usingEnvLlm
+                              ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200'
+                              : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          瀏覽器手動覆寫
+                        </button>
+                      </div>
+                      {llmConfig.apiKey && (
+                        <button
+                          type="button"
+                          onClick={() => updateLlmConfig({ apiKey: '' })}
+                          className="text-[11px] text-slate-400 hover:text-rose-300 underline"
+                        >
+                          清除瀏覽器舊 Token
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {usingEnvLlm ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                      <div className="px-2.5 py-1.5 rounded bg-slate-950/70 border border-slate-800">
+                        <div className="text-[10px] text-slate-500 mb-0.5">GNAI_URL (.env)</div>
+                        <div className="text-slate-300 truncate" title={envLlmStatus.baseUrl}>
+                          {envLlmStatus.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl}
+                        </div>
+                      </div>
+                      <div className="px-2.5 py-1.5 rounded bg-slate-950/70 border border-slate-800">
+                        <div className="text-[10px] text-slate-500 mb-0.5">GNAI_TOKEN (.env)</div>
+                        <div className="text-emerald-400">已由伺服器端 .env 安全載入</div>
+                      </div>
+                      <div className="px-2.5 py-1.5 rounded bg-slate-950/70 border border-slate-800">
+                        <div className="text-[10px] text-slate-500 mb-0.5">GNAI_MODEL (.env)</div>
+                        <div className="text-slate-300 font-mono">
+                          {envLlmStatus.model || DEFAULT_GNAI_CONFIG.model}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_URL</label>
+                        <input
+                          type="text"
+                          value={llmConfig.baseUrl}
+                          onChange={(e) => updateLlmConfig({ baseUrl: e.target.value })}
+                          placeholder="https://gnai.intel.com/api/providers/openai/v1"
+                          className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
+                        <input
+                          type="password"
+                          value={llmConfig.apiKey}
+                          onChange={(e) => updateLlmConfig({ apiKey: e.target.value })}
+                          placeholder="貼上您的 GNAI Token"
+                          className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_MODEL</label>
+                        <input
+                          type="text"
+                          value={llmConfig.model}
+                          onChange={(e) => updateLlmConfig({ model: e.target.value })}
+                          placeholder="gpt-5-mini"
+                          className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Step 4: Default TTS Model */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              4. 預設 TTS 語音合成引擎
+          {/* Step 4: Default TTS Model & Voice Profile */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              4. 預設 TTS 語音合成引擎與聲線
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -619,6 +798,52 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                   inclusionAI/Ming-3.0-tts • 支援本地推論與多語氣控制
                 </div>
               </button>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+              <label
+                htmlFor="wizard-voice-profile"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-1.5"
+              >
+                <Mic className="w-3.5 h-3.5 text-cyan-400" />
+                自訂聲線 (Voice Profile)
+              </label>
+              <select
+                id="wizard-voice-profile"
+                value={selectedVoiceFileName}
+                onChange={(e) => {
+                  const fileName = e.target.value;
+                  setSelectedVoiceFileName(fileName);
+                  const picked = voiceProfiles.find((p) => p.fileName === fileName);
+                  if (picked?.provider) {
+                    setTtsProvider(picked.provider);
+                  }
+                }}
+                disabled={voiceProfilesLoading}
+                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+              >
+                <option value="">
+                  {voiceProfilesLoading ? '載入聲線列表中...' : '不使用自訂聲線（使用引擎預設聲音）'}
+                </option>
+                {voiceProfiles.map((p) => {
+                  const tag = p.provider
+                    ? ` (${p.provider === 'ming-3.0' ? 'Ming-3.0' : 'OpenFormosa'}${p.trainingStatus === 'trained' ? ' · 已訓練' : ''})`
+                    : '';
+                  return (
+                    <option key={p.id} value={p.fileName}>
+                      {p.name}
+                      {tag}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                {selectedVoiceProfile
+                  ? `建立後將套用聲線「${selectedVoiceProfile.name}」${selectedVoiceProfile.trainingNote ? `（${selectedVoiceProfile.trainingNote}）` : ''}。`
+                  : voiceProfiles.length > 0
+                  ? '可選擇已錄製或訓練完成的自訂聲線；選擇後會自動切換至對應的 TTS 引擎。'
+                  : '尚未建立自訂聲線，可先至「設定」或進入編輯器錄製 / 上傳聲線。'}
+              </p>
             </div>
           </div>
 

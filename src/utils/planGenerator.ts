@@ -44,7 +44,12 @@ export function computeRichnessDuration(
     (scene.diagramData?.nodes?.length || 0) +
     (scene.diagramData?.protocolSteps?.length || 0) +
     (scene.diagramData?.comparisonRows?.length || 0) +
-    (scene.diagramData?.waveformChannels?.length || 0);
+    (scene.diagramData?.waveformChannels?.length || 0) +
+    (scene.diagramData?.packetFields?.length || 0) +
+    (scene.diagramData?.stateNodes?.length || 0) +
+    (scene.diagramData?.codeLines?.length || 0) +
+    (scene.diagramData?.kpiMetrics?.length || 0) +
+    (scene.diagramData?.faultBranches?.length || 0);
 
   const visualFloor = Math.round(MIN_SCENE_SECONDS + Math.min(4, kpCount * 0.7 + diagramCount * 0.4));
   return Math.max(MIN_SCENE_SECONDS, Math.min(MAX_SCENE_SECONDS, Math.max(speechSec, visualFloor)));
@@ -116,6 +121,21 @@ function inferTemplateFromText(text: string, index: number, total: number): Visu
   if (index === 0) return 'title-hero';
   if (index === total - 1) return 'summary-takeaways';
   const lower = text.toLowerCase();
+  if (/packet|frame|header|payload|beacon|eapol|tlv|mac header|fcs|封包|訊框|標頭|欄位/.test(lower)) {
+    return 'packet-frame';
+  }
+  if (/state machine|fsm|ltssm|transition|state|scan.*auth|狀態機|狀態轉移|切換狀態/.test(lower)) {
+    return 'state-machine';
+  }
+  if (/log|dmesg|register|cli|command|hex|0x|trace|程式碼|指令|暫存器|日誌/.test(lower)) {
+    return 'code-log';
+  }
+  if (/kpi|metric|throughput|latency|snr|evm|rssi|margin|dbm|gbps|效能指標|量測數據|吞吐量/.test(lower)) {
+    return 'kpi-metrics';
+  }
+  if (/fault tree|root cause|decision tree|branch|symptom|isolate|根因|決策樹|故障樹|分支排查/.test(lower)) {
+    return 'fault-tree';
+  }
   if (/waveform|oscilloscope|clock|spi|i2c|sine|s11|s21|spectrum|frequency|波形|頻譜|時脈|眼圖|漣波/.test(lower)) {
     return 'signal-waveform';
   }
@@ -125,7 +145,7 @@ function inferTemplateFromText(text: string, index: number, total: number): Visu
   if (/vs|compare|comparison|matrix|difference|6e|wifi 7|ble|classic|對照|比較|差異|規格/.test(lower)) {
     return 'comparison-matrix';
   }
-  if (/debug|troubleshoot|triage|checklist|root cause|issue|fail|除錯|排查|異常|檢查/.test(lower)) {
+  if (/debug|troubleshoot|triage|checklist|issue|fail|除錯|排查|異常|檢查/.test(lower)) {
     return 'debug-checklist';
   }
   return 'architecture-flow';
@@ -464,6 +484,192 @@ export function getDefaultDiagramData(domain: TechDomain, template: VisualTempla
         { metric: 'Rx Desense (USB3)', optionA: '< 1.5 dB', optionB: '8.2 dB Noise Floor Rise', highlight: 'A' as const },
         { metric: 'Power Rail Ripple', optionA: '< 25 mVpp', optionB: '110 mVpp Droop', highlight: 'A' as const },
         { metric: 'Antenna Isolation', optionA: '> 18 dB', optionB: '9 dB Coupling', highlight: 'A' as const },
+      ],
+    };
+  }
+
+  if (template === 'packet-frame') {
+    if (domain === 'wifi') {
+      return {
+        visualCaption: '802.11 Management / Data MAC Frame 欄位結構',
+        packetFields: [
+          { name: 'Frame Ctrl', bits: '2B', value: '0x0080', description: '協定版本、Frame Type (Mgmt/Ctrl/Data) 與旗標位元', color: '#38BDF8', highlight: true },
+          { name: 'Duration/ID', bits: '2B', value: '0x013A', description: 'NAV 虛擬載波感測保護時間 (μs)', color: '#0EA5E9' },
+          { name: 'Addr 1–3', bits: '18B', value: 'RA / TA / BSSID', description: '接收端、發送端與 AP BSSID 位址欄位', color: '#6366F1' },
+          { name: 'Seq Ctrl', bits: '2B', value: 'Frag=0 Seq=42', description: '分片序號與重傳去重識別', color: '#8B5CF6' },
+          { name: 'Frame Body', bits: '0–2312B', value: 'IEs / Payload', description: '能力資訊、MLO IE 或加密後上層封包', color: '#10B981', highlight: true },
+          { name: 'FCS', bits: '4B', value: 'CRC-32', description: '整幀循環冗餘校驗，錯誤即丟棄', color: '#F59E0B' },
+        ],
+      };
+    }
+    if (domain === 'bluetooth') {
+      return {
+        visualCaption: 'BLE Link Layer PDU 封包拆解',
+        packetFields: [
+          { name: 'Preamble', bits: '1–2B', value: '0xAA / 0x55', description: '接收端頻率同步與 AGC 鎖定前導碼', color: '#60A5FA' },
+          { name: 'Access Addr', bits: '4B', value: '0x8E89BED6', description: '廣播或連線專屬存取位址', color: '#3B82F6', highlight: true },
+          { name: 'PDU Header', bits: '2B', value: 'LLID / Length', description: '區分資料/控制封包與負載長度', color: '#8B5CF6' },
+          { name: 'Payload', bits: '0–251B', value: 'L2CAP / ATT', description: 'GATT 特徵值或 LE Audio ISO 資料', color: '#10B981', highlight: true },
+          { name: 'CRC', bits: '3B', value: 'CRC-24', description: '鏈路層完整性校驗，失敗觸發重傳', color: '#F59E0B' },
+        ],
+      };
+    }
+    return {
+      visualCaption: 'PCIe / 高速匯流排 TLP 封包結構',
+      packetFields: [
+        { name: 'STP / Seq', bits: '2B', value: 'Seq# 0x014', description: 'Data Link Layer 封包起始與序號保護', color: '#00C2FF' },
+        { name: 'TLP Header', bits: '12–16B', value: 'Fmt / Type / Tag', description: '定義 Memory Read/Write、Requester ID 與位址', color: '#0071C5', highlight: true },
+        { name: 'Data Payload', bits: '0–4KB', value: 'MPS 256B', description: '實際 DMA 傳輸資料負載', color: '#10B981' },
+        { name: 'ECRC / LCRC', bits: '4B', value: 'CRC-32', description: '鏈路層錯誤偵測，異常觸發 Replay', color: '#F59E0B', highlight: true },
+      ],
+    };
+  }
+
+  if (template === 'state-machine') {
+    if (domain === 'wifi') {
+      return {
+        visualCaption: '802.11 連線建立與漫遊狀態機',
+        stateNodes: [
+          { id: 'scan', label: 'SCAN', sublabel: 'Probe / Beacon', status: 'normal' as const },
+          { id: 'auth', label: 'AUTH', sublabel: 'SAE / Open Auth', status: 'normal' as const },
+          { id: 'assoc', label: 'ASSOC', sublabel: 'MLO & Capab IE', status: 'active' as const },
+          { id: 'eapol', label: '4-WAY KEY', sublabel: 'PTK / GTK 安裝', status: 'normal' as const },
+          { id: 'run', label: 'CONNECTED', sublabel: 'Data Tx/Rx', status: 'success' as const },
+        ],
+        stateTransitions: [
+          { from: 'scan', to: 'auth', trigger: 'BSS Selected' },
+          { from: 'auth', to: 'assoc', trigger: 'Auth OK' },
+          { from: 'assoc', to: 'eapol', trigger: 'Assoc Resp' },
+          { from: 'eapol', to: 'run', trigger: 'M4 ACK' },
+          { from: 'eapol', to: 'scan', trigger: 'Deauth / Timeout', isErrorPath: true },
+        ],
+      };
+    }
+    return {
+      visualCaption: 'PCIe LTSSM 鏈路訓練狀態機',
+      stateNodes: [
+        { id: 'detect', label: 'Detect', sublabel: 'Rx 終端阻抗偵測', status: 'normal' as const },
+        { id: 'polling', label: 'Polling', sublabel: 'TS1/TS2 位元鎖定', status: 'normal' as const },
+        { id: 'config', label: 'Config', sublabel: 'Lane 寬度與極性協商', status: 'active' as const },
+        { id: 'l0', label: 'L0 Active', sublabel: '正常高速傳輸', status: 'success' as const },
+        { id: 'recovery', label: 'Recovery', sublabel: '降速 / 重訓 EQ', status: 'error' as const },
+      ],
+      stateTransitions: [
+        { from: 'detect', to: 'polling', trigger: 'Rx Detected' },
+        { from: 'polling', to: 'config', trigger: 'TS2 Locked' },
+        { from: 'config', to: 'l0', trigger: 'Link Up' },
+        { from: 'l0', to: 'recovery', trigger: 'CRC / Framing Err', isErrorPath: true },
+      ],
+    };
+  }
+
+  if (template === 'code-log') {
+    if (domain === 'wifi') {
+      return {
+        codeLanguage: 'log',
+        codeTitle: 'iwlwifi / wpa_supplicant 連線除錯日誌',
+        visualCaption: '從驅動 Log 定位 4-Way Handshake 逾時根因',
+        codeLines: [
+          { lineNo: 1, text: '[12.401] wlan0: authenticate with 4c:ed:fb:92:1a:20 (6GHz ch37)', level: 'normal' as const },
+          { lineNo: 2, text: '[12.418] wlan0: associate with 4c:ed:fb:92:1a:20 (MLO 5+6GHz)', level: 'success' as const, annotation: 'Association 成功，雙鏈路能力協商完成' },
+          { lineNo: 3, text: '[12.425] WPA: RX message 1 of 4-Way Handshake (ANonce OK)', level: 'highlight' as const, annotation: '已收到 AP 送出的 EAPOL M1' },
+          { lineNo: 4, text: '[16.430] wlan0: WPA: 4-Way Handshake timeout — no M3 received', level: 'error' as const, annotation: '卡在 M2→M3：常見為密碼/PMF 設定或封包被干擾丟失' },
+          { lineNo: 5, text: '[16.432] wlan0: deauthenticating (reason=15 4WAY_HANDSHAKE_TIMEOUT)', level: 'warn' as const, annotation: 'Reason 15 明確指向金鑰交握階段失敗' },
+        ],
+      };
+    }
+    return {
+      codeLanguage: 'log',
+      codeTitle: 'EC / BIOS POST & PCIe Bring-Up Trace',
+      visualCaption: '透過暫存器與開機日誌快速定位卡關階段',
+      codeLines: [
+        { lineNo: 1, text: '[00.012] EC: RSMRST#=1, SLP_S5#=1, ALL_SYS_PWRGD=1', level: 'success' as const, annotation: '主要供電軌與 Power Good 皆已就緒' },
+        { lineNo: 2, text: '[00.048] BIOS: POST 0x32 — MRC DDR5 Training Completed', level: 'normal' as const },
+        { lineNo: 3, text: '[00.115] PCIE RP4: LTSSM Detect -> Polling -> Config (Gen5 x4)', level: 'highlight' as const, annotation: '進入高速鏈路訓練階段' },
+        { lineNo: 4, text: '[00.194] PCIE RP4: EQ Phase 2 Timeout! Downgrade Gen5 -> Gen3', level: 'error' as const, annotation: '通道插入損耗或 RefClk Jitter 導致降速' },
+        { lineNo: 5, text: '[00.201] PCIE RP4: AER Correctable=142, Receiver Error Flag=1', level: 'warn' as const, annotation: '檢查主機板走線阻抗與 AC 耦合電容' },
+      ],
+    };
+  }
+
+  if (template === 'kpi-metrics') {
+    if (domain === 'rf') {
+      return {
+        visualCaption: 'RF 天線與系統去敏化關鍵量測指標',
+        kpiMetrics: [
+          { label: 'S11 Return Loss', value: '-14.2 dB', delta: 'PASS', target: '< -10 dB', status: 'good' as const },
+          { label: 'Antenna Isolation', value: '21.5 dB', delta: '+3.5 dB', target: '> 18 dB', status: 'good' as const },
+          { label: 'USB3 Rx Desense', value: '6.8 dB', delta: '超標警示', target: '< 1.5 dB', status: 'bad' as const },
+          { label: 'SAR 1g Avg', value: '0.84 W/kg', delta: '餘裕 47%', target: '< 1.6 W/kg', status: 'good' as const },
+        ],
+      };
+    }
+    return {
+      visualCaption: 'EVT / DVT 階段核心效能與穩定度 KPI',
+      kpiMetrics: [
+        { label: 'Peak Throughput', value: '4.8 Gbps', delta: '+92% vs 6E', target: '> 4.0 Gbps', status: 'good' as const },
+        { label: 'P99 Latency', value: '3.2 ms', delta: '-68% 延遲', target: '< 5.0 ms', status: 'good' as const },
+        { label: 'Packet Error Rate', value: '0.42%', delta: '輕微波動', target: '< 0.1%', status: 'warn' as const },
+        { label: 'Active Power', value: '1.85 W', delta: '-22% 功耗', target: '< 2.2 W', status: 'good' as const },
+      ],
+    };
+  }
+
+  if (template === 'fault-tree') {
+    if (domain === 'wifi') {
+      return {
+        visualCaption: 'Wi-Fi 斷線 / 低吞吐量根因排查決策樹',
+        faultRoot: '筆電 Wi-Fi 6GHz 連線頻繁掉速或斷線',
+        faultBranches: [
+          {
+            symptom: 'RSSI 過低 (< -75 dBm)',
+            check: '量測天線埠 S11 與 I-PEX 接頭',
+            passAction: '排除天線硬體，轉查 AP 覆蓋',
+            failRootCause: '同軸線鬆脫或金屬機殼遮蔽導致失配',
+            severity: 'high' as const,
+          },
+          {
+            symptom: '高重傳率 / 低 MCS',
+            check: '檢查 USB3 / DDR EMI 雜訊底噪',
+            passAction: '底噪正常，轉查驅動與漫遊門檻',
+            failRootCause: 'USB3 3.2GHz/6GHz 諧波造成 Rx Desense',
+            severity: 'high' as const,
+          },
+          {
+            symptom: '握手逾時 (Reason 15)',
+            check: '抓包比對 EAPOL M1–M4 與 PMF',
+            passAction: '金鑰流程正常，檢查 DHCP/DNS',
+            failRootCause: 'AP 韌體 MLO/WPA3 相容性或驅動 Bug',
+            severity: 'medium' as const,
+          },
+        ],
+      };
+    }
+    return {
+      visualCaption: '系統異常分層隔離決策樹 (二分法 SOP)',
+      faultRoot: '平台開機無畫面 / 高速介面隨機失聯',
+      faultBranches: [
+        {
+          symptom: 'Power Rail 壓降或無輸出',
+          check: '量測 VR 輸出波形與 ALL_SYS_PWRGD',
+          passAction: '供電穩定，進入時脈與重置檢查',
+          failRootCause: 'PMIC 保護鎖定、負載短路或電容失效',
+          severity: 'high' as const,
+        },
+        {
+          symptom: '時脈偏移 / 重置卡死',
+          check: '示波器抓取 100MHz RefClk 與 PLT_RST#',
+          passAction: '時序正確，轉查匯流排協定',
+          failRootCause: '晶振未起振或 EC 電源時序卡關',
+          severity: 'high' as const,
+        },
+        {
+          symptom: '匯流排降速或 CRC 暴增',
+          check: '讀取 AER 錯誤暫存器與眼圖餘裕',
+          passAction: 'SI 達標，聚焦 BIOS/驅動設定',
+          failRootCause: '高速走線阻抗不連續或散熱降頻',
+          severity: 'medium' as const,
+        },
       ],
     };
   }

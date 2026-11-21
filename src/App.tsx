@@ -112,8 +112,18 @@ export function App() {
   const [savedProjects, setSavedProjects] = useState<SavedProjectSummary[]>([]);
   const [savedProjectsLoading, setSavedProjectsLoading] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
+  const [envLlmConfigured, setEnvLlmConfigured] = useState(false);
 
   const qualityReport = useMemo(() => evaluateProjectQuality(project), [project]);
+
+  useEffect(() => {
+    fetch('/api/llm/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((status: { configured?: boolean } | null) => {
+        if (status?.configured) setEnvLlmConfigured(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const playerRef = useRef<PlayerRef>(null);
   const activeProjectIdRef = useRef<string>(project.id);
@@ -176,9 +186,14 @@ export function App() {
     const data = (await resp.json()) as { record?: SavedProjectRecord };
     if (!data.record?.project) return;
     const loaded = data.record.project;
+    const storedLlm = loadStoredLlmConfig();
     setProject({
       ...loaded,
-      llmConfig: loaded.llmConfig || loadStoredLlmConfig(),
+      llmConfig: {
+        baseUrl: loaded.llmConfig?.baseUrl || storedLlm.baseUrl,
+        apiKey: loaded.llmConfig?.apiKey || storedLlm.apiKey,
+        model: loaded.llmConfig?.model || storedLlm.model,
+      },
     });
     setSelectedSceneIdx(0);
     setRenderState({ active: false, progress: 0, status: 'idle' });
@@ -509,7 +524,10 @@ export function App() {
     setBatchTtsRunning(true);
 
     let cursor = 0;
-    const workerCount = 6;
+    // Local TTS engines (BlueMagpie / Ming-3.0) serialize inference on a single model lock;
+    // firing 6 concurrent requests causes later scenes to wait >300s in the HTTP queue and time out.
+    const usesLocalTts = queue.some(({ s }) => s.tts.provider === 'openformosa' || s.tts.provider === 'ming-3.0');
+    const workerCount = usesLocalTts ? 1 : 6;
 
     const worker = async () => {
       while (cursor < queue.length) {
@@ -517,6 +535,16 @@ export function App() {
         const item = queue[cursor++];
         if (!item) return;
         const { s, idx } = item;
+
+        setProject((prev) => {
+          if (prev.id !== targetProjectId) return prev;
+          return {
+            ...prev,
+            scenes: prev.scenes.map((sc, i) =>
+              i === idx ? { ...sc, tts: { ...sc.tts, status: 'generating', error: undefined } } : sc
+            ),
+          };
+        });
 
         try {
           const resp = await fetch('/api/tts/synthesize', {
@@ -565,9 +593,46 @@ export function App() {
                 ),
               };
             });
+          } else {
+            setProject((prev) => {
+              if (prev.id !== targetProjectId) return prev;
+              return {
+                ...prev,
+                scenes: prev.scenes.map((sc, i) =>
+                  i === idx
+                    ? {
+                        ...sc,
+                        tts: {
+                          ...sc.tts,
+                          status: 'error',
+                          error: data?.error || 'TTS 合成失敗',
+                        },
+                      }
+                    : sc
+                ),
+              };
+            });
           }
-        } catch {
-          // Keep going for remaining scenes
+        } catch (err) {
+          if (activeProjectIdRef.current !== targetProjectId) return;
+          setProject((prev) => {
+            if (prev.id !== targetProjectId) return prev;
+            return {
+              ...prev,
+              scenes: prev.scenes.map((sc, i) =>
+                i === idx
+                  ? {
+                      ...sc,
+                      tts: {
+                        ...sc.tts,
+                        status: 'error',
+                        error: err instanceof Error ? err.message : 'TTS 合成失敗',
+                      },
+                    }
+                  : sc
+              ),
+            };
+          });
         }
       }
     };
@@ -794,7 +859,7 @@ export function App() {
       onClose={() => setIsWizardOpen(false)}
       initialLlmConfig={project.llmConfig}
       onProjectCreated={(created, notice) => {
-        const newProj = applyTtsSettings(created, loadTtsSettings());
+        const newProj = applyTtsSettings(created, loadTtsSettings(), { preserveCustomVoice: true });
         setProject(newProj);
         setSelectedSceneIdx(0);
         if (notice) setAiNotice(notice);
@@ -1260,6 +1325,52 @@ export function App() {
 
         {/* CENTER PANE: Remotion Live Player + Timeline */}
         <main className="flex-1 flex flex-col min-w-0 bg-[#0A0908]">
+          {/* Video Title & Playback Context Bar */}
+          <div className="shrink-0 px-5 py-2.5 border-b border-slate-800/80 bg-[#100F0D] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Film className="w-4 h-4 text-cyan-400 shrink-0" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h2
+                    className="text-sm font-bold text-white truncate select-text"
+                    title={project.title}
+                  >
+                    {project.title}
+                  </h2>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0 hidden sm:inline">
+                    {project.id}
+                  </span>
+                </div>
+                {selectedScene && (
+                  <p className="text-[11px] text-slate-400 truncate">
+                    S{selectedSceneIdx + 1}/{project.scenes.length} · {selectedScene.title}
+                    {project.ttsConfig.customVoice?.name
+                      ? ` · 聲線：${project.ttsConfig.customVoice.name}`
+                      : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {batchTtsRunning ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-[11px] font-semibold text-cyan-200">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  配音生成中 ({readyTtsCount}/{project.scenes.length})
+                </span>
+              ) : readyTtsCount === project.scenes.length ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300">
+                  <Volume2 className="w-3 h-3" />
+                  配音 {readyTtsCount}/{project.scenes.length} 就緒
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-[11px] font-semibold text-amber-200">
+                  <Volume2 className="w-3 h-3" />
+                  配音 {readyTtsCount}/{project.scenes.length}（其餘場景尚未配音）
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="flex-1 flex items-center justify-center p-5 min-h-0">
             <div className="w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
               <Player
@@ -1843,7 +1954,11 @@ export function App() {
                       <Wand2 className="w-4 h-4" /> Intel GNAI LLM 引擎
                     </div>
                     <span className="text-[10px] text-slate-400">
-                      {project.llmConfig?.apiKey ? '已儲存於本機' : '未設定 Token'}
+                      {project.llmConfig?.apiKey
+                        ? '已儲存於本機'
+                        : envLlmConfigured
+                        ? '已由本機 .env 載入'
+                        : '未設定 Token'}
                     </span>
                   </div>
                   <div>

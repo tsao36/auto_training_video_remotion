@@ -7,6 +7,7 @@ import {
   TrainingProject,
   VisualTemplate,
 } from '../types/training';
+import { collectSceneTextForTermCheck, findRegionalTermMatches } from './regionalTerms';
 
 const INTERNAL_TEMPLATE_IDS: ReadonlySet<string> = new Set<VisualTemplate>([
   'title-hero',
@@ -15,6 +16,11 @@ const INTERNAL_TEMPLATE_IDS: ReadonlySet<string> = new Set<VisualTemplate>([
   'protocol-timeline',
   'comparison-matrix',
   'debug-checklist',
+  'packet-frame',
+  'state-machine',
+  'code-log',
+  'kpi-metrics',
+  'fault-tree',
   'summary-takeaways',
   'pptx-slide',
 ]);
@@ -171,6 +177,22 @@ export function evaluateProjectQuality(
           });
         }
       }
+    }
+
+    const termMatches = findRegionalTermMatches(collectSceneTextForTermCheck(scene), langMeta.value);
+    if (termMatches.length > 0) {
+      const summary = termMatches
+        .slice(0, 4)
+        .map((m) => `「${m.wrong}」→「${m.preferred}」`)
+        .join('、');
+      const more = termMatches.length > 4 ? ` 等 ${termMatches.length} 項` : '';
+      issues.push({
+        level: 'warning',
+        code: 'regional-terminology',
+        message: `場景 ${sceneNo} 偵測到不符合「${langMeta.label}」的技術術語：${summary}${more}。`,
+        sceneIndex: index,
+        sceneId: scene.id,
+      });
     }
   }
 

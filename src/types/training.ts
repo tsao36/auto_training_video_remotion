@@ -7,6 +7,11 @@ export type VisualTemplate =
   | 'protocol-timeline'
   | 'comparison-matrix'
   | 'debug-checklist'
+  | 'packet-frame'
+  | 'state-machine'
+  | 'code-log'
+  | 'kpi-metrics'
+  | 'fault-tree'
   | 'summary-takeaways'
   | 'pptx-slide';
 
@@ -93,6 +98,52 @@ export interface ComparisonRow {
   highlight?: 'A' | 'B' | 'both';
 }
 
+export interface PacketField {
+  name: string;
+  bits: string;
+  value?: string;
+  description?: string;
+  color?: string;
+  highlight?: boolean;
+}
+
+export interface StateMachineNode {
+  id: string;
+  label: string;
+  sublabel?: string;
+  status?: 'normal' | 'active' | 'error' | 'success';
+}
+
+export interface StateMachineTransition {
+  from: string;
+  to: string;
+  trigger: string;
+  isErrorPath?: boolean;
+}
+
+export interface CodeLogLine {
+  lineNo?: number;
+  text: string;
+  level?: 'normal' | 'highlight' | 'warn' | 'error' | 'success';
+  annotation?: string;
+}
+
+export interface KpiMetricItem {
+  label: string;
+  value: string;
+  delta?: string;
+  target?: string;
+  status?: 'good' | 'warn' | 'bad' | 'neutral';
+}
+
+export interface FaultTreeBranch {
+  symptom: string;
+  check: string;
+  passAction: string;
+  failRootCause: string;
+  severity?: 'high' | 'medium' | 'low';
+}
+
 export interface SceneDiagramData {
   nodes?: DiagramNode[];
   waveformFreqHz?: number;
@@ -100,6 +151,15 @@ export interface SceneDiagramData {
   protocolSteps?: ProtocolStep[];
   comparisonHeaders?: [string, string];
   comparisonRows?: ComparisonRow[];
+  packetFields?: PacketField[];
+  stateNodes?: StateMachineNode[];
+  stateTransitions?: StateMachineTransition[];
+  codeLanguage?: string;
+  codeTitle?: string;
+  codeLines?: CodeLogLine[];
+  kpiMetrics?: KpiMetricItem[];
+  faultRoot?: string;
+  faultBranches?: FaultTreeBranch[];
   badgeText?: string;
   highlightNodeIndex?: number;
   faultChannelIndex?: number;
@@ -417,6 +477,11 @@ export const TEMPLATE_LABELS: Record<VisualTemplate, string> = {
   'protocol-timeline': '協定互動時間軸',
   'comparison-matrix': '技術規格對照表',
   'debug-checklist': '除錯決策檢查表',
+  'packet-frame': '封包 / 訊框欄位拆解',
+  'state-machine': '狀態機轉移圖',
+  'code-log': '程式碼 / CLI / Log 判讀',
+  'kpi-metrics': '關鍵效能指標卡',
+  'fault-tree': '根因排查決策樹',
   'summary-takeaways': '重點總結與實作',
   'pptx-slide': 'PowerPoint 原版投影片',
 };

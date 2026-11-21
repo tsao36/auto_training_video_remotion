@@ -2,6 +2,8 @@ import cors from 'cors';
 import express from 'express';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JSZip from 'jszip';
@@ -11,7 +13,8 @@ import pdfParse from 'pdf-parse';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from './audioDuration';
-import { generateVideoPlanWithLlm, regenerateSceneWithLlm } from './llmGenerator';
+import { generateVideoPlanWithLlm, getEnvLlmStatus, regenerateSceneWithLlm } from './llmGenerator';
+import { loadLocalEnv } from './loadEnv';
 import { inspectRenderedMedia } from './mediaQa';
 import { parsePptxBuffer } from './pptxParser';
 import { evaluateProjectQuality } from '../src/utils/qualityLinter';
@@ -33,6 +36,10 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
+const loadedEnvFiles = loadLocalEnv(ROOT_DIR);
+if (loadedEnvFiles.length > 0) {
+  console.log(`[env] Loaded ${loadedEnvFiles.join(', ')}`);
+}
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
@@ -271,6 +278,11 @@ app.delete('/api/projects/:id', (req, res) => {
   }
 });
 
+// Check whether server-side .env / environment already provides GNAI_TOKEN (never returns the token itself)
+app.get('/api/llm/status', (_req, res) => {
+  res.json(getEnvLlmStatus());
+});
+
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
@@ -282,7 +294,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
     const result = await generateVideoPlanWithLlm({
       topic: String(topic).trim(),
       durationSeconds: Number(durationSeconds) || 60,
-      domain: domain || 'debug-logic',
+      domain: domain === 'auto' || !domain ? 'auto' : domain,
       rawText,
       pptxSlides,
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
@@ -389,6 +401,7 @@ function cleanVoiceName(raw: unknown, fallback: string): string {
 }
 
 const DEFAULT_OPENFORMOSA_URL = 'http://127.0.0.1:8001/v1/tts';
+const LOCAL_TTS_TIMEOUT_MS = 10 * 60 * 1000;
 
 function resolveOpenFormosaUrl(raw?: string): string {
   const trimmed = (raw || '').trim();
@@ -397,6 +410,55 @@ function resolveOpenFormosaUrl(raw?: string): string {
     return DEFAULT_OPENFORMOSA_URL;
   }
   return trimmed;
+}
+
+/**
+ * Posts JSON and collects the binary response without undici's 300s headersTimeout,
+ * which otherwise aborts queued CPU TTS synthesis requests.
+ */
+function postJsonForBuffer(
+  urlStr: string,
+  headers: Record<string, string>,
+  payload: unknown,
+  timeoutMs = LOCAL_TTS_TIMEOUT_MS
+): Promise<{ status: number; buffer: Buffer }> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(urlStr);
+    const body = Buffer.from(JSON.stringify(payload), 'utf8');
+    const transport = parsed.protocol === 'https:' ? https : http;
+    const req = transport.request(
+      {
+        protocol: parsed.protocol,
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+        path: `${parsed.pathname}${parsed.search}`,
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Length': String(body.length),
+        },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer | string) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+        res.on('end', () => {
+          resolve({ status: res.statusCode ?? 500, buffer: Buffer.concat(chunks) });
+        });
+        res.on('error', reject);
+      }
+    );
+    req.on('timeout', () => {
+      const err = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`) as NodeJS.ErrnoException;
+      err.code = 'ETIMEDOUT';
+      req.destroy(err);
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 app.get('/api/tts/health', async (req, res) => {
@@ -740,54 +802,52 @@ app.post('/api/tts/synthesize', async (req, res) => {
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (openformosa?.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
-        const resp = await fetch(openformosaUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: openformosa?.model || 'OpenFormosa/BlueMagpie-TTS',
-            voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || 'hung_yi_lee',
-            input: text,
-            speed,
-            response_format: 'wav',
-            ...referenceAudio,
-          }),
+        const resp = await postJsonForBuffer(openformosaUrl, headers, {
+          model: openformosa?.model || 'OpenFormosa/BlueMagpie-TTS',
+          voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || 'hung_yi_lee',
+          input: text,
+          speed,
+          response_format: 'wav',
+          ...referenceAudio,
         });
-        if (resp.ok) {
-          const arr = Buffer.from(await resp.arrayBuffer());
-          fs.writeFileSync(wavFilePath, arr);
+        if (resp.status >= 200 && resp.status < 300) {
+          fs.writeFileSync(wavFilePath, resp.buffer);
           mode = 'openformosa';
         } else {
           note = `OpenFormosa (BlueMagpie-TTS) HTTP ${resp.status} — 已使用神經網路語音合成`;
         }
       } catch (e) {
-        note = `OpenFormosa (BlueMagpie-TTS) 本地端點未啟動 (${openformosaUrl}) — 已使用神經網路語音合成`;
+        const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
+        note =
+          errCode === 'ETIMEDOUT'
+            ? `OpenFormosa (BlueMagpie-TTS) 推論逾時 (${openformosaUrl}) — 已使用神經網路語音合成`
+            : `OpenFormosa (BlueMagpie-TTS) 本地端點未啟動 (${openformosaUrl}) — 已使用神經網路語音合成`;
       }
     } else if (provider === 'ming-3.0' && mingTts?.baseUrl) {
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (mingTts.apiKey) headers.Authorization = `Bearer ${mingTts.apiKey}`;
-        const resp = await fetch(mingTts.baseUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: mingTts.model || 'inclusionAI/Ming-3.0-tts',
-            text,
-            speaker: resolvedRemoteVoiceId || voiceId || mingTts.speaker || 'ming-tech-zh-en',
-            style: mingTts.style || 'professional-training',
-            language: ttsLanguage,
-            speed,
-            ...referenceAudio,
-          }),
+        const resp = await postJsonForBuffer(mingTts.baseUrl, headers, {
+          model: mingTts.model || 'inclusionAI/Ming-3.0-tts',
+          text,
+          speaker: resolvedRemoteVoiceId || voiceId || mingTts.speaker || 'ming-tech-zh-en',
+          style: mingTts.style || 'professional-training',
+          language: ttsLanguage,
+          speed,
+          ...referenceAudio,
         });
-        if (resp.ok) {
-          const arr = Buffer.from(await resp.arrayBuffer());
-          fs.writeFileSync(wavFilePath, arr);
+        if (resp.status >= 200 && resp.status < 300) {
+          fs.writeFileSync(wavFilePath, resp.buffer);
           mode = 'ming-3.0';
         } else {
           note = `Ming-3.0-TTS HTTP ${resp.status} — 已使用神經網路語音合成`;
         }
       } catch (e) {
-        note = `Ming-3.0-TTS 本地端點未啟動 — 已使用神經網路語音合成`;
+        const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
+        note =
+          errCode === 'ETIMEDOUT'
+            ? `Ming-3.0-TTS 推論逾時 — 已使用神經網路語音合成`
+            : `Ming-3.0-TTS 本地端點未啟動 — 已使用神經網路語音合成`;
       }
     } else {
       note =

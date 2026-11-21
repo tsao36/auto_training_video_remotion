@@ -10,11 +10,13 @@ import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from '../server/audioDuration';
 import { generateVideoPlanWithLlm } from '../server/llmGenerator';
+import { loadLocalEnv } from '../server/loadEnv';
 import { inspectRenderedMedia } from '../server/mediaQa';
 import { parsePptxBuffer } from '../server/pptxParser';
 import {
   ContentLanguage,
   DEFAULT_CONTENT_LANGUAGE,
+  DOMAIN_META,
   getContentLanguage,
   PptxSlideData,
   SavedProjectRecord,
@@ -29,6 +31,7 @@ import { evaluateProjectQuality } from '../src/utils/qualityLinter';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
+loadLocalEnv(ROOT_DIR);
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
@@ -44,7 +47,7 @@ fs.mkdirSync(PROJECTS_DIR, { recursive: true });
 interface CliOptions {
   input?: string;
   topic?: string;
-  domain: TechDomain;
+  domain: TechDomain | 'auto';
   duration: number;
   language: ContentLanguage;
   tts: TtsProvider;
@@ -66,7 +69,7 @@ Usage:
 Options:
   --input <path>        Input file (.pptx, .pdf, .md, .txt, or saved project .json)
   --topic <text>        Topic title (required if --input is not provided)
-  --domain <domain>     debug-logic | wifi | bluetooth | rf  (default: debug-logic)
+  --domain <domain>     auto | debug-logic | wifi | bluetooth | rf  (default: auto)
   --duration <sec>      Target duration in seconds           (default: 120)
   --language <lang>     zh-TW | en-US | zh-CN | ja-JP | ko-KR (default: zh-TW)
   --tts <provider>      openformosa | ming-3.0 | browser-fallback (default: openformosa)
@@ -86,7 +89,7 @@ Examples:
 
 function parseArgs(argv: string[]): CliOptions {
   const opts: CliOptions = {
-    domain: 'debug-logic',
+    domain: 'auto',
     duration: 120,
     language: DEFAULT_CONTENT_LANGUAGE,
     tts: 'openformosa',
@@ -106,8 +109,10 @@ function parseArgs(argv: string[]): CliOptions {
     } else if (arg === '--topic' && argv[i + 1]) {
       opts.topic = argv[++i];
     } else if (arg === '--domain' && argv[i + 1]) {
-      const d = argv[++i] as TechDomain;
-      if (['debug-logic', 'wifi', 'bluetooth', 'rf'].includes(d)) opts.domain = d;
+      const d = argv[++i];
+      if (d === 'auto' || ['debug-logic', 'wifi', 'bluetooth', 'rf'].includes(d)) {
+        opts.domain = d as TechDomain | 'auto';
+      }
     } else if (arg === '--duration' && argv[i + 1]) {
       opts.duration = Math.max(15, Number(argv[++i]) || 120);
     } else if (arg === '--language' && argv[i + 1]) {
@@ -218,6 +223,55 @@ async function startAssetServer(): Promise<{ server: http.Server; baseUrl: strin
   });
 }
 
+function planToProject(
+  result: Awaited<ReturnType<typeof generateVideoPlanWithLlm>>,
+  opts: CliOptions,
+  extras: {
+    topic: string;
+    rawText: string;
+    sourceType: TrainingProject['sourceType'];
+    sourceFileName?: string;
+  }
+): TrainingProject {
+  const meta = DOMAIN_META[result.domain];
+  console.log(
+    `      計畫來源：${result.mode}（${meta.shortLabel} / ${result.domainSource}）${result.note ? ` ${result.note}` : ''}`
+  );
+  if (result.domainReason) console.log(`      領域判斷：${result.domainReason}`);
+  return {
+    id: `proj-${Date.now()}`,
+    title: result.title,
+    subtitle: result.subtitle || meta.description,
+    language: opts.language,
+    topic: extras.topic,
+    domain: result.domain,
+    targetDurationSeconds: opts.duration,
+    fps: VIDEO_FPS,
+    width: 1920,
+    height: 1080,
+    sourceType: extras.sourceType,
+    sourceFileName: extras.sourceFileName,
+    rawSourceText: extras.rawText,
+    ttsConfig: {
+      defaultProvider: opts.tts === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
+      openformosa: {
+        baseUrl: 'http://127.0.0.1:8001/v1/tts',
+        apiKey: '',
+        model: 'OpenFormosa/BlueMagpie-TTS',
+        voice: 'hung_yi_lee',
+      },
+      mingTts: {
+        baseUrl: 'http://localhost:8000/v1/tts',
+        apiKey: '',
+        model: 'inclusionAI/Ming-3.0-tts',
+        speaker: 'ming-tech-zh-en',
+        style: 'professional-training',
+      },
+    },
+    scenes: result.scenes,
+  };
+}
+
 async function loadOrBuildProject(opts: CliOptions): Promise<TrainingProject> {
   if (opts.input) {
     const absInput = path.resolve(opts.input);
@@ -272,8 +326,14 @@ async function loadOrBuildProject(opts: CliOptions): Promise<TrainingProject> {
       defaultTtsProvider: opts.tts,
       language: opts.language,
     });
-    console.log(`      計畫來源：${result.source}${result.note ? ` (${result.note})` : ''}`);
-    return result.project;
+    const sourceType: TrainingProject['sourceType'] =
+      ext === '.pptx' ? 'pptx' : ext === '.pdf' ? 'pdf' : 'research-text';
+    return planToProject(result, opts, {
+      topic,
+      rawText,
+      sourceType,
+      sourceFileName: path.basename(absInput),
+    });
   }
 
   if (!opts.topic) {
@@ -288,8 +348,11 @@ async function loadOrBuildProject(opts: CliOptions): Promise<TrainingProject> {
     defaultTtsProvider: opts.tts,
     language: opts.language,
   });
-  console.log(`      計畫來源：${result.source}${result.note ? ` (${result.note})` : ''}`);
-  return result.project;
+  return planToProject(result, opts, {
+    topic: opts.topic,
+    rawText: '',
+    sourceType: 'topic-llm',
+  });
 }
 
 async function main() {

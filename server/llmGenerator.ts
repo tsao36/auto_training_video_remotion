@@ -13,17 +13,26 @@ import {
   TtsProvider,
   VisualTemplate,
 } from '../src/types/training';
+import { inferDomainFromText, isTechDomain } from '../src/utils/domainInference';
+import {
+  applyDeterministicRegionalFixes,
+  collectSceneTextForTermCheck,
+  findRegionalTermMatches,
+  getRegionalTerminologyPromptGuidance,
+} from '../src/utils/regionalTerms';
 
 export interface GeneratePlanParams {
   topic: string;
   durationSeconds: number;
-  domain: TechDomain;
+  domain?: TechDomain | 'auto';
   rawText?: string;
   pptxSlides?: PptxSlideData[];
   defaultTtsProvider?: TtsProvider;
   language?: ContentLanguage;
   llmConfig?: Partial<LlmConfig>;
 }
+
+type ResolvedGeneratePlanParams = Omit<GeneratePlanParams, 'domain'> & { domain: TechDomain };
 
 export interface RegenerateSceneParams {
   topic: string;
@@ -58,6 +67,11 @@ const VALID_TEMPLATES: VisualTemplate[] = [
   'protocol-timeline',
   'comparison-matrix',
   'debug-checklist',
+  'packet-frame',
+  'state-machine',
+  'code-log',
+  'kpi-metrics',
+  'fault-tree',
   'summary-takeaways',
 ];
 
@@ -110,6 +124,22 @@ function resolveLlmConfig(override?: Partial<LlmConfig>): LlmConfig {
   };
 }
 
+export function getEnvLlmStatus(): {
+  configured: boolean;
+  source: 'env' | 'none';
+  baseUrl: string;
+  model: string;
+} {
+  const cfg = resolveLlmConfig();
+  const configured = Boolean(cfg.apiKey);
+  return {
+    configured,
+    source: configured ? 'env' : 'none',
+    baseUrl: cfg.baseUrl,
+    model: cfg.model,
+  };
+}
+
 function isLocalLlmEndpoint(baseUrl: string): boolean {
   return /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(baseUrl);
 }
@@ -157,11 +187,31 @@ export function inferEffectFromScriptAndTemplate(script: string, template: Visua
   if (template === 'signal-waveform') return 'sweep-scan';
   if (template === 'protocol-timeline') return 'cascade-reveal';
   if (template === 'comparison-matrix') return 'zoom-focus';
+  if (template === 'packet-frame') return 'sweep-scan';
+  if (template === 'state-machine') return 'cascade-reveal';
+  if (template === 'code-log') return 'sweep-scan';
+  if (template === 'kpi-metrics') return 'zoom-focus';
+  if (template === 'fault-tree') return 'cascade-reveal';
   return 'signal-pulse';
 }
 
 export function inferTemplateFromScript(script: string, current?: VisualTemplate): VisualTemplate {
   const s = script.toLowerCase();
+  if (/封包|訊框|標頭|欄位|packet|frame|header|payload|beacon|eapol|tlv|fcs/.test(s)) {
+    return 'packet-frame';
+  }
+  if (/狀態機|狀態轉移|切換狀態|state machine|fsm|ltssm|transition/.test(s)) {
+    return 'state-machine';
+  }
+  if (/程式碼|指令|暫存器|日誌|log|dmesg|register|cli|0x|trace/.test(s)) {
+    return 'code-log';
+  }
+  if (/效能指標|量測數據|吞吐量|kpi|metric|throughput|latency|snr|evm|rssi|gbps/.test(s)) {
+    return 'kpi-metrics';
+  }
+  if (/根因|決策樹|故障樹|分支排查|fault tree|root cause|decision tree|symptom/.test(s)) {
+    return 'fault-tree';
+  }
   if (/波形|示波器|頻譜|眼圖|雜訊|漣波|時脈|waveform|clock|ripple|jitter|s11|ofdma|qam/.test(s)) {
     return 'signal-waveform';
   }
@@ -403,12 +453,79 @@ function buildSmartFallbackDiagram(
     };
   }
 
+  if (template === 'packet-frame') {
+    return {
+      visualCaption: `${shortTopic} 協定封包欄位結構`,
+      packetFields: [
+        { name: 'Header', bits: '2B', value: '0x0080', description: '協定控制位元與封包類型旗標', color: '#38BDF8', highlight: true },
+        { name: 'Addr / ID', bits: '6B', value: 'SRC / DST', description: '來源與目的端識別位址', color: '#6366F1' },
+        { name: 'Payload', bits: '0–1500B', value: `${shortTopic} IE`, description: '主要協商參數與資料負載', color: '#10B981', highlight: true },
+        { name: 'CRC / FCS', bits: '4B', value: 'CRC-32', description: '整幀完整性校驗，錯誤即丟棄重傳', color: '#F59E0B' },
+      ],
+    };
+  }
+
+  if (template === 'state-machine') {
+    return {
+      visualCaption: `${shortTopic} 核心狀態機轉移流程`,
+      stateNodes: [
+        { id: 'init', label: 'INIT', sublabel: '掃描 / 偵測', status: 'normal' },
+        { id: 'negotiate', label: 'NEGOTIATE', sublabel: '認證 / 參數協商', status: 'active' },
+        { id: 'active', label: 'ACTIVE', sublabel: '穩定傳輸', status: 'success' },
+        { id: 'recover', label: 'RECOVERY', sublabel: '逾時重試', status: 'error' },
+      ],
+      stateTransitions: [
+        { from: 'init', to: 'negotiate', trigger: 'Detect OK' },
+        { from: 'negotiate', to: 'active', trigger: 'Handshake OK' },
+        { from: 'active', to: 'recover', trigger: 'Timeout / CRC Err', isErrorPath: true },
+      ],
+    };
+  }
+
+  if (template === 'code-log') {
+    return {
+      codeLanguage: 'log',
+      codeTitle: `${shortTopic} 實機診斷日誌`,
+      visualCaption: '關鍵 Log 判讀與異常觸發點',
+      codeLines: [
+        { lineNo: 1, text: `[00.120] ${shortTopic}: init handshake start`, level: 'normal' },
+        { lineNo: 2, text: `[00.145] ${shortTopic}: capability negotiated OK`, level: 'success', annotation: '基礎能力協商完成' },
+        { lineNo: 3, text: `[00.210] ${shortTopic}: timeout waiting for response (err=-110)`, level: 'error', annotation: '關鍵異常點：回應逾時，需檢查實體鏈路或參數設定' },
+        { lineNo: 4, text: `[00.215] ${shortTopic}: fallback recovery triggered`, level: 'warn', annotation: '系統自動觸發降速或重連機制' },
+      ],
+    };
+  }
+
+  if (template === 'kpi-metrics') {
+    return {
+      visualCaption: `${shortTopic} 關鍵量測與效能指標`,
+      kpiMetrics: [
+        { label: 'Peak Throughput', value: '4.8 Gbps', delta: '+85%', target: '> 4.0 Gbps', status: 'good' },
+        { label: 'P99 Latency', value: '3.2 ms', delta: '-60%', target: '< 5.0 ms', status: 'good' },
+        { label: 'Error Rate', value: '0.35%', delta: '需關注', target: '< 0.1%', status: 'warn' },
+        { label: 'Link Margin', value: '+12 dB', delta: 'PASS', target: '> +6 dB', status: 'good' },
+      ],
+    };
+  }
+
+  if (template === 'fault-tree') {
+    return {
+      visualCaption: `${shortTopic} 根因排查決策樹`,
+      faultRoot: `${shortTopic} 連線不穩或效能未達標`,
+      faultBranches: [
+        { symptom: '實體訊號強度不足', check: '量測電源軌 / 天線 S11 與接頭', passAction: '硬體正常，轉查干擾', failRootCause: '阻抗失配或供電壓降', severity: 'high' },
+        { symptom: '高重傳與封包遺失', check: '檢查鄰近高速匯流排 EMI 底噪', passAction: '底噪正常，轉查協定', failRootCause: 'USB3 / DDR 雜訊耦合導致去敏', severity: 'high' },
+        { symptom: '交握階段逾時中斷', check: '抓包比對狀態機與驅動 Log', passAction: '協定正常，檢查上層網路', failRootCause: '韌體相容性或安全參數不符', severity: 'medium' },
+      ],
+    };
+  }
+
   return {
     visualCaption: /排查|除錯|檢查/.test(script) ? '逐步隔離驗證 SOP' : `${shortTopic} 核心架構`,
   };
 }
 
-function generateFallbackPlan(params: GeneratePlanParams): LlmPlanPayload {
+function generateFallbackPlan(params: ResolvedGeneratePlanParams): LlmPlanPayload {
   const { topic, durationSeconds, domain, rawText } = params;
   const meta = DOMAIN_META[domain];
   const sceneCount = Math.max(3, Math.min(16, Math.round(durationSeconds / 12)));
@@ -593,7 +710,7 @@ function buildPptxKeyPoints(slide: PptxSlideData): string[] {
 }
 
 async function generatePptxPlan(
-  params: GeneratePlanParams,
+  params: ResolvedGeneratePlanParams,
   pptxSlides: PptxSlideData[],
   cfg: LlmConfig,
   canCallLlm: boolean
@@ -737,22 +854,342 @@ ${JSON.stringify(slideSummaries, null, 2)}`;
     },
   }));
 
-  return {
+  const checked = await runRegionalTerminologyCheckStage({
     title: params.topic || pptxSlides[0]?.title || `${meta.shortLabel} PowerPoint 課程`,
     subtitle: `${pptxSlides.length} 張投影片 • 100% 原版視覺還原`,
     scenes,
+    language: language.value,
+    cfg,
+    canCallLlm: canCallLlm && mode === 'llm',
+    preservePptxTitles: true,
+  });
+
+  return {
+    title: checked.title,
+    subtitle: checked.subtitle,
+    scenes: checked.scenes,
     mode,
-    note,
+    note: checked.checkNote ? `${note} • ${checked.checkNote}` : note,
   };
 }
 
-export async function generateVideoPlanWithLlm(params: GeneratePlanParams): Promise<{
+const SKIP_DIAGRAM_KEYS = new Set([
+  'id',
+  'color',
+  'type',
+  'status',
+  'highlight',
+  'codeLanguage',
+  'severity',
+]);
+
+function applyDeterministicFixesToDiagramData<T>(value: T, language: ContentLanguage): { value: T; count: number } {
+  if (typeof value === 'string') {
+    const res = applyDeterministicRegionalFixes(value, language);
+    const count = res.replacements.reduce((sum, r) => sum + r.count, 0);
+    return { value: res.text as unknown as T, count };
+  }
+  if (Array.isArray(value)) {
+    let total = 0;
+    const next = value.map((item) => {
+      const fixed = applyDeterministicFixesToDiagramData(item, language);
+      total += fixed.count;
+      return fixed.value;
+    });
+    return { value: next as unknown as T, count: total };
+  }
+  if (value && typeof value === 'object') {
+    let total = 0;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (SKIP_DIAGRAM_KEYS.has(k)) {
+        out[k] = v;
+      } else {
+        const fixed = applyDeterministicFixesToDiagramData(v, language);
+        total += fixed.count;
+        out[k] = fixed.value;
+      }
+    }
+    return { value: out as T, count: total };
+  }
+  return { value, count: 0 };
+}
+
+async function runRegionalTerminologyCheckStage(params: {
+  title: string;
+  subtitle: string;
+  scenes: SceneSpec[];
+  language: ContentLanguage;
+  cfg: LlmConfig;
+  canCallLlm: boolean;
+  preservePptxTitles?: boolean;
+}): Promise<{
+  title: string;
+  subtitle: string;
+  scenes: SceneSpec[];
+  checkNote: string;
+}> {
+  const langMeta = getContentLanguage(params.language);
+  let title = params.title;
+  let subtitle = params.subtitle;
+  let scenes = params.scenes.map((s) => ({ ...s }));
+  let llmReviewed = false;
+  let llmAdjustedCount = 0;
+
+  if (params.canCallLlm && scenes.length > 0) {
+    try {
+      const flaggedExamples = Array.from(
+        new Set(
+          scenes.flatMap((s) =>
+            findRegionalTermMatches(collectSceneTextForTermCheck(s), params.language).map(
+              (m) => `${m.wrong} -> ${m.preferred}`
+            )
+          )
+        )
+      );
+
+      const systemPrompt = `You are a technical localization editor and regional terminology reviewer for ${langMeta.promptName}.
+Your ONLY job is to audit and refine the generated video script and on-screen labels so that EVERY technical term matches authentic ${langMeta.promptName} engineering conventions.
+
+${getRegionalTerminologyPromptGuidance(params.language)}
+
+STRICT RULES:
+1. Keep the EXACT same number of scenes, order, meaning, and speaking length (do not expand or shorten scripts).
+2. Fix any cross-region technical wording, unnatural literal translations, or mixed-region terminology (for example in Taiwan zh-TW: replace 派生 with 衍生, 鑰匙 with 金鑰, 字段 with 欄位, 信息 with 訊息, 數據包/報文 with 封包, 網絡 with 網路, 協議 with 協定, 調試 with 除錯).
+3. Preserve all English acronyms, protocol names, register names, numbers, and units verbatim (e.g., EAPOL, PTK, PMK, MIC, ANonce, SNonce, PCIe, 802.11ax/be).
+4. If a field is already completely natural and accurate for ${langMeta.promptName}, return it unchanged.
+${params.preservePptxTitles ? '5. Keep slide titles/subtitles/keyPoints unchanged; only review the spoken "script".' : ''}
+
+Return strict JSON:
+{
+  "title": "reviewed project title",
+  "subtitle": "reviewed project subtitle",
+  "scenes": [
+    {
+      "index": 0,
+      "title": "reviewed scene title",
+      "subtitle": "reviewed scene subtitle",
+      "keyPoints": ["..."],
+      "script": "reviewed spoken narration",
+      "visualCaption": "reviewed caption or empty string"
+    }
+  ]
+}`;
+
+      const reviewPayload = {
+        language: langMeta.promptName,
+        flaggedTermsDetected: flaggedExamples,
+        title,
+        subtitle,
+        scenes: scenes.map((s, index) => ({
+          index,
+          title: s.title,
+          subtitle: s.subtitle,
+          keyPoints: s.keyPoints,
+          script: s.script,
+          visualCaption: s.diagramData?.visualCaption || '',
+        })),
+      };
+
+      const reviewed = (await callChatCompletionJson(
+        params.cfg,
+        systemPrompt,
+        JSON.stringify(reviewPayload)
+      )) as {
+        title?: string;
+        subtitle?: string;
+        scenes?: {
+          index?: number;
+          title?: string;
+          subtitle?: string;
+          keyPoints?: string[];
+          script?: string;
+          visualCaption?: string;
+        }[];
+      };
+
+      if (reviewed && Array.isArray(reviewed.scenes) && reviewed.scenes.length > 0) {
+        llmReviewed = true;
+        if (!params.preservePptxTitles && typeof reviewed.title === 'string' && reviewed.title.trim()) {
+          if (reviewed.title.trim() !== title) llmAdjustedCount += 1;
+          title = reviewed.title.trim();
+        }
+        if (!params.preservePptxTitles && typeof reviewed.subtitle === 'string' && reviewed.subtitle.trim()) {
+          if (reviewed.subtitle.trim() !== subtitle) llmAdjustedCount += 1;
+          subtitle = reviewed.subtitle.trim();
+        }
+
+        scenes = scenes.map((scene, idx) => {
+          const patch =
+            reviewed.scenes?.find((item) => item.index === idx) || reviewed.scenes?.[idx];
+          if (!patch) return scene;
+
+          const nextScript =
+            typeof patch.script === 'string' && patch.script.trim()
+              ? patch.script.trim()
+              : scene.script;
+          if (nextScript !== scene.script) llmAdjustedCount += 1;
+
+          if (params.preservePptxTitles) {
+            return { ...scene, script: nextScript };
+          }
+
+          const nextTitle =
+            typeof patch.title === 'string' && patch.title.trim() ? patch.title.trim() : scene.title;
+          const nextSubtitle =
+            typeof patch.subtitle === 'string' && patch.subtitle.trim()
+              ? patch.subtitle.trim()
+              : scene.subtitle;
+          const nextKeyPoints =
+            Array.isArray(patch.keyPoints) && patch.keyPoints.length > 0
+              ? patch.keyPoints.map((kp) => String(kp).trim()).filter(Boolean)
+              : scene.keyPoints;
+          const nextDiagramData =
+            scene.diagramData && typeof patch.visualCaption === 'string' && patch.visualCaption.trim()
+              ? { ...scene.diagramData, visualCaption: patch.visualCaption.trim() }
+              : scene.diagramData;
+
+          if (nextTitle !== scene.title) llmAdjustedCount += 1;
+
+          return {
+            ...scene,
+            title: nextTitle,
+            subtitle: nextSubtitle,
+            keyPoints: nextKeyPoints,
+            script: nextScript,
+            diagramData: nextDiagramData,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('Regional terminology review stage failed, applying deterministic fallback:', err);
+    }
+  }
+
+  // Deterministic safety net to guarantee known cross-region terms are normalized.
+  let deterministicFixes = 0;
+  if (!params.preservePptxTitles) {
+    const fixedTitle = applyDeterministicRegionalFixes(title, params.language);
+    title = fixedTitle.text;
+    deterministicFixes += fixedTitle.replacements.reduce((sum, r) => sum + r.count, 0);
+
+    const fixedSubtitle = applyDeterministicRegionalFixes(subtitle, params.language);
+    subtitle = fixedSubtitle.text;
+    deterministicFixes += fixedSubtitle.replacements.reduce((sum, r) => sum + r.count, 0);
+  }
+
+  scenes = scenes.map((scene) => {
+    const fixedScript = applyDeterministicRegionalFixes(scene.script, params.language);
+    deterministicFixes += fixedScript.replacements.reduce((sum, r) => sum + r.count, 0);
+
+    if (params.preservePptxTitles) {
+      return { ...scene, script: fixedScript.text };
+    }
+
+    const fixedTitle = applyDeterministicRegionalFixes(scene.title, params.language);
+    const fixedSub = applyDeterministicRegionalFixes(scene.subtitle, params.language);
+    deterministicFixes +=
+      fixedTitle.replacements.reduce((sum, r) => sum + r.count, 0) +
+      fixedSub.replacements.reduce((sum, r) => sum + r.count, 0);
+
+    const fixedKeyPoints = scene.keyPoints.map((kp) => {
+      const r = applyDeterministicRegionalFixes(kp, params.language);
+      deterministicFixes += r.replacements.reduce((sum, m) => sum + m.count, 0);
+      return r.text;
+    });
+
+    const fixedDiagram = scene.diagramData
+      ? applyDeterministicFixesToDiagramData(scene.diagramData, params.language)
+      : { value: scene.diagramData, count: 0 };
+    deterministicFixes += fixedDiagram.count;
+
+    return {
+      ...scene,
+      title: fixedTitle.text,
+      subtitle: fixedSub.text,
+      keyPoints: fixedKeyPoints,
+      script: fixedScript.text,
+      diagramData: fixedDiagram.value,
+    };
+  });
+
+  const totalAdjustments = llmAdjustedCount + deterministicFixes;
+  const checkNote = llmReviewed
+    ? totalAdjustments > 0
+      ? `已完成「${langMeta.label}」術語校對（修正 ${totalAdjustments} 處區域用語）`
+      : `已通過「${langMeta.label}」技術術語校對`
+    : deterministicFixes > 0
+    ? `已依「${langMeta.label}」術語表自動修正 ${deterministicFixes} 處用語`
+    : '';
+
+  return { title, subtitle, scenes, checkNote };
+}
+
+export async function resolveTrainingDomain(params: {
+  topic: string;
+  rawText?: string;
+  domain?: TechDomain | 'auto';
+  llmConfig?: Partial<LlmConfig>;
+}): Promise<{
+  domain: TechDomain;
+  domainSource: 'manual' | 'llm' | 'keywords';
+  domainReason: string;
+}> {
+  if (isTechDomain(params.domain)) {
+    return {
+      domain: params.domain,
+      domainSource: 'manual',
+      domainReason: '使用手動指定的技術領域',
+    };
+  }
+
+  const brief = [params.topic, params.rawText || ''].filter(Boolean).join('\n').slice(0, 2500);
+  const cfg = resolveLlmConfig(params.llmConfig);
+  const canCallLlm = Boolean(cfg.apiKey || isLocalLlmEndpoint(cfg.baseUrl));
+  if (canCallLlm && brief.trim().length >= 2) {
+    try {
+      const classified = (await callChatCompletionJson(
+        cfg,
+        `Classify a technical training topic into exactly one domain.
+Return strict JSON: {"domain":"debug-logic|wifi|bluetooth|rf","reason":"short reason"}.
+debug-logic = PC/laptop debug, BIOS, power, PCIe, buses.
+wifi = Wi-Fi / 802.11 / WLAN.
+bluetooth = Bluetooth / BLE.
+rf = antenna, RF parameters, SAR, EMI, desense.`,
+        brief
+      )) as { domain?: string; reason?: string };
+      if (isTechDomain(classified?.domain)) {
+        return {
+          domain: classified.domain,
+          domainSource: 'llm',
+          domainReason: classified.reason || `已由 LLM (${cfg.model}) 判斷技術領域`,
+        };
+      }
+    } catch (err) {
+      console.warn('Domain classification failed, using keyword inference:', err);
+    }
+  }
+
+  const inferred = inferDomainFromText(brief);
+  return {
+    domain: inferred.domain,
+    domainSource: 'keywords',
+    domainReason: inferred.reason,
+  };
+}
+
+export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promise<{
   title: string;
   subtitle: string;
   scenes: SceneSpec[];
   mode: 'llm' | 'smart-fallback';
   note: string;
+  domain: TechDomain;
+  domainSource: 'manual' | 'llm' | 'keywords';
+  domainReason: string;
 }> {
+  const resolvedDomain = await resolveTrainingDomain(input);
+  const params: ResolvedGeneratePlanParams = { ...input, domain: resolvedDomain.domain };
   const cfg = resolveLlmConfig(params.llmConfig);
   const provider = params.defaultTtsProvider || 'openformosa';
   const language = getContentLanguage(params.language || DEFAULT_CONTENT_LANGUAGE);
@@ -767,7 +1204,8 @@ export async function generateVideoPlanWithLlm(params: GeneratePlanParams): Prom
 
   // Dedicated 1:1 PowerPoint slide mode
   if (params.pptxSlides && params.pptxSlides.length > 0) {
-    return generatePptxPlan(params, params.pptxSlides, cfg, canCallLlm);
+    const pptxPlan = await generatePptxPlan(params, params.pptxSlides, cfg, canCallLlm);
+    return { ...pptxPlan, ...resolvedDomain };
   }
 
   if (canCallLlm) {
@@ -780,17 +1218,24 @@ CRITICAL RULES:
 2. LANGUAGE AND SPEECH PACING (VERY IMPORTANT):
   - Write ALL video content in ${language.promptName}: titles, subtitles, narration, key points, visual descriptions, and diagram labels. Translate reference notes when necessary. Preserve technical acronyms, model numbers, units, and product names.
   - Spoken ${language.promptName} runs at approximately ${language.charsPerSecond} characters per second. Keep each script near ${Math.round(language.charsPerSecond * 0.9)} characters per second of scene duration so the narration finishes cleanly.
+  - ${getRegionalTerminologyPromptGuidance(language.value)}
 3. SCRIPT vs GRAPHIC SEPARATION (VERY IMPORTANT):
    - "keyPoints" and "diagramData" labels MUST be short, scannable visual anchors (keywords, component names, metrics, 2–8 words max).
   - "script" (spoken narration) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
 3. EFFECT-TO-SCRIPT ALIGNMENT:
-   - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "summary-takeaways"].
-   - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline"; if script talks about comparing options, use "zoom-focus" + "comparison-matrix"; if script talks about probing/checking, use "sweep-scan").
+   - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "summary-takeaways"].
+   - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, and "fault-tree" for root-cause decision branches.
+   - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
      * signal-waveform: { waveformChannels: [{label, color, type: "clock"|"data"|"rf-sine"|"ofdma"}], faultChannelIndex, visualCaption }
      * protocol-timeline: { protocolSteps: [{actor, target, message, timing}], activeStepIndex, visualCaption }
      * comparison-matrix: { comparisonHeaders: [string, string], comparisonRows: [{metric, optionA, optionB, highlight: "A"|"B"}], visualCaption }
+     * packet-frame: { packetFields: [{name, bits, value, description, color, highlight}], visualCaption }
+     * state-machine: { stateNodes: [{id, label, sublabel, status: "normal"|"active"|"error"|"success"}], stateTransitions: [{from, to, trigger, isErrorPath}], visualCaption }
+     * code-log: { codeLanguage, codeTitle, codeLines: [{lineNo, text, level: "normal"|"highlight"|"warn"|"error"|"success", annotation}], visualCaption }
+     * kpi-metrics: { kpiMetrics: [{label, value, delta, target, status: "good"|"warn"|"bad"|"neutral"}], visualCaption }
+     * fault-tree: { faultRoot, faultBranches: [{symptom, check, passAction, failRootCause, severity: "high"|"medium"|"low"}], visualCaption }
      * title-hero / debug-checklist / summary-takeaways: { visualCaption }
 
 Return JSON schema:
@@ -802,7 +1247,7 @@ Return JSON schema:
       "title": "string",
       "subtitle": "string",
       "durationSeconds": number,
-      "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|summary-takeaways",
+      "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|summary-takeaways",
       "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan",
       "visualDescription": "string describing what the Remotion graphic + effect shows and why it matches the script",
       "keyPoints": ["short visual anchor 1", "short visual anchor 2", "short visual anchor 3"],
@@ -824,12 +1269,23 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
         rawResult.scenes.forEach((s, i) => {
           s.durationSeconds = balanced[i];
         });
-        return {
+        const initialScenes = toSceneSpecs(rawResult, params.domain, provider, params.topic);
+        const checked = await runRegionalTerminologyCheckStage({
           title: rawResult.title || params.topic,
           subtitle: rawResult.subtitle || DOMAIN_META[params.domain].description,
-          scenes: toSceneSpecs(rawResult, params.domain, provider, params.topic),
+          scenes: initialScenes,
+          language: language.value,
+          cfg,
+          canCallLlm: true,
+        });
+        const baseNote = `已由 LLM (${cfg.model}) 自動生成台詞與對應 Remotion 動態圖表`;
+        return {
+          title: checked.title,
+          subtitle: checked.subtitle,
+          scenes: checked.scenes,
           mode: 'llm',
-          note: `已由 LLM (${cfg.model}) 自動生成台詞與對應 Remotion 動態圖表`,
+          note: checked.checkNote ? `${baseNote} • ${checked.checkNote}` : baseNote,
+          ...resolvedDomain,
         };
       }
     } catch (err) {
@@ -844,6 +1300,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
         scenes: toSceneSpecs(fallback, params.domain, provider, params.topic),
         mode: 'smart-fallback',
         note: `LLM 連線失敗 (${err instanceof Error ? err.message : 'error'})，已自動切換為智慧規則引擎生成`,
+        ...resolvedDomain,
       };
     }
   }
@@ -855,6 +1312,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
     scenes: toSceneSpecs(fallback, params.domain, provider, params.topic),
     mode: 'smart-fallback',
     note: '未設定 LLM API Key，已使用內建智慧引擎生成（可於設定中填入 OpenAI / 本地 Ollama 金鑰以啟用雲端 LLM）',
+    ...resolvedDomain,
   };
 }
 
@@ -914,9 +1372,10 @@ Return JSON: { "script": "..." }`;
 Return strict JSON updating a single scene.
 CRITICAL:
 - Write any regenerated narration and visual text in ${language.promptName}. Preserve technical acronyms and identifiers.
+- ${getRegionalTerminologyPromptGuidance(language.value)}
 - The spoken "script" (台詞) MUST NOT just read the "keyPoints" or diagram labels. Script explains WHY/HOW; graphics show concise visual anchors.
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
-Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","summary-takeaways"]
+Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","summary-takeaways"]
 Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan"]
 
 Return JSON:
@@ -943,38 +1402,44 @@ ${
   action === 'sync-visual-to-script'
     ? 'Keep the current script mostly intact, and redesign template, effect, visualDescription, keyPoints (concise visual labels, NOT repeating script), and diagramData so the Remotion graphic and animation effect match what the script is describing.'
     : action === 'rewrite-script-no-read'
-    ? 'Keep the current graphic/template/diagramData, and rewrite ONLY the script (Traditional Chinese + English terms) so it explains the story/causality behind the graphic instead of reading the graphic text verbatim.'
+    ? 'Keep the current graphic/template/diagramData, and rewrite ONLY the script so it explains the story/causality behind the graphic instead of reading the graphic text verbatim.'
     : 'Regenerate both a fresh explanatory script and matching Remotion graphic/effect/diagramData.'
 }`;
 
       const res = (await callChatCompletionJson(cfg, systemPrompt, userPrompt)) as Partial<LlmScenePayload>;
       const nextTemplate = clampTemplate(res.template, scene.index, scene.index + 2);
-      const nextScript =
+      const rawScript =
         action === 'sync-visual-to-script' ? scene.script : (res.script || scene.script).trim();
+      const nextScript = applyDeterministicRegionalFixes(rawScript, language.value).text;
       const nextEffect = clampEffect(res.effect, nextTemplate, nextScript);
+      const rawKeyPoints =
+        action === 'rewrite-script-no-read'
+          ? scene.keyPoints
+          : Array.isArray(res.keyPoints) && res.keyPoints.length > 0
+          ? res.keyPoints.slice(0, 4).map((kp) => applyDeterministicRegionalFixes(String(kp), language.value).text)
+          : scene.keyPoints;
+      const rawDiagram =
+        action === 'rewrite-script-no-read'
+          ? scene.diagramData
+          : applyDeterministicFixesToDiagramData(
+              res.diagramData || buildSmartFallbackDiagram(topic, scene.domain, nextTemplate, nextEffect, nextScript),
+              language.value
+            ).value;
 
       return {
         scenePatch: {
           template: action === 'rewrite-script-no-read' ? scene.template : nextTemplate,
           script: nextScript,
           visualDescription: res.visualDescription || scene.visualDescription,
-          keyPoints:
-            action === 'rewrite-script-no-read'
-              ? scene.keyPoints
-              : Array.isArray(res.keyPoints) && res.keyPoints.length > 0
-              ? res.keyPoints.slice(0, 4)
-              : scene.keyPoints,
-          diagramData:
-            action === 'rewrite-script-no-read'
-              ? scene.diagramData
-              : res.diagramData || buildSmartFallbackDiagram(topic, scene.domain, nextTemplate, nextEffect, nextScript),
+          keyPoints: rawKeyPoints,
+          diagramData: rawDiagram,
           animation: {
             ...scene.animation,
             effect: action === 'rewrite-script-no-read' ? scene.animation.effect : nextEffect,
           },
         },
         mode: 'llm',
-        note: `已透過 LLM (${cfg.model}) 完成更新`,
+        note: `已透過 LLM (${cfg.model}) 完成更新並套用「${language.label}」術語校對`,
       };
     } catch (err) {
       if (language.value !== DEFAULT_CONTENT_LANGUAGE) {

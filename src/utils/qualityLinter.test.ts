@@ -120,4 +120,27 @@ describe('evaluateProjectQuality', () => {
       ])
     );
   });
+
+  it('warns when technical terms do not match the selected regional language', () => {
+    const report = evaluateProjectQuality({
+      title: 'Wi-Fi EAPOL',
+      language: 'zh-TW',
+      scenes: [
+        makeScene({
+          title: '快速導覽',
+          keyPoints: ['目標：派生 PTK'],
+          script: 'EAPOL 的任務是安全派生與驗證鑰匙，並檢查關鍵字段。',
+        }),
+      ],
+    });
+
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          level: 'warning',
+          code: 'regional-terminology',
+        }),
+      ])
+    );
+  });
 });

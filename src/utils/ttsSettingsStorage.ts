@@ -60,9 +60,14 @@ export function saveTtsSettings(settings: TtsSettings): void {
 export function applyTtsSettings(
   project: TrainingProject,
   settings: TtsSettings,
-  opts: { overrideProvider?: boolean } = {}
+  opts: { overrideProvider?: boolean; preserveCustomVoice?: boolean } = {}
 ): TrainingProject {
   const provider = opts.overrideProvider ? settings.defaultProvider : project.ttsConfig.defaultProvider;
+  const customVoice = opts.preserveCustomVoice
+    ? project.ttsConfig.customVoice
+    : settings.defaultVoice
+    ? { ...settings.defaultVoice }
+    : undefined;
   return {
     ...project,
     ttsConfig: {
@@ -70,7 +75,7 @@ export function applyTtsSettings(
       defaultProvider: provider,
       openformosa: { ...settings.openformosa },
       mingTts: { ...settings.mingTts },
-      customVoice: settings.defaultVoice ? { ...settings.defaultVoice } : undefined,
+      customVoice,
     },
     scenes: project.scenes.map((s) => {
       const sceneProvider = opts.overrideProvider ? provider : s.tts.provider;
