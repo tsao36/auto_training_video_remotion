@@ -625,6 +625,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
       openformosa,
       mingTts,
       customVoice,
+      skipCache = false,
     } = req.body as {
       sceneId: string;
       text: string;
@@ -641,6 +642,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
         provider?: VoiceProfileProvider;
         remoteVoiceId?: string;
       };
+      skipCache?: boolean;
     };
 
     const storedProfile = customVoice?.profileId
@@ -667,6 +669,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
 
     const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
+    const isVoicePreview = safeId.startsWith('voice-preview-');
     const cacheHash = crypto
       .createHash('sha1')
       .update(
@@ -676,7 +679,17 @@ app.post('/api/tts/synthesize', async (req, res) => {
       .slice(0, 14);
     const cachedMp3 = `tts-${cacheHash}.mp3`;
     const cachedMp3Path = path.join(AUDIO_DIR, cachedMp3);
-    if (fs.existsSync(cachedMp3Path) && fs.statSync(cachedMp3Path).size > 512) {
+    // Only reuse cached Edge-TTS MP3 when browser-fallback was explicitly requested;
+    // never let a stale fallback MP3 shadow OpenFormosa/Ming-3.0 or custom voice previews.
+    if (
+      !skipCache &&
+      !isVoicePreview &&
+      provider === 'browser-fallback' &&
+      !referenceAudio &&
+      !resolvedRemoteVoiceId &&
+      fs.existsSync(cachedMp3Path) &&
+      fs.statSync(cachedMp3Path).size > 512
+    ) {
       const cachedBuf = fs.readFileSync(cachedMp3Path);
       const measuredDuration = getAudioDurationSec(cachedBuf, 'mp3') ?? durationSeconds;
       res.json({

@@ -113,6 +113,7 @@ export async function synthesizeVoicePreview(
       openformosa: params.openformosa,
       mingTts: params.mingTts,
       customVoice: toCustomVoice(profile),
+      skipCache: true,
     }),
   });
   const data = await parseOrThrow<{
