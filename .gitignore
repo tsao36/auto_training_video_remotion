@@ -6,4 +6,5 @@ dist/
 output/
 .playwright-mcp/
 public/audio/tts-*.mp3
+public/audio/voice-preview-*.wav
 voice-samples/

@@ -83,3 +83,46 @@ export function toCustomVoice(p: VoiceProfile): NonNullable<TrainingProject['tts
     remoteVoiceId: p.remoteVoiceId,
   };
 }
+
+export interface VoicePreviewResult {
+  audioUrl: string;
+  mode: string;
+  note?: string;
+  durationSec?: number;
+}
+
+export async function synthesizeVoicePreview(
+  profile: VoiceProfile,
+  params: {
+    text: string;
+    provider: VoiceProfileProvider;
+    language: ContentLanguage;
+    openformosa?: TtsEngineConfig['openformosa'];
+    mingTts?: TtsEngineConfig['mingTts'];
+  }
+): Promise<VoicePreviewResult> {
+  const resp = await fetch('/api/tts/synthesize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sceneId: `voice-preview-${profile.id}`,
+      text: params.text,
+      provider: params.provider,
+      language: params.language,
+      speed: 1.0,
+      openformosa: params.openformosa,
+      mingTts: params.mingTts,
+      customVoice: toCustomVoice(profile),
+    }),
+  });
+  const data = await parseOrThrow<{
+    audioUrl: string;
+    mode: string;
+    note?: string;
+    durationSec?: number;
+  }>(resp, '合成試聽失敗');
+  return {
+    ...data,
+    audioUrl: `${data.audioUrl}?t=${Date.now()}`,
+  };
+}
