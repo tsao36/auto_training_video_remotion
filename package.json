@@ -4,9 +4,10 @@
   "private": true,
   "description": "PC/Laptop Industry Technology Training Video Studio powered solely by Remotion, with PPTX/PDF/Research enhancement, 10-minute scene scripting, and OpenFormosa + Ming-3.0-TTS voiceover.",
   "scripts": {
-    "dev": "concurrently -n \"WEB,API\" -c \"cyan,magenta\" \"npm run dev:client\" \"npm run dev:server\"",
+    "dev": "concurrently -n \"WEB,API,TTS\" -c \"cyan,magenta,yellow\" \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:tts\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
+    "dev:tts": "node server/startBlueMagpie.mjs",
     "build": "vite build",
     "remotion:studio": "remotion studio src/remotion/index.ts",
     "typecheck": "tsc --noEmit",

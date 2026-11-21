@@ -20,10 +20,10 @@ if not exist node_modules (
   )
 )
 
-rem Web UI is on 5173, API on 3001; open the browser once Vite has had time to start.
+rem Web UI is on 5173, API on 3001, BlueMagpie-TTS on 8001; open the browser once Vite has had time to start.
 start "" /b cmd /c "timeout /t 4 /nobreak >nul & start http://127.0.0.1:5173/"
 
-echo Starting Remotion Tech Training Studio. Press Ctrl+C to stop.
+echo Starting Remotion Tech Training Studio (Web + API + BlueMagpie-TTS). Press Ctrl+C to stop.
 call npm run dev
 
 pause
