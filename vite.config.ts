@@ -5,26 +5,38 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    host: '127.0.0.1',
     port: 5173,
-    // Runtime data written by the API server must not trigger a full page reload.
+    // Runtime data and Python virtualenvs must not be watched by Vite.
     watch: {
-      ignored: ['**/projects/**', '**/output/**', '**/public/audio/**', '**/public/pptx-media/**', '**/voice-samples/**'],
+      ignored: [
+        '**/.venv/**',
+        '**/.venv312/**',
+        '**/__pycache__/**',
+        '**/dist/**',
+        '**/.playwright-mcp/**',
+        '**/projects/**',
+        '**/output/**',
+        '**/public/audio/**',
+        '**/public/pptx-media/**',
+        '**/voice-samples/**',
+      ],
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
       '/audio': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
       '/pptx-media': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
       '/output': {
-        target: 'http://localhost:3001',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
     },
