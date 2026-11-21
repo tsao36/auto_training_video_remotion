@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   Trash2,
+  Tv,
   Wand2,
 } from 'lucide-react';
 import { DOMAIN_META, SavedProjectSummary, TechDomain } from '../types/training';
@@ -24,6 +25,7 @@ interface ProjectDashboardProps {
   loading: boolean;
   onRefresh: () => void;
   onOpenProject: (projectId: string) => Promise<void>;
+  onOpenPlayer: (projectId?: string) => void;
   onDeleteProject: (projectId: string) => Promise<void>;
   onCreateWithAi: () => void;
   onCreateFromPreset: (domain: TechDomain) => void;
@@ -54,6 +56,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   loading,
   onRefresh,
   onOpenProject,
+  onOpenPlayer,
   onDeleteProject,
   onCreateWithAi,
   onCreateFromPreset,
@@ -104,14 +107,26 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             <div className="text-[11px] text-slate-400">專案總覽</div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onCreateWithAi}
-          className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition"
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-          AI 主題生成 / 匯入
-        </button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onOpenPlayer()}
+            disabled={projects.length === 0}
+            title="進入播放器模式，連續播放所有草稿與已輸出影片"
+            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-40"
+          >
+            <Tv className="w-3.5 h-3.5 text-cyan-400" />
+            播放器模式 ({projects.length})
+          </button>
+          <button
+            type="button"
+            onClick={onCreateWithAi}
+            className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            AI 主題生成 / 匯入
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">
@@ -284,17 +299,19 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                           )}
                           編輯專案
                         </button>
-                        {item.latestVideoUrl && (
-                          <a
-                            href={item.latestVideoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
-                          >
-                            <Play className="w-3.5 h-3.5 text-emerald-400" />
-                            觀看影片
-                          </a>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => onOpenPlayer(item.id)}
+                          title={rendered ? '在播放器模式觀看已輸出 MP4 或預覽草稿' : '在播放器模式即時播放此草稿'}
+                          className="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
+                        >
+                          <Play
+                            className={`w-3.5 h-3.5 ${
+                              rendered ? 'text-emerald-400' : 'text-amber-400'
+                            }`}
+                          />
+                          {rendered ? '播放影片' : '播放草稿'}
+                        </button>
                       </div>
                     </li>
                   );

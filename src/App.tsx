@@ -23,14 +23,17 @@ import {
   Sliders,
   Sparkles,
   Trash2,
+  Tv,
   Upload,
   Volume2,
   Wand2,
 } from 'lucide-react';
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
+import { VideoPlayerMode } from './components/VideoPlayerMode';
 import { PreviewStillsState, QualityPreviewModal } from './components/QualityPreviewModal';
 import { SourceWizardModal } from './components/SourceWizardModal';
+import { TtsProgressPanel } from './components/TtsProgressPanel';
 import { RecordedVoiceSubmission, VoiceRecorderModal } from './components/VoiceRecorderModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
 import {
@@ -55,6 +58,11 @@ import {
 } from './types/training';
 import { evaluateProjectQuality } from './utils/qualityLinter';
 import { applyTtsSettings, loadTtsSettings } from './utils/ttsSettingsStorage';
+import {
+  computeTtsProgressMetrics,
+  resolveTtsStage,
+  TtsLiveStatusResponse,
+} from './utils/ttsProgress';
 import { createVoiceProfile, listVoiceProfiles, toCustomVoice, trainVoiceProfile } from './utils/voiceProfiles';
 import {
   DEFAULT_GNAI_CONFIG,
@@ -77,10 +85,17 @@ export function App() {
     llmConfig: loadStoredLlmConfig(),
   }));
   const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
-  const [view, setView] = useState<'dashboard' | 'editor'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'editor' | 'player'>('dashboard');
+  const [playerInitialProjectId, setPlayerInitialProjectId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
+  const [ttsDevice, setTtsDevice] = useState<string | null>(null);
+  const [ttsElapsedSec, setTtsElapsedSec] = useState(0);
+  const [ttsBatchElapsedSec, setTtsBatchElapsedSec] = useState(0);
+  const [ttsCompletedDurationsSec, setTtsCompletedDurationsSec] = useState<number[]>([]);
+  const [ttsLiveStatus, setTtsLiveStatus] = useState<TtsLiveStatusResponse | null>(null);
+  const [ttsServerAlive, setTtsServerAlive] = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
   const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfile[]>([]);
   const voiceFileInputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +144,8 @@ export function App() {
   const activeProjectIdRef = useRef<string>(project.id);
   const deletedProjectIdsRef = useRef<Set<string>>(new Set());
   const saveChainRef = useRef<Promise<void>>(Promise.resolve());
+  const ttsRunIdRef = useRef(0);
+  const ttsAbortControllerRef = useRef<AbortController | null>(null);
   activeProjectIdRef.current = project.id;
 
   const fetchSavedProjects = async () => {
@@ -256,6 +273,51 @@ export function App() {
     () => project.scenes.filter((s) => s.tts.status === 'ready' && s.tts.audioUrl).length,
     [project.scenes]
   );
+  const generatingScenes = useMemo(
+    () =>
+      project.scenes
+        .map((scene, idx) => ({ scene, idx }))
+        .filter(({ scene }) => scene.tts.status === 'generating'),
+    [project.scenes]
+  );
+  const isTtsRendering = batchTtsRunning || generatingScenes.length > 0;
+  const activeGeneratingScene = generatingScenes[0];
+  const resolvedTtsStage = useMemo(
+    () =>
+      resolveTtsStage(
+        ttsLiveStatus,
+        activeGeneratingScene?.scene.id,
+        activeGeneratingScene?.scene.tts.provider,
+        ttsDevice
+      ),
+    [ttsLiveStatus, activeGeneratingScene?.scene.id, activeGeneratingScene?.scene.tts.provider, ttsDevice]
+  );
+  const ttsProgressMetrics = useMemo(
+    () =>
+      computeTtsProgressMetrics({
+        totalScenes: project.scenes.length,
+        readyScenes: readyTtsCount,
+        generatingCount: generatingScenes.length,
+        currentSceneElapsedSec: ttsElapsedSec,
+        completedDurationsSec: ttsCompletedDurationsSec,
+        provider: activeGeneratingScene?.scene.tts.provider,
+        device: resolvedTtsStage.device,
+        engineLastDurationSec: ttsLiveStatus?.engineStatus?.last_duration_sec ?? null,
+        isLoadingModel: resolvedTtsStage.isLoadingModel,
+      }),
+    [
+      project.scenes.length,
+      readyTtsCount,
+      generatingScenes.length,
+      ttsElapsedSec,
+      ttsCompletedDurationsSec,
+      activeGeneratingScene?.scene.tts.provider,
+      resolvedTtsStage.device,
+      resolvedTtsStage.isLoadingModel,
+      ttsLiveStatus?.engineStatus?.last_duration_sec,
+    ]
+  );
+  const isSelectedSceneTtsRendering = selectedScene?.tts.status === 'generating';
 
   const totalSeconds = useMemo(
     () => project.scenes.reduce((sum, s) => sum + s.durationSeconds, 0),
@@ -448,6 +510,7 @@ export function App() {
   const synthesizeSceneTts = async (idx: number) => {
     const scene = project.scenes[idx];
     if (!scene) return;
+    const startedAt = Date.now();
     updateScene(idx, { tts: { ...scene.tts, status: 'generating', error: undefined } });
 
     try {
@@ -469,6 +532,10 @@ export function App() {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'TTS failed');
+      const wallSec = (Date.now() - startedAt) / 1000;
+      if (data.mode !== 'cached' && wallSec >= 0.5) {
+        setTtsCompletedDurationsSec((prev) => [...prev.slice(-11), wallSec]);
+      }
       const actualDur = typeof data.durationSec === 'number' && data.durationSec > 0 ? data.durationSec : undefined;
       setProject((prev) => ({
         ...prev,
@@ -521,6 +588,11 @@ export function App() {
       .filter(({ s }) => (!onlyMissing ? true : s.tts.status !== 'ready' || !s.tts.audioUrl));
 
     if (queue.length === 0) return;
+    ttsAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    ttsAbortControllerRef.current = controller;
+    const runId = ++ttsRunIdRef.current;
+    setTtsCompletedDurationsSec([]);
     setBatchTtsRunning(true);
 
     let cursor = 0;
@@ -531,10 +603,11 @@ export function App() {
 
     const worker = async () => {
       while (cursor < queue.length) {
-        if (activeProjectIdRef.current !== targetProjectId) return;
+        if (activeProjectIdRef.current !== targetProjectId || ttsRunIdRef.current !== runId) return;
         const item = queue[cursor++];
         if (!item) return;
         const { s, idx } = item;
+        const itemStartedAt = Date.now();
 
         setProject((prev) => {
           if (prev.id !== targetProjectId) return prev;
@@ -550,6 +623,7 @@ export function App() {
           const resp = await fetch('/api/tts/synthesize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               sceneId: s.id,
               text: s.script,
@@ -564,8 +638,12 @@ export function App() {
             }),
           });
           const data = await resp.json();
-          if (activeProjectIdRef.current !== targetProjectId) return;
+          if (activeProjectIdRef.current !== targetProjectId || ttsRunIdRef.current !== runId) return;
           if (resp.ok && data.audioUrl) {
+            const wallSec = (Date.now() - itemStartedAt) / 1000;
+            if (data.mode !== 'cached' && wallSec >= 0.5) {
+              setTtsCompletedDurationsSec((prev) => [...prev.slice(-11), wallSec]);
+            }
             const actualDur =
               typeof data.durationSec === 'number' && data.durationSec > 0
                 ? data.durationSec
@@ -614,7 +692,13 @@ export function App() {
             });
           }
         } catch (err) {
-          if (activeProjectIdRef.current !== targetProjectId) return;
+          if (
+            controller.signal.aborted ||
+            activeProjectIdRef.current !== targetProjectId ||
+            ttsRunIdRef.current !== runId
+          ) {
+            return;
+          }
           setProject((prev) => {
             if (prev.id !== targetProjectId) return prev;
             return {
@@ -638,9 +722,45 @@ export function App() {
     };
 
     await Promise.all(Array.from({ length: workerCount }, () => worker()));
-    if (activeProjectIdRef.current === targetProjectId) {
+    if (activeProjectIdRef.current === targetProjectId && ttsRunIdRef.current === runId) {
       setBatchTtsRunning(false);
     }
+  };
+
+  const switchRemainingToFastTts = () => {
+    ttsAbortControllerRef.current?.abort();
+    ttsRunIdRef.current += 1;
+    setBatchTtsRunning(false);
+    const updatedScenes: SceneSpec[] = project.scenes.map((sc) =>
+      sc.tts.status === 'ready' && sc.tts.audioUrl
+        ? sc
+        : {
+            ...sc,
+            tts: {
+              ...sc.tts,
+              provider: 'browser-fallback',
+              status: 'idle',
+              error: undefined,
+            },
+          }
+    );
+    const updatedTtsConfig: TrainingProject['ttsConfig'] = {
+      ...project.ttsConfig,
+      customVoice: undefined,
+    };
+    setProject((prev) => ({
+      ...prev,
+      ttsConfig: updatedTtsConfig,
+      scenes: updatedScenes,
+    }));
+    setAiNotice('已將尚未完成配音的場景切換為快速神經網路語音 (Edge TTS)，正在極速合成中...');
+    void synthesizeScenesConcurrent(
+      project.id,
+      updatedScenes,
+      updatedTtsConfig,
+      project.language,
+      true
+    );
   };
 
   useEffect(() => {
@@ -648,7 +768,66 @@ export function App() {
     listVoiceProfiles()
       .then(setVoiceProfiles)
       .catch(() => setVoiceProfiles([]));
-  }, [view]);
+    fetch(`/api/tts/health?baseUrl=${encodeURIComponent(project.ttsConfig.openformosa.baseUrl || '')}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { ok?: boolean; device?: string } | null) => {
+        setTtsDevice(data?.ok ? data.device || 'cpu' : null);
+      })
+      .catch(() => setTtsDevice(null));
+  }, [view, project.ttsConfig.openformosa.baseUrl]);
+
+  useEffect(() => {
+    if (!isTtsRendering) {
+      setTtsElapsedSec(0);
+      return;
+    }
+    setTtsElapsedSec(0);
+    const timer = setInterval(() => {
+      setTtsElapsedSec((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isTtsRendering, activeGeneratingScene?.scene.id]);
+
+  useEffect(() => {
+    if (!isTtsRendering) {
+      setTtsBatchElapsedSec(0);
+      setTtsLiveStatus(null);
+      setTtsServerAlive(false);
+      return;
+    }
+    setTtsBatchElapsedSec(0);
+    const batchTimer = setInterval(() => {
+      setTtsBatchElapsedSec((prev) => prev + 1);
+    }, 1000);
+
+    let cancelled = false;
+    const pollStatus = async () => {
+      try {
+        const baseUrl = project.ttsConfig.openformosa.baseUrl || '';
+        const resp = await fetch(`/api/tts/status?baseUrl=${encodeURIComponent(baseUrl)}`);
+        if (!resp.ok || cancelled) return;
+        const data = (await resp.json()) as TtsLiveStatusResponse;
+        if (cancelled) return;
+        setTtsLiveStatus(data);
+        setTtsServerAlive(true);
+        if (data.engineStatus?.device) {
+          setTtsDevice(data.engineStatus.device);
+        }
+      } catch {
+        if (!cancelled) setTtsServerAlive(false);
+      }
+    };
+    void pollStatus();
+    const statusTimer = setInterval(() => {
+      void pollStatus();
+    }, 1500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(batchTimer);
+      clearInterval(statusTimer);
+    };
+  }, [isTtsRendering, project.ttsConfig.openformosa.baseUrl]);
 
   useEffect(() => {
     if (view !== 'editor') return;
@@ -659,6 +838,9 @@ export function App() {
       project.language,
       true
     );
+    return () => {
+      ttsAbortControllerRef.current?.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, view]);
 
@@ -829,10 +1011,19 @@ export function App() {
 
   // Flush the debounced auto-save so reopening the project from disk shows the latest edits.
   const goToDashboard = async () => {
-    if (isCurrentProjectSaved) {
+    if (view === 'editor' && isCurrentProjectSaved) {
       await saveProjectToDisk(project, false);
     }
     setView('dashboard');
+    void fetchSavedProjects();
+  };
+
+  const openPlayerMode = async (projectId?: string) => {
+    if (view === 'editor' && isCurrentProjectSaved) {
+      await saveProjectToDisk(project, false);
+    }
+    setPlayerInitialProjectId(projectId ?? null);
+    setView('player');
     void fetchSavedProjects();
   };
 
@@ -878,6 +1069,7 @@ export function App() {
           loading={savedProjectsLoading}
           onRefresh={() => void fetchSavedProjects()}
           onOpenProject={handleSelectSavedProject}
+          onOpenPlayer={(projectId) => void openPlayerMode(projectId)}
           onDeleteProject={handleDeleteSavedProject}
           onCreateWithAi={() => setIsWizardOpen(true)}
           onCreateFromPreset={handleCreateFromPreset}
@@ -902,6 +1094,19 @@ export function App() {
     );
   }
 
+  if (view === 'player') {
+    return (
+      <VideoPlayerMode
+        projects={savedProjects}
+        loading={savedProjectsLoading}
+        initialProjectId={playerInitialProjectId}
+        onRefresh={() => void fetchSavedProjects()}
+        onBackToDashboard={() => void goToDashboard()}
+        onEditProject={handleSelectSavedProject}
+      />
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0E0D0C] text-slate-100 overflow-hidden select-none">
       {/* Top Studio Header */}
@@ -915,6 +1120,15 @@ export function App() {
           >
             <LayoutGrid className="w-3.5 h-3.5 text-cyan-400" />
             專案總覽
+          </button>
+          <button
+            type="button"
+            onClick={() => void openPlayerMode(isCurrentProjectSaved ? project.id : undefined)}
+            title="切換至播放器模式，播放所有草稿與已輸出影片"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition shrink-0"
+          >
+            <Tv className="w-3.5 h-3.5 text-cyan-400" />
+            播放器
           </button>
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Film className="w-4 h-4 text-slate-950" />
@@ -1015,15 +1229,15 @@ export function App() {
 
           <button
             onClick={synthesizeAllScenes}
-            disabled={batchTtsRunning}
+            disabled={isTtsRendering}
             className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-xs font-semibold text-indigo-200 flex items-center gap-1.5 transition disabled:opacity-50"
           >
-            {batchTtsRunning ? (
+            {isTtsRendering ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Mic className="w-3.5 h-3.5" />
             )}
-            {batchTtsRunning
+            {isTtsRendering
               ? `配音中 (${readyTtsCount}/${project.scenes.length})`
               : readyTtsCount === project.scenes.length
               ? `語音就緒 (${readyTtsCount}/${project.scenes.length})`
@@ -1072,23 +1286,41 @@ export function App() {
 
           <button
             onClick={() => startRender(selectedSceneIdx)}
-            disabled={renderState.active}
-            title="快速輸出當前選取場景為 MP4 預覽"
+            disabled={renderState.active || isSelectedSceneTtsRendering}
+            title={
+              isSelectedSceneTtsRendering
+                ? '此場景 TTS 語音尚在生成中，等待配音加入完成後即可輸出'
+                : '快速輸出當前選取場景為 MP4 預覽'
+            }
             className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
           >
-            <Activity className="w-3.5 h-3.5 text-emerald-400" />
-            輸出單幕預覽
+            {isSelectedSceneTtsRendering ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+            ) : (
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            {isSelectedSceneTtsRendering ? '等待此幕 TTS' : '輸出單幕預覽'}
           </button>
 
           <button
             onClick={() => startRender(undefined)}
-            disabled={renderState.active}
+            disabled={renderState.active || isTtsRendering}
+            title={
+              isTtsRendering
+                ? 'TTS 語音尚在生成中，影片正等待語音加入完成後再輸出'
+                : `輸出完整 ${formatDuration(totalSeconds)} MP4 影片`
+            }
             className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-50"
           >
             {renderState.active ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 輸出中 {renderState.progress}%
+              </>
+            ) : isTtsRendering ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                等待 TTS 配音 ({readyTtsCount}/{project.scenes.length})
               </>
             ) : (
               <>
@@ -1136,6 +1368,28 @@ export function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* TTS Rendering Status Banner */}
+      {isTtsRendering && (
+        <TtsProgressPanel
+          scenes={project.scenes}
+          readyCount={readyTtsCount}
+          activeGeneratingScene={activeGeneratingScene}
+          stage={resolvedTtsStage}
+          metrics={ttsProgressMetrics}
+          currentSceneElapsedSec={ttsElapsedSec}
+          batchElapsedSec={ttsBatchElapsedSec}
+          serverAlive={ttsServerAlive}
+          customVoiceName={project.ttsConfig.customVoice?.name}
+          canSwitchToFastTts={project.scenes.some(
+            (s) =>
+              (s.tts.status !== 'ready' || !s.tts.audioUrl) &&
+              s.tts.provider !== 'browser-fallback'
+          )}
+          onSwitchToFastTts={switchRemainingToFastTts}
+          onJumpToScene={jumpToScene}
+        />
       )}
 
       {/* Render Status Banner */}
@@ -1270,6 +1524,19 @@ export function App() {
                       SCENE {String(idx + 1).padStart(2, '0')}
                     </span>
                     <div className="flex items-center gap-1.5">
+                      {scene.tts.status === 'generating' && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-[10px] font-semibold text-amber-200 font-mono tabular-nums">
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                          配音中 {formatDuration(ttsElapsedSec)}
+                        </span>
+                      )}
+                      {batchTtsRunning &&
+                        scene.tts.status === 'idle' &&
+                        !scene.tts.audioUrl && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-800/90 border border-slate-700 text-[10px] text-slate-400">
+                            排隊中
+                          </span>
+                        )}
                       <span
                         className={`w-2 h-2 rounded-full ${
                           scene.tts.status === 'ready'
@@ -1352,10 +1619,10 @@ export function App() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {batchTtsRunning ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-[11px] font-semibold text-cyan-200">
+              {isTtsRendering ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-[11px] font-semibold text-amber-200">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  配音生成中 ({readyTtsCount}/{project.scenes.length})
+                  等待 TTS 語音加入 ({readyTtsCount}/{project.scenes.length})
                 </span>
               ) : readyTtsCount === project.scenes.length ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300">
@@ -1372,7 +1639,7 @@ export function App() {
           </div>
 
           <div className="flex-1 flex items-center justify-center p-5 min-h-0">
-            <div className="w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
+            <div className="relative w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
               <Player
                 ref={playerRef}
                 component={TechTrainingVideo as unknown as React.FC<Record<string, unknown>>}
@@ -1389,6 +1656,22 @@ export function App() {
                 controls
                 clickToPlay
               />
+              {isTtsRendering && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-10 max-w-[92%] px-3.5 py-2 rounded-full bg-slate-950/90 backdrop-blur-md border border-amber-400/50 shadow-lg flex items-center gap-2 text-xs text-amber-100"
+                >
+                  <Loader2 className="w-3.5 h-3.5 text-amber-300 animate-spin shrink-0" />
+                  <span className="font-semibold truncate">
+                    {activeGeneratingScene ? `S${activeGeneratingScene.idx + 1} ` : ''}
+                    {resolvedTtsStage.label}
+                  </span>
+                  <span className="font-mono text-[11px] text-amber-300 tabular-nums shrink-0">
+                    {formatDuration(ttsElapsedSec)} · {ttsProgressMetrics.overallPct}% ({readyTtsCount}/{project.scenes.length})
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1792,7 +2075,22 @@ export function App() {
                   )}
                 </button>
 
-                {selectedScene.tts.audioUrl && (
+                {selectedScene.tts.status === 'generating' && (
+                  <div
+                    role="status"
+                    className="p-3 rounded-xl bg-amber-950/35 border border-amber-500/40 space-y-1"
+                  >
+                    <div className="text-[11px] font-semibold text-amber-200 flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      正在生成此場景 TTS 語音...
+                    </div>
+                    <p className="text-[11px] text-amber-200/80 leading-snug">
+                      影片正等待語音合成完成後自動加入音軌並對齊場景時長，完成前此幕預覽暫無旁白。
+                    </p>
+                  </div>
+                )}
+
+                {selectedScene.tts.audioUrl && selectedScene.tts.status !== 'generating' && (
                   <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
                     <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5" /> 音軌已綁定至 Remotion &lt;Audio&gt;

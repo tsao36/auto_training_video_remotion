@@ -17,6 +17,7 @@ import { generateVideoPlanWithLlm, getEnvLlmStatus, regenerateSceneWithLlm } fro
 import { loadLocalEnv } from './loadEnv';
 import { inspectRenderedMedia } from './mediaQa';
 import { parsePptxBuffer } from './pptxParser';
+import { resolveRevealTarget, revealInFileExplorer } from './revealFile';
 import { evaluateProjectQuality } from '../src/utils/qualityLinter';
 import {
   DEFAULT_CONTENT_LANGUAGE,
@@ -278,6 +279,35 @@ app.delete('/api/projects/:id', (req, res) => {
   }
 });
 
+app.post('/api/files/reveal', (req, res) => {
+  try {
+    const body = req.body as {
+      kind?: 'output' | 'project';
+      outputUrl?: string;
+      projectId?: string;
+    };
+    if (body?.kind !== 'output' && body?.kind !== 'project') {
+      res.status(400).json({ error: '缺少有效的檔案類型 (output 或 project)' });
+      return;
+    }
+    const target = resolveRevealTarget({
+      kind: body.kind,
+      outputUrl: body.outputUrl,
+      projectId: body.projectId,
+      outputDir: OUTPUT_DIR,
+      projectsDir: PROJECTS_DIR,
+    });
+    if (!fs.existsSync(target.filePath)) {
+      res.status(404).json({ error: `找不到實際檔案：${target.fileName}` });
+      return;
+    }
+    revealInFileExplorer(target.filePath);
+    res.json({ ok: true, filePath: target.filePath, fileName: target.fileName });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : '無法開啟檔案總管' });
+  }
+});
+
 // Check whether server-side .env / environment already provides GNAI_TOKEN (never returns the token itself)
 app.get('/api/llm/status', (_req, res) => {
   res.json(getEnvLlmStatus());
@@ -480,6 +510,79 @@ app.get('/api/tts/health', async (req, res) => {
       error: '本地 BlueMagpie-TTS 伺服器未啟動，請執行專案根目錄的 start-bluemagpie.bat',
     });
   }
+});
+
+type ActiveTtsStage =
+  | 'checking-cache'
+  | 'connecting-engine'
+  | 'synthesizing'
+  | 'fallback-edge'
+  | 'fallback-silent'
+  | 'measuring-audio';
+
+interface ActiveTtsJob {
+  sceneId: string;
+  provider: 'openformosa' | 'ming-3.0' | 'browser-fallback';
+  voice: string;
+  textChars: number;
+  stage: ActiveTtsStage;
+  stageLabel: string;
+  startedAt: number;
+  stageStartedAt: number;
+  updatedAt: number;
+  engineUrl?: string;
+}
+
+const activeTtsJobs = new Map<string, ActiveTtsJob>();
+
+function updateActiveTtsJob(
+  key: string,
+  stage: ActiveTtsStage,
+  stageLabel: string,
+  extra?: Partial<ActiveTtsJob>
+) {
+  const existing = activeTtsJobs.get(key);
+  if (!existing) return;
+  const now = Date.now();
+  activeTtsJobs.set(key, {
+    ...existing,
+    ...extra,
+    stage,
+    stageLabel,
+    stageStartedAt: existing.stage === stage ? existing.stageStartedAt : now,
+    updatedAt: now,
+  });
+}
+
+app.get('/api/tts/status', async (req, res) => {
+  const jobs = Array.from(activeTtsJobs.values());
+  const rawUrl =
+    typeof req.query.baseUrl === 'string' && req.query.baseUrl
+      ? req.query.baseUrl
+      : jobs.find((j) => j.provider === 'openformosa' && j.engineUrl)?.engineUrl || '';
+
+  let engineStatus: Record<string, unknown> | null = null;
+  if (rawUrl || jobs.some((j) => j.provider === 'openformosa')) {
+    const baseUrl = resolveOpenFormosaUrl(rawUrl);
+    if (baseUrl) {
+      const statusUrl = baseUrl.replace(/\/v1\/tts\/?$/i, '/status').replace(/\/+$/, '');
+      try {
+        const resp = await fetch(statusUrl, { signal: AbortSignal.timeout(1500) });
+        if (resp.ok) {
+          engineStatus = (await resp.json().catch(() => null)) as Record<string, unknown> | null;
+        }
+      } catch {
+        // Ignore transient timeout while engine is busy
+      }
+    }
+  }
+
+  res.json({
+    ok: true,
+    serverTimeMs: Date.now(),
+    activeJobs: jobs,
+    engineStatus,
+  });
 });
 
 app.get('/api/voice-profiles', (_req, res) => {
@@ -693,6 +796,16 @@ app.get('/api/voice-profiles/:id/audio', (req, res) => {
   res.sendFile(path.join(VOICE_SAMPLES_DIR, profile.fileName));
 });
 
+interface TtsSynthesizeResult {
+  ok: true;
+  mode: 'cached' | 'openformosa' | 'ming-3.0' | 'neural-fallback' | 'local-fallback';
+  note: string;
+  audioUrl: string;
+  durationSec: number;
+}
+
+const inFlightTtsRequests = new Map<string, Promise<TtsSynthesizeResult>>();
+
 // Synthesize TTS using OpenFormosa or Ming-3.0-TTS (with local WAV fallback for offline preview)
 app.post('/api/tts/synthesize', async (req, res) => {
   try {
@@ -752,10 +865,11 @@ app.post('/api/tts/synthesize', async (req, res) => {
     const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
     const isVoicePreview = safeId.startsWith('voice-preview-');
+    const ttsCacheVersion = provider === 'openformosa' ? 'v2-refwav|' : '';
     const cacheHash = crypto
       .createHash('sha1')
       .update(
-        `${provider}|${ttsLanguage}|${resolvedRemoteVoiceId || voiceId || ''}|${referenceAudio ? resolvedFileName : ''}|${speed}|${text || ''}`
+        `${ttsCacheVersion}${provider}|${ttsLanguage}|${resolvedRemoteVoiceId || voiceId || ''}|${referenceAudio ? resolvedFileName : ''}|${speed}|${text || ''}`
       )
       .digest('hex')
       .slice(0, 14);
@@ -789,124 +903,203 @@ app.post('/api/tts/synthesize', async (req, res) => {
     const mp3FileName = cachedMp3;
     const mp3FilePath = cachedMp3Path;
 
-    let finalFileName = wavFileName;
-    let mode: 'openformosa' | 'ming-3.0' | 'neural-fallback' | 'local-fallback' = 'local-fallback';
-    let note = '';
-
-    const openformosaUrl = resolveOpenFormosaUrl(openformosa?.baseUrl);
+    // Reuse cached WAV for OpenFormosa / Ming-3.0 when the exact same scene, voice, speed, and script already succeeded.
     if (
-      provider === 'openformosa' &&
-      openformosaUrl &&
-      (ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US')
+      !skipCache &&
+      !isVoicePreview &&
+      (provider === 'openformosa' || provider === 'ming-3.0') &&
+      fs.existsSync(wavFilePath) &&
+      fs.statSync(wavFilePath).size > 512
     ) {
-      try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (openformosa?.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
-        const resp = await postJsonForBuffer(openformosaUrl, headers, {
-          model: openformosa?.model || 'OpenFormosa/BlueMagpie-TTS',
-          voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || 'hung_yi_lee',
-          input: text,
-          speed,
-          response_format: 'wav',
-          ...referenceAudio,
-        });
-        if (resp.status >= 200 && resp.status < 300) {
-          fs.writeFileSync(wavFilePath, resp.buffer);
-          mode = 'openformosa';
-        } else {
-          note = `OpenFormosa (BlueMagpie-TTS) HTTP ${resp.status} — 已使用神經網路語音合成`;
-        }
-      } catch (e) {
-        const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
-        note =
-          errCode === 'ETIMEDOUT'
-            ? `OpenFormosa (BlueMagpie-TTS) 推論逾時 (${openformosaUrl}) — 已使用神經網路語音合成`
-            : `OpenFormosa (BlueMagpie-TTS) 本地端點未啟動 (${openformosaUrl}) — 已使用神經網路語音合成`;
-      }
-    } else if (provider === 'ming-3.0' && mingTts?.baseUrl) {
-      try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (mingTts.apiKey) headers.Authorization = `Bearer ${mingTts.apiKey}`;
-        const resp = await postJsonForBuffer(mingTts.baseUrl, headers, {
-          model: mingTts.model || 'inclusionAI/Ming-3.0-tts',
-          text,
-          speaker: resolvedRemoteVoiceId || voiceId || mingTts.speaker || 'ming-tech-zh-en',
-          style: mingTts.style || 'professional-training',
-          language: ttsLanguage,
-          speed,
-          ...referenceAudio,
-        });
-        if (resp.status >= 200 && resp.status < 300) {
-          fs.writeFileSync(wavFilePath, resp.buffer);
-          mode = 'ming-3.0';
-        } else {
-          note = `Ming-3.0-TTS HTTP ${resp.status} — 已使用神經網路語音合成`;
-        }
-      } catch (e) {
-        const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
-        note =
-          errCode === 'ETIMEDOUT'
-            ? `Ming-3.0-TTS 推論逾時 — 已使用神經網路語音合成`
-            : `Ming-3.0-TTS 本地端點未啟動 — 已使用神經網路語音合成`;
-      }
-    } else {
-      note =
-        provider === 'openformosa'
-          ? ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US'
-            ? 'OpenFormosa API 未設定或無法連線，已切換至所選語言的神經網路語音'
-            : 'OpenFormosa 不支援此語言，已切換至對應的神經網路語音'
-          : 'Ming-3.0-TTS 本地端點未連線，已切換至所選語言的神經網路語音';
+      const cachedBuf = fs.readFileSync(wavFilePath);
+      const measuredDuration = getAudioDurationSec(cachedBuf, 'wav') ?? durationSeconds;
+      res.json({
+        ok: true,
+        mode: 'cached',
+        note: '使用快取語音音軌',
+        audioUrl: `/audio/${wavFileName}`,
+        durationSec: measuredDuration,
+      });
+      return;
     }
 
-    if (mode === 'local-fallback') {
-      try {
-        const edgeVoice = getContentLanguage(ttsLanguage).edgeVoice;
-        const tts = new MsEdgeTTS();
-        await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-        const ratePct = Math.round((speed - 1) * 100);
-        const rateStr = ratePct >= 0 ? `+${ratePct}%` : `${ratePct}%`;
-        const sanitizedText = (text || '')
-          .replace(/</g, ' ')
-          .replace(/>/g, ' ')
-          .trim() || '請輸入旁白內容';
-        const { audioStream } = tts.toStream(sanitizedText, { rate: rateStr });
-        const chunks: Buffer[] = [];
-        for await (const chunk of audioStream) {
-          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-        }
-        const audioBuf = Buffer.concat(chunks);
-        if (audioBuf.length > 0) {
-          fs.writeFileSync(mp3FilePath, audioBuf);
-          finalFileName = mp3FileName;
-          mode = 'neural-fallback';
-          if (referenceAudio) note += ' (備援語音無法複製自訂聲線)';
-        } else {
-          throw new Error('Empty audio stream');
-        }
-      } catch (edgeErr) {
-        console.warn('Neural TTS fallback failed, using local silent WAV:', edgeErr);
-        const wordCount = Math.max(10, text.length);
-        const estDuration = Math.min(durationSeconds, Math.max(5, Math.round(wordCount / 5)));
-        createSilentOrToneWav(estDuration, wavFilePath);
-        note += ' (離線模式：已生成靜音時序軌)';
-      }
+    const dedupeKey = `${provider}|${safeId}|${cacheHash}`;
+    const existingInFlight = !skipCache ? inFlightTtsRequests.get(dedupeKey) : undefined;
+    if (existingInFlight) {
+      const sharedResult = await existingInFlight;
+      res.json(sharedResult);
+      return;
     }
 
-    const finalFilePath = path.join(AUDIO_DIR, finalFileName);
-    let measuredDuration = durationSeconds;
-    if (fs.existsSync(finalFilePath)) {
-      const finalBuf = fs.readFileSync(finalFilePath);
-      measuredDuration =
-        getAudioDurationSec(finalBuf, path.extname(finalFileName)) ?? durationSeconds;
-    }
-
-    res.json({
-      ok: true,
-      mode,
-      note,
-      audioUrl: `/audio/${finalFileName}`,
-      durationSec: measuredDuration,
+    const jobTrackingKey = `${dedupeKey}|${Date.now()}`;
+    const openformosaUrl = resolveOpenFormosaUrl(openformosa?.baseUrl);
+    const now = Date.now();
+    activeTtsJobs.set(jobTrackingKey, {
+      sceneId: sceneId || safeId,
+      provider,
+      voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || mingTts?.speaker || 'default',
+      textChars: (text || '').length,
+      stage: 'checking-cache',
+      stageLabel: '檢查快取與準備合成任務...',
+      startedAt: now,
+      stageStartedAt: now,
+      updatedAt: now,
+      engineUrl: provider === 'openformosa' ? openformosaUrl : mingTts?.baseUrl,
     });
+
+    const synthesizeTask = (async (): Promise<TtsSynthesizeResult> => {
+      let finalFileName = wavFileName;
+      let mode: 'openformosa' | 'ming-3.0' | 'neural-fallback' | 'local-fallback' = 'local-fallback';
+      let note = '';
+
+      if (
+        provider === 'openformosa' &&
+        openformosaUrl &&
+        (ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US')
+      ) {
+        try {
+          updateActiveTtsJob(
+            jobTrackingKey,
+            'synthesizing',
+            `正在透過 OpenFormosa (BlueMagpie-TTS) 合成語音 (${(text || '').length} 字)...`
+          );
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (openformosa?.apiKey) headers.Authorization = `Bearer ${openformosa.apiKey}`;
+          const resp = await postJsonForBuffer(openformosaUrl, headers, {
+            model: openformosa?.model || 'OpenFormosa/BlueMagpie-TTS',
+            voice: resolvedRemoteVoiceId || voiceId || openformosa?.voice || 'hung_yi_lee',
+            input: text,
+            speed,
+            response_format: 'wav',
+            ...referenceAudio,
+          });
+          if (resp.status >= 200 && resp.status < 300) {
+            fs.writeFileSync(wavFilePath, resp.buffer);
+            mode = 'openformosa';
+          } else {
+            note = `OpenFormosa (BlueMagpie-TTS) HTTP ${resp.status} — 已使用神經網路語音合成`;
+          }
+        } catch (e) {
+          const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
+          note =
+            errCode === 'ETIMEDOUT'
+              ? `OpenFormosa (BlueMagpie-TTS) 推論逾時 (${openformosaUrl}) — 已使用神經網路語音合成`
+              : `OpenFormosa (BlueMagpie-TTS) 本地端點未啟動 (${openformosaUrl}) — 已使用神經網路語音合成`;
+        }
+      } else if (provider === 'ming-3.0' && mingTts?.baseUrl) {
+        try {
+          updateActiveTtsJob(
+            jobTrackingKey,
+            'synthesizing',
+            `正在透過 Ming-3.0-TTS 合成語音 (${(text || '').length} 字)...`
+          );
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (mingTts.apiKey) headers.Authorization = `Bearer ${mingTts.apiKey}`;
+          const resp = await postJsonForBuffer(mingTts.baseUrl, headers, {
+            model: mingTts.model || 'inclusionAI/Ming-3.0-tts',
+            text,
+            speaker: resolvedRemoteVoiceId || voiceId || mingTts.speaker || 'ming-tech-zh-en',
+            style: mingTts.style || 'professional-training',
+            language: ttsLanguage,
+            speed,
+            ...referenceAudio,
+          });
+          if (resp.status >= 200 && resp.status < 300) {
+            fs.writeFileSync(wavFilePath, resp.buffer);
+            mode = 'ming-3.0';
+          } else {
+            note = `Ming-3.0-TTS HTTP ${resp.status} — 已使用神經網路語音合成`;
+          }
+        } catch (e) {
+          const errCode = (e as NodeJS.ErrnoException | undefined)?.code;
+          note =
+            errCode === 'ETIMEDOUT'
+              ? `Ming-3.0-TTS 推論逾時 — 已使用神經網路語音合成`
+              : `Ming-3.0-TTS 本地端點未啟動 — 已使用神經網路語音合成`;
+        }
+      } else {
+        note =
+          provider === 'openformosa'
+            ? ttsLanguage === 'zh-TW' || ttsLanguage === 'en-US'
+              ? 'OpenFormosa API 未設定或無法連線，已切換至所選語言的神經網路語音'
+              : 'OpenFormosa 不支援此語言，已切換至對應的神經網路語音'
+            : 'Ming-3.0-TTS 本地端點未連線，已切換至所選語言的神經網路語音';
+      }
+
+      if (mode === 'local-fallback') {
+        try {
+          updateActiveTtsJob(
+            jobTrackingKey,
+            'fallback-edge',
+            `正在使用快速神經網路語音 (Edge TTS) 合成 (${(text || '').length} 字)...`
+          );
+          const edgeVoice = getContentLanguage(ttsLanguage).edgeVoice;
+          const tts = new MsEdgeTTS();
+          await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+          const ratePct = Math.round((speed - 1) * 100);
+          const rateStr = ratePct >= 0 ? `+${ratePct}%` : `${ratePct}%`;
+          const sanitizedText = (text || '')
+            .replace(/</g, ' ')
+            .replace(/>/g, ' ')
+            .trim() || '請輸入旁白內容';
+          const { audioStream } = tts.toStream(sanitizedText, { rate: rateStr });
+          const chunks: Buffer[] = [];
+          for await (const chunk of audioStream) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          const audioBuf = Buffer.concat(chunks);
+          if (audioBuf.length > 0) {
+            fs.writeFileSync(mp3FilePath, audioBuf);
+            finalFileName = mp3FileName;
+            mode = 'neural-fallback';
+            if (referenceAudio) note += ' (備援語音無法複製自訂聲線)';
+          } else {
+            throw new Error('Empty audio stream');
+          }
+        } catch (edgeErr) {
+          console.warn('Neural TTS fallback failed, using local silent WAV:', edgeErr);
+          updateActiveTtsJob(
+            jobTrackingKey,
+            'fallback-silent',
+            '正在生成離線靜音時序軌...'
+          );
+          const wordCount = Math.max(10, text.length);
+          const estDuration = Math.min(durationSeconds, Math.max(5, Math.round(wordCount / 5)));
+          createSilentOrToneWav(estDuration, wavFilePath);
+          note += ' (離線模式：已生成靜音時序軌)';
+        }
+      }
+
+      updateActiveTtsJob(jobTrackingKey, 'measuring-audio', '正在量測語音實測長度並校正場景時長...');
+      const finalFilePath = path.join(AUDIO_DIR, finalFileName);
+      let measuredDuration = durationSeconds;
+      if (fs.existsSync(finalFilePath)) {
+        const finalBuf = fs.readFileSync(finalFilePath);
+        measuredDuration =
+          getAudioDurationSec(finalBuf, path.extname(finalFileName)) ?? durationSeconds;
+      }
+
+      return {
+        ok: true,
+        mode,
+        note,
+        audioUrl: `/audio/${finalFileName}`,
+        durationSec: measuredDuration,
+      };
+    })();
+
+    if (!skipCache) {
+      inFlightTtsRequests.set(dedupeKey, synthesizeTask);
+    }
+    try {
+      const result = await synthesizeTask;
+      res.json(result);
+    } finally {
+      activeTtsJobs.delete(jobTrackingKey);
+      if (!skipCache && inFlightTtsRequests.get(dedupeKey) === synthesizeTask) {
+        inFlightTtsRequests.delete(dedupeKey);
+      }
+    }
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'TTS synthesis failed' });
   }

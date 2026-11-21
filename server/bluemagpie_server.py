@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -45,7 +46,74 @@ _MODEL = None
 _MODEL_DIR: Path | None = None
 _BUNDLED_CENTROIDS: dict[str, Any] | None = None
 _MODEL_LOCK = threading.Lock()
+_STATUS_LOCK = threading.Lock()
 _DEVICE = "cpu"
+_DEVICE_NAME: str | None = None
+_STATUS: dict[str, Any] = {
+    "state": "idle",
+    "stage_label": "待命",
+    "started_at": None,
+    "stage_started_at": None,
+    "text_chars": 0,
+    "voice": "",
+    "completed_count": 0,
+    "last_duration_sec": None,
+}
+
+
+def _now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def _set_status(state: str, stage_label: str, **extra: Any) -> None:
+    now = _now_ms()
+    with _STATUS_LOCK:
+        _STATUS["state"] = state
+        _STATUS["stage_label"] = stage_label
+        _STATUS["stage_started_at"] = now
+        for k, v in extra.items():
+            _STATUS[k] = v
+
+
+def _get_status_snapshot() -> dict[str, Any]:
+    with _STATUS_LOCK:
+        snap = dict(_STATUS)
+    snap["device"] = _DEVICE
+    snap["device_name"] = _DEVICE_NAME
+    snap["model_loaded"] = _MODEL is not None
+    snap["server_time_ms"] = _now_ms()
+    return snap
+
+
+def _has_xpu() -> bool:
+    try:
+        import torch
+
+        return hasattr(torch, "xpu") and bool(torch.xpu.is_available())
+    except Exception:
+        return False
+
+
+def _patch_bluemagpie_xpu_support() -> None:
+    """Allow BlueMagpie/VoxCPM device resolution to accept Intel XPU devices."""
+    import bluemagpie.model as bm_model
+    import bluemagpie._vendor.voxcpm.model.utils as vox_utils
+
+    orig_resolve = vox_utils.resolve_runtime_device
+    if getattr(orig_resolve, "_xpu_patched", False):
+        return
+
+    def _resolve_with_xpu(device: str | None, configured_device: str = "cuda") -> str:
+        explicit = None if device is None else device.strip().lower()
+        if explicit and explicit.startswith("xpu"):
+            if not _has_xpu():
+                raise ValueError(f"Requested device '{device}', but Intel XPU is not available.")
+            return explicit
+        return orig_resolve(device, configured_device)
+
+    _resolve_with_xpu._xpu_patched = True  # type: ignore[attr-defined]
+    vox_utils.resolve_runtime_device = _resolve_with_xpu
+    bm_model.resolve_runtime_device = _resolve_with_xpu
 
 
 def _find_local_model_dir(explicit: str | None = None) -> Path | None:
@@ -84,9 +152,13 @@ def _ensure_model(explicit_dir: str | None = None):
     with _MODEL_LOCK:
         if _MODEL is not None:
             return _MODEL
+        _set_status("loading_model", f"正在載入 BlueMagpie-TTS 模型權重 ({_DEVICE.upper()})...")
         import torch
         from transformers import PreTrainedTokenizerFast
         from bluemagpie import BlueMagpieModel
+
+        if _DEVICE.startswith("xpu"):
+            _patch_bluemagpie_xpu_support()
 
         model_dir = _ensure_model_dir(explicit_dir)
         tokenizer = PreTrainedTokenizerFast(tokenizer_file=str(model_dir / "tokenizer.json"))
@@ -107,6 +179,7 @@ def _ensure_model(explicit_dir: str | None = None):
         else:
             _BUNDLED_CENTROIDS = {}
         print(f"[BlueMagpie] Ready (bundled speakers: {list(_BUNDLED_CENTROIDS.keys())})", flush=True)
+        _set_status("idle", "模型已載入就緒")
         return _MODEL
 
 
@@ -189,7 +262,11 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
         return json.loads(raw.decode("utf-8"))
 
     def do_GET(self) -> None:
-        if self.path.rstrip("/") in ("", "/health", "/v1/tts/health"):
+        path = self.path.split("?", 1)[0].rstrip("/")
+        if path in ("/status", "/v1/tts/status"):
+            self._send_json(200, {"ok": True, **_get_status_snapshot()})
+            return
+        if path in ("", "/health", "/v1/tts/health"):
             model_dir = _find_local_model_dir(self.explicit_model_dir)
             self._send_json(
                 200,
@@ -197,9 +274,11 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
                     "ok": True,
                     "service": "OpenFormosa/BlueMagpie-TTS",
                     "device": _DEVICE,
+                    "device_name": _DEVICE_NAME,
                     "model_dir": str(model_dir) if model_dir else None,
                     "model_loaded": _MODEL is not None,
                     "centroid_supported": _has_centroid_extractor(),
+                    "status": _get_status_snapshot(),
                 },
             )
             return
@@ -262,6 +341,8 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
 
     def _handle_synthesize(self) -> None:
         tmp_ref: Path | None = None
+        req_start = time.monotonic()
+        succeeded = False
         try:
             body = self._read_json()
             text = str(body.get("input") or body.get("text") or "").strip()
@@ -269,10 +350,28 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Missing input/text"})
                 return
 
+            voice = str(body.get("voice") or "").strip()
+            _set_status(
+                "loading_model" if _MODEL is None else "preparing_voice",
+                (
+                    f"正在載入 BlueMagpie-TTS 模型權重 ({_DEVICE.upper()})..."
+                    if _MODEL is None
+                    else "正在準備參考聲線與輸入參數..."
+                ),
+                started_at=_now_ms(),
+                text_chars=len(text),
+                voice=voice or "default",
+            )
+
             model = _ensure_model(self.explicit_model_dir)
             import torch
 
-            voice = str(body.get("voice") or "").strip()
+            _set_status(
+                "preparing_voice",
+                "正在準備參考聲線與輸入參數...",
+                text_chars=len(text),
+                voice=voice or "default",
+            )
             cfg_value = float(body.get("cfg_value", 2.0))
             timesteps = int(body.get("inference_timesteps", 10))
 
@@ -287,9 +386,10 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
             pt_path = VOICE_STORE_DIR / f"{safe_vid}.pt" if safe_vid else None
             wav_path = VOICE_STORE_DIR / f"{safe_vid}.wav" if safe_vid else None
 
-            if pt_path and pt_path.exists():
-                kwargs["speaker_centroid"] = torch.load(str(pt_path), map_location="cpu", weights_only=True)
-            elif wav_path and wav_path.exists():
+            # For custom cloned voices (unseen speakers), prefer reference_wav_path
+            # (zero-shot AudioVAE acoustic tokens) over speaker_centroid (.pt),
+            # because a single 192-d centroid drifts across scenes for unseen voices.
+            if wav_path and wav_path.exists():
                 kwargs["reference_wav_path"] = str(wav_path)
             elif isinstance(body.get("reference_audio"), str) and body["reference_audio"]:
                 raw_bytes = base64.b64decode(body["reference_audio"])
@@ -298,13 +398,20 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
                     tmp_ref = Path(tf.name)
                 _convert_to_wav(raw_bytes, fmt, tmp_ref)
                 kwargs["reference_wav_path"] = str(tmp_ref)
+            elif pt_path and pt_path.exists():
+                kwargs["speaker_centroid"] = torch.load(str(pt_path), map_location="cpu", weights_only=True)
             elif _BUNDLED_CENTROIDS and voice in _BUNDLED_CENTROIDS:
                 kwargs["speaker_centroid"] = _BUNDLED_CENTROIDS[voice]
             elif _BUNDLED_CENTROIDS and "hung_yi_lee" in _BUNDLED_CENTROIDS:
                 kwargs["speaker_centroid"] = _BUNDLED_CENTROIDS["hung_yi_lee"]
 
             with _MODEL_LOCK:
+                _set_status(
+                    "generating",
+                    f"正在執行 BlueMagpie 語音推論 ({len(text)} 字 · {_DEVICE.upper()})...",
+                )
                 audio = model.generate(**kwargs)
+            _set_status("encoding", "正在封裝 48kHz WAV 音檔...")
             wav_bytes = _waveform_to_wav_bytes(audio.squeeze().cpu().numpy(), model.sample_rate)
 
             self.send_response(200)
@@ -312,19 +419,29 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(wav_bytes)))
             self.end_headers()
             self.wfile.write(wav_bytes)
+            succeeded = True
         except Exception as exc:
             self._send_json(500, {"error": str(exc)})
         finally:
             if tmp_ref is not None:
                 tmp_ref.unlink(missing_ok=True)
+            elapsed = round(time.monotonic() - req_start, 2)
+            with _STATUS_LOCK:
+                if succeeded:
+                    _STATUS["completed_count"] = int(_STATUS.get("completed_count", 0)) + 1
+                    _STATUS["last_duration_sec"] = elapsed
+                _STATUS["state"] = "idle"
+                _STATUS["stage_label"] = "待命"
+                _STATUS["started_at"] = None
+                _STATUS["stage_started_at"] = _now_ms()
 
 
 def main() -> int:
-    global _DEVICE
+    global _DEVICE, _DEVICE_NAME
     parser = argparse.ArgumentParser(description="Local OpenFormosa/BlueMagpie-TTS HTTP Server")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
-    parser.add_argument("--device", default="auto", choices=["auto", "cuda", "mps", "cpu"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cuda", "xpu", "mps", "cpu"])
     parser.add_argument("--model-dir", default=None)
     parser.add_argument("--preload", action="store_true", help="Load the 8GB model immediately on startup")
     args = parser.parse_args()
@@ -333,18 +450,33 @@ def main() -> int:
         try:
             import torch
 
-            _DEVICE = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+            if torch.cuda.is_available():
+                _DEVICE = "cuda"
+                _DEVICE_NAME = torch.cuda.get_device_name(0)
+            elif hasattr(torch, "xpu") and torch.xpu.is_available():
+                _DEVICE = "xpu"
+                _DEVICE_NAME = torch.xpu.get_device_name(0)
+            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                _DEVICE = "mps"
+                _DEVICE_NAME = "Apple MPS"
+            else:
+                _DEVICE = "cpu"
         except Exception:
             _DEVICE = "cpu"
     else:
         _DEVICE = args.device
+        if _DEVICE == "xpu" and _has_xpu():
+            import torch
+
+            _DEVICE_NAME = torch.xpu.get_device_name(0)
 
     BlueMagpieHandler.explicit_model_dir = args.model_dir
     if args.preload:
         _ensure_model(args.model_dir)
 
     server = ThreadingHTTPServer((args.host, args.port), BlueMagpieHandler)
-    print(f"[BlueMagpie] Listening on http://{args.host}:{args.port} (device={_DEVICE})", flush=True)
+    dev_desc = f"{_DEVICE} ({_DEVICE_NAME})" if _DEVICE_NAME else _DEVICE
+    print(f"[BlueMagpie] Listening on http://{args.host}:{args.port} (device={dev_desc})", flush=True)
     print(f"[BlueMagpie] Model dir: {_find_local_model_dir(args.model_dir) or 'HuggingFace auto-download'}", flush=True)
     print(f"[BlueMagpie] Speaker centroid (speechbrain): {_has_centroid_extractor()}", flush=True)
     try:

@@ -343,9 +343,9 @@ async function callChatCompletionJson(
   }
 
   const isFixedTempModel = /^(gpt-5|o1|o3|o4)/i.test(cfg.model.trim());
-  const buildBody = (useJsonMode: boolean, includeTemp: boolean) => {
+  const buildBody = (modelName: string, useJsonMode: boolean, includeTemp: boolean) => {
     const payload: Record<string, unknown> = {
-      model: cfg.model,
+      model: modelName,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -357,11 +357,24 @@ async function callChatCompletionJson(
   };
 
   const urlStr = `${cfg.baseUrl}/chat/completions`;
-  let resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(true, !isFixedTempModel));
+  let activeModel = cfg.model;
+  let resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(activeModel, true, !isFixedTempModel));
+
+  if (
+    (resp.status === 404 || resp.status === 400) &&
+    /not\s*found|unknown\s*model|invalid\s*model|does\s*not\s*exist/i.test(resp.text) &&
+    activeModel.trim() !== DEFAULT_GNAI_MODEL
+  ) {
+    console.warn(
+      `[LLM] Model "${activeModel}" unavailable on ${cfg.baseUrl} (HTTP ${resp.status}); retrying with default "${DEFAULT_GNAI_MODEL}".`
+    );
+    activeModel = DEFAULT_GNAI_MODEL;
+    resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(activeModel, true, false));
+  }
 
   if (resp.status === 400) {
     // Retry without response_format / temperature in case provider or model restricts them
-    resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(false, false));
+    resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(activeModel, false, false));
   }
 
   if (!resp.ok) {
@@ -1289,19 +1302,11 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
         };
       }
     } catch (err) {
-      console.warn('LLM plan generation failed, falling back to smart generator:', err);
-      if (language.value !== DEFAULT_CONTENT_LANGUAGE) {
-        throw new Error(`無法以${language.label}生成內容，請確認 LLM 服務可用後重試。`);
-      }
-      const fallback = generateFallbackPlan({ ...params, durationSeconds: targetDuration });
-      return {
-        title: fallback.title,
-        subtitle: fallback.subtitle,
-        scenes: toSceneSpecs(fallback, params.domain, provider, params.topic),
-        mode: 'smart-fallback',
-        note: `LLM 連線失敗 (${err instanceof Error ? err.message : 'error'})，已自動切換為智慧規則引擎生成`,
-        ...resolvedDomain,
-      };
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error('LLM plan generation failed:', detail);
+      throw new Error(
+        `LLM 生成課程失敗（${detail}）。請確認 GNAI_MODEL（例如 gpt-5-mini）與 GNAI_TOKEN 設定後重試，避免產生與主題無關的預設範本內容。`
+      );
     }
   }
 
