@@ -418,6 +418,8 @@ export interface TrainingProject {
   rawSourceText: string;
   llmConfig?: LlmConfig;
   ttsConfig: TtsEngineConfig;
+  // When true, TTS is not auto-generated on open; the user starts it after reviewing the script.
+  ttsDeferred?: boolean;
   scenes: SceneSpec[];
 }
 

@@ -800,7 +800,7 @@ function toSceneSpecs(
       tts: {
         provider: defaultTtsProvider,
         voiceId,
-        speed: 1.05,
+        speed: 0.95,
         status: 'idle',
       },
       animation: {
@@ -976,7 +976,7 @@ ${JSON.stringify(slideSummaries, null, 2)}`;
     tts: {
       provider,
       voiceId,
-      speed: 1.05,
+      speed: 0.95,
       status: 'idle',
     },
     animation: {

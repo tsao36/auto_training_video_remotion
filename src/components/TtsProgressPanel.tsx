@@ -9,6 +9,7 @@ import {
   Cpu,
   Loader2,
   Sparkles,
+  Square,
   Zap,
 } from 'lucide-react';
 import { SceneSpec } from '../types/training';
@@ -31,6 +32,7 @@ interface TtsProgressPanelProps {
   customVoiceName?: string;
   canSwitchToFastTts: boolean;
   onSwitchToFastTts: () => void;
+  onStop: () => void;
   onJumpToScene: (idx: number) => void;
 }
 
@@ -46,6 +48,7 @@ export const TtsProgressPanel: React.FC<TtsProgressPanelProps> = ({
   customVoiceName,
   canSwitchToFastTts,
   onSwitchToFastTts,
+  onStop,
   onJumpToScene,
 }) => {
   const [expanded, setExpanded] = useState(true);
@@ -161,6 +164,16 @@ export const TtsProgressPanel: React.FC<TtsProgressPanelProps> = ({
               改用快速語音
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={onStop}
+            title="停止 TTS 配音；已完成的場景語音會保留"
+            className="px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/50 text-[11px] font-semibold text-rose-100 flex items-center gap-1 transition cursor-pointer"
+          >
+            <Square className="w-3 h-3 text-rose-300" />
+            停止配音
+          </button>
 
           <div
             role="progressbar"

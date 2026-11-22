@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -215,6 +216,11 @@ def _convert_to_wav(raw_bytes: bytes, ext: str, out_wav: Path) -> None:
         tmp_path.unlink(missing_ok=True)
 
 
+def _split_narration_sentences(text: str) -> list[str]:
+    parts = re.split(r"(?<=[。！？!?])\s*|(?<=\.)\s+(?=\S)|\n+", text.strip())
+    return [part.strip() for part in parts if part.strip()]
+
+
 def _waveform_to_wav_bytes(waveform, sample_rate: int) -> bytes:
     import numpy as np
 
@@ -235,6 +241,51 @@ def _waveform_to_wav_bytes(waveform, sample_rate: int) -> bytes:
         wf.setframerate(int(sample_rate))
         wf.writeframes(pcm16.tobytes())
     return buf.getvalue()
+
+
+def _apply_wav_tempo(wav_bytes: bytes, speed: float) -> bytes:
+    tempo = min(2.0, max(0.5, float(speed)))
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg or abs(tempo - 1.0) < 0.01:
+        return wav_bytes
+
+    input_path: Path | None = None
+    output_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix="-input.wav", delete=False) as input_file:
+            input_path = Path(input_file.name)
+            input_file.write(wav_bytes)
+        with tempfile.NamedTemporaryFile(suffix="-output.wav", delete=False) as output_file:
+            output_path = Path(output_file.name)
+
+        proc = subprocess.run(
+            [
+                ffmpeg,
+                "-y",
+                "-loglevel",
+                "error",
+                "-i",
+                str(input_path),
+                "-af",
+                f"atempo={tempo}",
+                "-ac",
+                "1",
+                str(output_path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if proc.returncode == 0 and output_path.exists() and output_path.stat().st_size > 44:
+            return output_path.read_bytes()
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
+    finally:
+        if input_path is not None:
+            input_path.unlink(missing_ok=True)
+        if output_path is not None:
+            output_path.unlink(missing_ok=True)
+    return wav_bytes
 
 
 def _safe_voice_id(raw: str | None, audio_bytes: bytes) -> str:
@@ -405,14 +456,26 @@ class BlueMagpieHandler(BaseHTTPRequestHandler):
             elif _BUNDLED_CENTROIDS and "hung_yi_lee" in _BUNDLED_CENTROIDS:
                 kwargs["speaker_centroid"] = _BUNDLED_CENTROIDS["hung_yi_lee"]
 
+            sentences = _split_narration_sentences(text)
             with _MODEL_LOCK:
-                _set_status(
-                    "generating",
-                    f"正在執行 BlueMagpie 語音推論 ({len(text)} 字 · {_DEVICE.upper()})...",
-                )
-                audio = model.generate(**kwargs)
+                generated_parts = []
+                for index, sentence in enumerate(sentences):
+                    _set_status(
+                        "generating",
+                        f"正在執行 BlueMagpie 語音推論 ({index + 1}/{len(sentences)} 句 · {_DEVICE.upper()})...",
+                    )
+                    part_kwargs = {**kwargs, "target_text": sentence}
+                    generated_parts.append(model.generate(**part_kwargs).squeeze().cpu().numpy())
+
+            import numpy as np
+
+            silence = np.zeros(round(model.sample_rate * 0.35), dtype=np.float32)
+            audio = np.concatenate(
+                [part if index == 0 else np.concatenate([silence, part]) for index, part in enumerate(generated_parts)]
+            )
             _set_status("encoding", "正在封裝 48kHz WAV 音檔...")
-            wav_bytes = _waveform_to_wav_bytes(audio.squeeze().cpu().numpy(), model.sample_rate)
+            wav_bytes = _waveform_to_wav_bytes(audio, model.sample_rate)
+            wav_bytes = _apply_wav_tempo(wav_bytes, float(body.get("speed", 1.0)))
 
             self.send_response(200)
             self.send_header("Content-Type", "audio/wav")

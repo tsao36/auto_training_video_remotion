@@ -65,6 +65,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [selectedVoiceFileName, setSelectedVoiceFileName] = useState<string>(
     () => loadTtsSettings().defaultVoice?.fileName ?? ''
   );
+  const [createTtsOnFirstRun, setCreateTtsOnFirstRun] = useState(false);
   const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload'>('topic-llm');
   const [topic, setTopic] = useState('');
@@ -307,12 +308,16 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           },
           customVoice: selectedCustomVoice,
         },
+        ttsDeferred: !createTtsOnFirstRun,
         scenes: data.scenes,
       };
+      const ttsNote = createTtsOnFirstRun
+        ? undefined
+        : '尚未生成 TTS 配音：請先按「檢視腳本」審閱內容，確認後再按「全部配音」';
 
       setCreateProgress(100);
       setCreateStage('專案建立完成！');
-      onProjectCreated(proj, [domainNote, data.note].filter(Boolean).join(' • '));
+      onProjectCreated(proj, [domainNote, data.note, ttsNote].filter(Boolean).join(' • '));
       onClose();
     } catch (err) {
       stopProgressTimer();
@@ -791,6 +796,38 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                   : '尚未建立自訂聲線，可先至「設定」或進入編輯器錄製 / 上傳聲線。'}
               </p>
             </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={createTtsOnFirstRun}
+              onClick={() => setCreateTtsOnFirstRun((enabled) => !enabled)}
+              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-left transition ${
+                createTtsOnFirstRun
+                  ? 'border-cyan-400 bg-cyan-500/10 text-cyan-100'
+                  : 'border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700'
+              }`}
+            >
+              <span>
+                <span className="block text-xs font-bold">建立後立即生成 TTS 配音</span>
+                <span className="block text-[11px] mt-0.5 text-slate-400">
+                  {createTtsOnFirstRun
+                    ? '專案建立後會自動開始合成所有場景的語音。'
+                    : '預設關閉：先只生成腳本，審閱內容後再於編輯器按「全部配音」。'}
+                </span>
+              </span>
+              <span
+                className={`relative w-9 h-5 shrink-0 rounded-full transition ${
+                  createTtsOnFirstRun ? 'bg-cyan-400' : 'bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${
+                    createTtsOnFirstRun ? 'left-[18px]' : 'left-0.5'
+                  }`}
+                />
+              </span>
+            </button>
           </div>
 
           {error && (

@@ -6,6 +6,7 @@ import {
   Clock,
   Cpu,
   Download,
+  FileText,
   Film,
   LayoutGrid,
   Layers,
@@ -28,6 +29,7 @@ import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { VideoPlayerMode } from './components/VideoPlayerMode';
 import { PreviewStillsState, QualityPreviewModal } from './components/QualityPreviewModal';
+import { ScriptReviewModal } from './components/ScriptReviewModal';
 import { SourceWizardModal } from './components/SourceWizardModal';
 import { TtsProgressPanel } from './components/TtsProgressPanel';
 import { RecordedVoiceSubmission, VoiceRecorderModal } from './components/VoiceRecorderModal';
@@ -85,6 +87,7 @@ export function App() {
   const [playerInitialProjectId, setPlayerInitialProjectId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isScriptReviewOpen, setIsScriptReviewOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
   const [ttsDevice, setTtsDevice] = useState<string | null>(null);
   const [ttsElapsedSec, setTtsElapsedSec] = useState(0);
@@ -141,6 +144,7 @@ export function App() {
   const saveChainRef = useRef<Promise<void>>(Promise.resolve());
   const ttsRunIdRef = useRef(0);
   const ttsAbortControllerRef = useRef<AbortController | null>(null);
+  const sceneTtsAbortControllersRef = useRef<Set<AbortController>>(new Set());
   activeProjectIdRef.current = project.id;
 
   const fetchSavedProjects = async () => {
@@ -507,12 +511,15 @@ export function App() {
     const scene = project.scenes[idx];
     if (!scene) return;
     const startedAt = Date.now();
+    const controller = new AbortController();
+    sceneTtsAbortControllersRef.current.add(controller);
     updateScene(idx, { tts: { ...scene.tts, status: 'generating', error: undefined } });
 
     try {
       const resp = await fetch('/api/tts/synthesize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           sceneId: scene.id,
           text: scene.script,
@@ -554,6 +561,7 @@ export function App() {
         ),
       }));
     } catch (err) {
+      if (controller.signal.aborted) return;
       setProject((prev) => ({
         ...prev,
         scenes: prev.scenes.map((sc, i) =>
@@ -569,6 +577,8 @@ export function App() {
             : sc
         ),
       }));
+    } finally {
+      sceneTtsAbortControllersRef.current.delete(controller);
     }
   };
 
@@ -723,6 +733,24 @@ export function App() {
     }
   };
 
+  const stopTtsGeneration = () => {
+    ttsAbortControllerRef.current?.abort();
+    sceneTtsAbortControllersRef.current.forEach((c) => c.abort());
+    ttsRunIdRef.current += 1;
+    setBatchTtsRunning(false);
+    // Deferring keeps the stop in effect when the project is reopened.
+    setProject((prev) => ({
+      ...prev,
+      ttsDeferred: true,
+      scenes: prev.scenes.map((sc) =>
+        sc.tts.status === 'generating'
+          ? { ...sc, tts: { ...sc.tts, status: 'idle', error: undefined } }
+          : sc
+      ),
+    }));
+    setAiNotice('已停止 TTS 配音；已完成的場景語音會保留，需要時再按「全部配音」繼續。');
+  };
+
   const switchRemainingToFastTts = () => {
     ttsAbortControllerRef.current?.abort();
     ttsRunIdRef.current += 1;
@@ -827,13 +855,15 @@ export function App() {
 
   useEffect(() => {
     if (view !== 'editor') return;
-    void synthesizeScenesConcurrent(
-      project.id,
-      project.scenes,
-      project.ttsConfig,
-      project.language,
-      true
-    );
+    if (!project.ttsDeferred) {
+      void synthesizeScenesConcurrent(
+        project.id,
+        project.scenes,
+        project.ttsConfig,
+        project.language,
+        true
+      );
+    }
     return () => {
       ttsAbortControllerRef.current?.abort();
     };
@@ -841,6 +871,7 @@ export function App() {
   }, [project.id, view]);
 
   const synthesizeAllScenes = async () => {
+    setProject((prev) => (prev.ttsDeferred ? { ...prev, ttsDeferred: false } : prev));
     await synthesizeScenesConcurrent(
       project.id,
       project.scenes,
@@ -1187,6 +1218,16 @@ export function App() {
           </button>
 
           <button
+            type="button"
+            onClick={() => setIsScriptReviewOpen(true)}
+            title="檢視所有場景的標題、要點與旁白腳本，供配音前審閱"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
+          >
+            <FileText className="w-3.5 h-3.5 text-cyan-400" />
+            檢視腳本
+          </button>
+
+          <button
             onClick={synthesizeAllScenes}
             disabled={isTtsRendering}
             className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-xs font-semibold text-indigo-200 flex items-center gap-1.5 transition disabled:opacity-50"
@@ -1316,6 +1357,7 @@ export function App() {
               s.tts.provider !== 'browser-fallback'
           )}
           onSwitchToFastTts={switchRemainingToFastTts}
+          onStop={stopTtsGeneration}
           onJumpToScene={jumpToScene}
         />
       )}
@@ -2338,6 +2380,18 @@ export function App() {
           </div>
         </aside>
       </div>
+
+      <ScriptReviewModal
+        isOpen={isScriptReviewOpen}
+        onClose={() => setIsScriptReviewOpen(false)}
+        projectTitle={project.title}
+        scenes={project.scenes}
+        onEditScene={(idx) => {
+          setIsScriptReviewOpen(false);
+          setInspectorTab('script-tts');
+          jumpToScene(idx);
+        }}
+      />
 
       {wizardModal}
     </div>

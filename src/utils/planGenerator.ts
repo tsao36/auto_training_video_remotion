@@ -325,7 +325,7 @@ export function buildPlanFromSource(params: {
       tts: {
         provider: params.defaultTtsProvider,
         voiceId,
-        speed: 1.05,
+        speed: 0.95,
         status: 'idle',
       },
       animation: {

@@ -850,7 +850,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
     const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
     const isVoicePreview = safeId.startsWith('voice-preview-');
-    const ttsCacheVersion = provider === 'openformosa' ? 'v2-refwav|' : '';
+    const ttsCacheVersion = provider === 'openformosa' ? 'v3-sentence-pauses|' : '';
     const cacheHash = crypto
       .createHash('sha1')
       .update(
