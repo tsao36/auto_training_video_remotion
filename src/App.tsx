@@ -7,6 +7,7 @@ import {
   Cpu,
   Download,
   FileText,
+  GitBranch,
   Film,
   LayoutGrid,
   Layers,
@@ -28,6 +29,7 @@ import {
 import { SavedProjectsMenu } from './components/SavedProjectsMenu';
 import { ProjectDashboard } from './components/ProjectDashboard';
 import { VideoPlayerMode } from './components/VideoPlayerMode';
+import { AiPipelineReviewModal } from './components/AiPipelineReviewModal';
 import { PreviewStillsState, QualityPreviewModal } from './components/QualityPreviewModal';
 import { ScriptReviewModal } from './components/ScriptReviewModal';
 import { SourceWizardModal } from './components/SourceWizardModal';
@@ -88,6 +90,7 @@ export function App() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScriptReviewOpen, setIsScriptReviewOpen] = useState(false);
+  const [isAiPipelineOpen, setIsAiPipelineOpen] = useState(false);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
   const [ttsDevice, setTtsDevice] = useState<string | null>(null);
   const [ttsElapsedSec, setTtsElapsedSec] = useState(0);
@@ -421,7 +424,7 @@ export function App() {
       animation: {
         motionStyle: 'spring-snappy',
         effect: 'signal-pulse',
-        accentColor: meta.accentColor,
+        accentColor: project.colorScheme?.primary || meta.accentColor,
         showSubtitles: true,
         showProgressHud: true,
       },
@@ -1215,6 +1218,16 @@ export function App() {
           >
             <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
             AI 主題生成 / 匯入
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsAiPipelineOpen(true)}
+            title="檢視由主題到 Remotion JSON 的完整 AI 製作階段"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
+          >
+            <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
+            製作流程
           </button>
 
           <button
@@ -2380,6 +2393,18 @@ export function App() {
           </div>
         </aside>
       </div>
+
+      <AiPipelineReviewModal
+        isOpen={isAiPipelineOpen}
+        onClose={() => setIsAiPipelineOpen(false)}
+        project={project}
+        onApplyProject={(nextProject) => {
+          setProject(nextProject);
+          setSelectedSceneIdx(0);
+          playerRef.current?.seekTo(0);
+          void saveProjectToDisk(nextProject, false);
+        }}
+      />
 
       <ScriptReviewModal
         isOpen={isScriptReviewOpen}

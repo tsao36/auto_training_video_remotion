@@ -50,6 +50,8 @@ const DURATION_PRESETS = [
   { label: '3 分鐘', seconds: 180 },
   { label: '5 分鐘', seconds: 300 },
   { label: '10 分鐘', seconds: 600 },
+  { label: '20 分鐘', seconds: 1200 },
+  { label: '30 分鐘', seconds: 1800 },
 ];
 
 export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
@@ -86,6 +88,24 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [createStage, setCreateStage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copiedError, setCopiedError] = useState(false);
+  const [pipelineStage, setPipelineStage] = useState<0 | 1 | 2 | 3>(0);
+  const [preparedSource, setPreparedSource] = useState({
+    topic: '',
+    rawText: '',
+    sourceType: 'topic-llm' as TrainingProject['sourceType'],
+    sourceFileName: '' as string | undefined,
+    pptxSlides: undefined as unknown[] | undefined,
+  });
+  const [planDraft, setPlanDraft] = useState<{
+    title: string;
+    subtitle: string;
+    domain: TechDomain;
+    domainReason?: string;
+    domainSource?: string;
+    note?: string;
+    scenes: any[];
+  } | null>(null);
+  const [jsonDraft, setJsonDraft] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const progressTimerRef = useRef<number | null>(null);
 
@@ -105,6 +125,9 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setPipelineStage(0);
+    setPlanDraft(null);
+    setJsonDraft('');
     const stored = loadStoredLlmConfig();
     const merged = initialLlmConfig?.apiKey ? initialLlmConfig : stored;
     setLlmConfig(merged);
@@ -180,22 +203,13 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
     try {
       const requestLlmConfig = usingEnvLlm ? undefined : llmConfig;
-      const projectLlmConfig: LlmConfig = usingEnvLlm
-        ? {
-            baseUrl: envLlmStatus.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
-            apiKey: '',
-            model: envLlmStatus.model || DEFAULT_GNAI_CONFIG.model,
-          }
-        : llmConfig;
-      const selectedCustomVoice = selectedVoiceProfile ? toCustomVoice(selectedVoiceProfile) : undefined;
+      let rawTextForLlm = pipelineStage >= 1 ? preparedSource.rawText : researchText.trim();
+      let resolvedTopic = pipelineStage >= 1 ? preparedSource.topic : topic.trim();
+      let sourceType: TrainingProject['sourceType'] = pipelineStage >= 1 ? preparedSource.sourceType : 'topic-llm';
+      let sourceFileName: string | undefined = pipelineStage >= 1 ? preparedSource.sourceFileName : undefined;
+      let pptxSlidesForLlm: unknown[] | undefined = pipelineStage >= 1 ? preparedSource.pptxSlides : undefined;
 
-      let rawTextForLlm = researchText.trim();
-      let pptxSlidesForLlm: unknown[] | undefined;
-      let resolvedTopic = topic.trim();
-      let sourceType: TrainingProject['sourceType'] = 'topic-llm';
-      let sourceFileName: string | undefined;
-
-      if (inputMode === 'upload') {
+      if (inputMode === 'upload' && pipelineStage === 0) {
         if (!selectedFile) {
           setError('請先選擇 .pptx 或 .pdf 檔案');
           setIsProcessing(false);
@@ -265,60 +279,34 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       stopProgressTimer();
       if (!resp.ok) throw new Error(data.error || 'LLM 生成失敗');
 
-      setCreateProgress(94);
-      setCreateStage('正在建構 Remotion 專案與儲存草稿...');
+      setCreateProgress(100);
+      setCreateStage('AI 大綱草稿已生成，等待逐階段審閱...');
 
       const apiDomain: unknown = data.domain;
       const fallbackDomain: TechDomain = isTechDomain(domainChoice) ? domainChoice : 'debug-logic';
       const resolvedDomain: TechDomain = isTechDomain(apiDomain) ? apiDomain : fallbackDomain;
-      const meta = DOMAIN_META[resolvedDomain];
-      const domainNote = data.domainReason
-        ? `視覺風格：${meta.shortLabel}（${data.domainSource === 'manual' ? '手動指定' : 'AI 判斷'}）`
-        : undefined;
-      const proj: TrainingProject = {
-        id: `proj-${Date.now()}`,
-        title: data.title || resolvedTopic,
-        subtitle: data.subtitle || meta.description,
-        language,
+
+      setPreparedSource({
         topic: resolvedTopic,
-        odmMode,
-        domain: resolvedDomain,
-        targetDurationSeconds: targetSec,
-        fps: 30,
-        width: 1920,
-        height: 1080,
+        rawText: rawTextForLlm,
         sourceType,
         sourceFileName,
-        rawSourceText: rawTextForLlm,
-        llmConfig: projectLlmConfig,
-        ttsConfig: {
-          defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
-          openformosa: {
-            baseUrl: 'http://127.0.0.1:8001/v1/tts',
-            apiKey: '',
-            model: 'OpenFormosa/BlueMagpie-TTS',
-            voice: 'hung_yi_lee',
-          },
-          mingTts: {
-            baseUrl: 'http://localhost:8000/v1/tts',
-            apiKey: '',
-            model: 'inclusionAI/Ming-3.0-tts',
-            speaker: 'ming-tech-zh-en',
-            style: 'professional-training',
-          },
-          customVoice: selectedCustomVoice,
-        },
-        ttsDeferred: !createTtsOnFirstRun,
-        scenes: data.scenes,
+        pptxSlides: pptxSlidesForLlm,
+      });
+      const nextDraft = {
+        title: data.title || resolvedTopic,
+        subtitle: data.subtitle || DOMAIN_META[resolvedDomain].description,
+        domain: resolvedDomain,
+        domainReason: data.domainReason,
+        domainSource: data.domainSource,
+        note: data.note,
+        scenes: Array.isArray(data.scenes) ? data.scenes : [],
       };
-      const ttsNote = createTtsOnFirstRun
-        ? undefined
-        : '尚未生成 TTS 配音：請先按「檢視腳本」審閱內容，確認後再按「全部配音」';
-
+      setPlanDraft(nextDraft);
+      setJsonDraft(JSON.stringify(nextDraft, null, 2));
+      setPipelineStage(pipelineStage === 1 ? 2 : 1);
       setCreateProgress(100);
-      setCreateStage('專案建立完成！');
-      onProjectCreated(proj, [domainNote, data.note, ttsNote].filter(Boolean).join(' • '));
-      onClose();
+      setCreateStage('');
     } catch (err) {
       stopProgressTimer();
       setCreateProgress(0);
@@ -329,6 +317,127 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       setIsProcessing(false);
     }
   };
+
+  const handleFinalizeProject = () => {
+    if (!planDraft) return;
+    let finalPlan = planDraft;
+    if (jsonDraft.trim()) {
+      try {
+        const parsed = JSON.parse(jsonDraft);
+        if (!Array.isArray(parsed.scenes)) throw new Error('JSON 缺少 scenes 陣列');
+        finalPlan = {
+          ...parsed,
+          domain: isTechDomain(parsed.domain) ? parsed.domain : planDraft.domain,
+          scenes: parsed.scenes,
+        };
+      } catch (err) {
+        setError(err instanceof Error ? `Remotion JSON 格式錯誤：${err.message}` : 'Remotion JSON 格式錯誤');
+        return;
+      }
+    }
+
+    const projectLlmConfig: LlmConfig = usingEnvLlm
+      ? {
+          baseUrl: envLlmStatus.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
+          apiKey: '',
+          model: envLlmStatus.model || DEFAULT_GNAI_CONFIG.model,
+        }
+      : llmConfig;
+    const selectedCustomVoice = selectedVoiceProfile ? toCustomVoice(selectedVoiceProfile) : undefined;
+    const meta = DOMAIN_META[finalPlan.domain];
+    const domainNote = finalPlan.domainReason
+      ? `視覺風格：${meta.shortLabel}（${finalPlan.domainSource === 'manual' ? '手動指定' : 'AI 判斷'}）`
+      : undefined;
+    const proj: TrainingProject = {
+      id: `proj-${Date.now()}`,
+      title: finalPlan.title || preparedSource.topic,
+      subtitle: finalPlan.subtitle || meta.description,
+      language,
+      topic: preparedSource.topic,
+      odmMode,
+      domain: finalPlan.domain,
+      targetDurationSeconds: Math.max(15, Math.min(1800, durationSeconds)),
+      fps: 30,
+      width: 1920,
+      height: 1080,
+      sourceType: preparedSource.sourceType,
+      sourceFileName: preparedSource.sourceFileName,
+      rawSourceText: preparedSource.rawText,
+      llmConfig: projectLlmConfig,
+      ttsConfig: {
+        defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
+        openformosa: {
+          baseUrl: 'http://127.0.0.1:8001/v1/tts',
+          apiKey: '',
+          model: 'OpenFormosa/BlueMagpie-TTS',
+          voice: 'hung_yi_lee',
+        },
+        mingTts: {
+          baseUrl: 'http://localhost:8000/v1/tts',
+          apiKey: '',
+          model: 'inclusionAI/Ming-3.0-tts',
+          speaker: 'ming-tech-zh-en',
+          style: 'professional-training',
+        },
+        customVoice: selectedCustomVoice,
+      },
+      ttsDeferred: !createTtsOnFirstRun,
+      colorScheme: {
+        preset: 'domain',
+        primary: meta.accentColor,
+        secondary: meta.secondaryColor,
+        surface: '#12100E',
+      },
+      aiGenerationStages: {
+        input: {
+          topic: preparedSource.topic,
+          rawText: preparedSource.rawText,
+          sourceType: preparedSource.sourceType,
+          sourceFileName: preparedSource.sourceFileName,
+        },
+        source: {
+          topic: preparedSource.topic,
+          rawText: preparedSource.rawText,
+          pptxSlideCount: preparedSource.pptxSlides?.length,
+        },
+        outline: {
+          title: finalPlan.title || preparedSource.topic,
+          subtitle: finalPlan.subtitle || meta.description,
+          domain: finalPlan.domain,
+          scenes: finalPlan.scenes,
+        },
+        remotionJson: {
+          json: jsonDraft.trim() || JSON.stringify(finalPlan, null, 2),
+        },
+      },
+      scenes: finalPlan.scenes,
+    };
+    const ttsNote = createTtsOnFirstRun
+      ? undefined
+      : '尚未生成 TTS 配音：請先按「檢視腳本」審閱內容，確認後再按「全部配音」';
+
+    onProjectCreated(proj, [domainNote, finalPlan.note, ttsNote].filter(Boolean).join(' • '));
+    onClose();
+  };
+
+  const updateDraftScene = (idx: number, patch: Record<string, unknown>) => {
+    setPlanDraft((prev) => {
+      if (!prev) return prev;
+      const scenes = prev.scenes.map((scene, sceneIdx) =>
+        sceneIdx === idx ? { ...scene, ...patch } : scene
+      );
+      const next = { ...prev, scenes };
+      setJsonDraft(JSON.stringify(next, null, 2));
+      return next;
+    });
+  };
+
+  const PIPELINE_STAGES = [
+    { label: '輸入內容', description: '主題與條件' },
+    { label: '來源整理', description: '解析後文字' },
+    { label: 'AI 場景大綱', description: '標題與腳本' },
+    { label: 'Remotion JSON', description: '最終草稿' },
+  ] as const;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
@@ -362,6 +471,39 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+          <div className="grid grid-cols-4 gap-2">
+            {PIPELINE_STAGES.map((stage, idx) => {
+              const active = pipelineStage === idx;
+              const complete = pipelineStage > idx;
+              return (
+                <button
+                  key={stage.label}
+                  type="button"
+                  onClick={() => {
+                    if (idx === 0 || (idx === 1 && preparedSource.topic) || (idx >= 2 && planDraft)) {
+                      setPipelineStage(idx as 0 | 1 | 2 | 3);
+                    }
+                  }}
+                  disabled={idx === 1 && !preparedSource.topic || idx >= 2 && !planDraft}
+                  className={`text-left px-3 py-2 rounded-lg border transition ${
+                    active
+                      ? 'border-cyan-400 bg-cyan-500/10'
+                      : complete
+                      ? 'border-emerald-500/40 bg-emerald-500/5'
+                      : 'border-slate-800 bg-slate-900/50'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  <div className={`text-[11px] font-bold ${active ? 'text-cyan-300' : complete ? 'text-emerald-300' : 'text-slate-400'}`}>
+                    {idx + 1}. {stage.label}
+                  </div>
+                  <div className="text-[10px] mt-0.5 text-slate-500">{stage.description}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {pipelineStage === 0 ? (
+            <div className="space-y-5">
           {/* Step 1: Creation Mode */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
@@ -830,6 +972,163 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </button>
           </div>
 
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pipelineStage === 1 && (
+                <section className="space-y-4">
+                  <div>
+                    <div className="text-sm font-bold text-white">來源整理結果</div>
+                    <p className="text-xs text-slate-400 mt-1">可直接修正這階段的文字；確認後會送入 AI 場景規劃。</p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">影片主題</label>
+                    <input
+                      value={preparedSource.topic}
+                      onChange={(e) => setPreparedSource((prev) => ({ ...prev, topic: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">送給 AI 的來源文字 / 筆記</label>
+                    <textarea
+                      rows={12}
+                      value={preparedSource.rawText}
+                      onChange={(e) => setPreparedSource((prev) => ({ ...prev, rawText: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white font-mono leading-relaxed"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerate()}
+                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
+                  >
+                    確認來源，檢視 AI 場景大綱
+                  </button>
+                </section>
+              )}
+
+              {pipelineStage === 2 && planDraft && (
+                <section className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">專案標題</label>
+                      <input
+                        value={planDraft.title}
+                        onChange={(e) => {
+                          const next = { ...planDraft, title: e.target.value };
+                          setPlanDraft(next);
+                          setJsonDraft(JSON.stringify(next, null, 2));
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">副標題</label>
+                      <input
+                        value={planDraft.subtitle}
+                        onChange={(e) => {
+                          const next = { ...planDraft, subtitle: e.target.value };
+                          setPlanDraft(next);
+                          setJsonDraft(JSON.stringify(next, null, 2));
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">視覺領域</label>
+                    <select
+                      value={planDraft.domain}
+                      onChange={(e) => {
+                        const next = { ...planDraft, domain: e.target.value as TechDomain };
+                        setPlanDraft(next);
+                        setJsonDraft(JSON.stringify(next, null, 2));
+                      }}
+                      className="w-full px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
+                    >
+                      {(Object.keys(DOMAIN_META) as TechDomain[]).map((domain) => (
+                        <option key={domain} value={domain}>{DOMAIN_META[domain].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    {planDraft.scenes.map((scene, idx) => (
+                      <section key={scene.id || idx} className="p-3 rounded-xl border border-slate-800 bg-slate-900/50 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-cyan-300">SCENE {idx + 1}</span>
+                          <span className="text-[10px] text-slate-500">可編輯標題、秒數與旁白</span>
+                        </div>
+                        <input
+                          value={scene.title || ''}
+                          onChange={(e) => updateDraftScene(idx, { title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white"
+                        />
+                        <div className="grid grid-cols-[90px_1fr] gap-2">
+                          <input
+                            type="number"
+                            min={3}
+                            max={180}
+                            value={scene.durationSeconds || 6}
+                            onChange={(e) => updateDraftScene(idx, { durationSeconds: Number(e.target.value) || 6 })}
+                            className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white"
+                          />
+                          <input
+                            value={scene.visualDescription || ''}
+                            onChange={(e) => updateDraftScene(idx, { visualDescription: e.target.value })}
+                            placeholder="畫面描述"
+                            className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white"
+                          />
+                        </div>
+                        <textarea
+                          rows={3}
+                          value={scene.script || ''}
+                          onChange={(e) => updateDraftScene(idx, { script: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white leading-relaxed"
+                        />
+                      </section>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJsonDraft(JSON.stringify(planDraft, null, 2));
+                      setPipelineStage(3);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
+                  >
+                    確認場景大綱，檢視最終 JSON
+                  </button>
+                </section>
+              )}
+
+              {pipelineStage === 3 && planDraft && (
+                <section className="space-y-3">
+                  <div>
+                    <div className="text-sm font-bold text-white">最終 Remotion JSON 草稿</div>
+                    <p className="text-xs text-slate-400 mt-1">可直接修正模板、特效、字幕、時間與每幕旁白；建立專案前會再次驗證 JSON 格式。</p>
+                  </div>
+                  <textarea
+                    value={jsonDraft}
+                    onChange={(e) => setJsonDraft(e.target.value)}
+                    rows={20}
+                    spellCheck={false}
+                    className="w-full px-3.5 py-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 font-mono leading-relaxed resize-y"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleFinalizeProject}
+                      className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
+                    >
+                      建立已審閱的 Remotion 專案
+                    </button>
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/40 text-xs text-rose-300 flex items-center justify-between gap-3">
               <span className="break-all select-text">{error}</span>
@@ -890,23 +1189,62 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           >
             取消
           </button>
-          <button
-            type="button"
-            disabled={isProcessing}
-            onClick={handleGenerate}
-            className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center gap-2 transition disabled:opacity-50"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> AI 生成腳本與 Remotion 圖表中...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />{' '}
-                {`生成 ${durationSeconds} 秒 Remotion 專案`}
-              </>
-            )}
-          </button>
+          {pipelineStage > 0 && (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={() => setPipelineStage((pipelineStage - 1) as 0 | 1 | 2)}
+              className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 text-slate-300 hover:bg-slate-800 transition"
+            >
+              上一步
+            </button>
+          )}
+          {pipelineStage === 0 ? (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={handleGenerate}
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] flex items-center gap-2 transition disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> AI 生成來源與大綱中...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> 生成並進入來源審閱</>
+              )}
+            </button>
+          ) : pipelineStage === 1 ? (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={() => void handleGenerate()}
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] flex items-center gap-2 transition disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> 正在重新生成大綱...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> 確認來源並重新生成大綱</>
+              )}
+            </button>
+          ) : pipelineStage === 2 ? (
+            <button
+              type="button"
+              onClick={() => {
+                setJsonDraft(JSON.stringify(planDraft, null, 2));
+                setPipelineStage(3);
+              }}
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607]"
+            >
+              確認場景大綱，檢視 JSON
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFinalizeProject}
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607]"
+            >
+              建立已審閱的 Remotion 專案
+            </button>
+          )}
         </div>
       </div>
     </div>

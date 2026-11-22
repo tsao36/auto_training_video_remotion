@@ -653,7 +653,7 @@ function buildSmartFallbackDiagram(
 function generateFallbackPlan(params: ResolvedGeneratePlanParams): LlmPlanPayload {
   const { topic, durationSeconds, domain, rawText } = params;
   const meta = DOMAIN_META[domain];
-  const sceneCount = Math.max(3, Math.min(16, Math.round(durationSeconds / 12)));
+  const sceneCount = Math.max(3, Math.min(48, Math.round(durationSeconds / 10)));
 
   const blueprints: {
     title: string;
@@ -763,6 +763,82 @@ function generateFallbackPlan(params: ResolvedGeneratePlanParams): LlmPlanPayloa
   };
 }
 
+const DIVERSE_TEMPLATE_ROTATION: VisualTemplate[] = [
+  'title-hero',
+  'architecture-flow',
+  'signal-waveform',
+  'protocol-timeline',
+  'comparison-matrix',
+  'debug-checklist',
+  'packet-frame',
+  'state-machine',
+  'code-log',
+  'kpi-metrics',
+  'fault-tree',
+  'packet-simulator',
+  'ofdm-spectrum',
+  'beamforming-array',
+  'qam-constellation',
+  'mlo-multilink',
+  'rf-link-budget',
+  'summary-takeaways',
+];
+
+const DIVERSE_EFFECT_ROTATION: RemotionEffect[] = [
+  'signal-pulse',
+  'glitch-alert',
+  'cascade-reveal',
+  'zoom-focus',
+  'sweep-scan',
+  'packet-traffic',
+];
+
+function chooseDiverseTemplate(
+  desired: VisualTemplate,
+  idx: number,
+  previousTemplates: VisualTemplate[],
+  domain: TechDomain
+): VisualTemplate {
+  if (idx === 0) return desired === 'pptx-slide' ? 'title-hero' : desired;
+
+  const recent = previousTemplates.slice(-3);
+  if (!recent.includes(desired)) return desired;
+
+  const domainPreferred: Record<TechDomain, VisualTemplate[]> = {
+    'debug-logic': ['debug-checklist', 'fault-tree', 'code-log', 'protocol-timeline', 'architecture-flow'],
+    wifi: ['packet-simulator', 'ofdm-spectrum', 'mlo-multilink', 'packet-frame', 'beamforming-array'],
+    bluetooth: ['packet-frame', 'protocol-timeline', 'comparison-matrix', 'state-machine', 'architecture-flow'],
+    rf: ['rf-link-budget', 'beamforming-array', 'ofdm-spectrum', 'qam-constellation', 'signal-waveform'],
+  };
+
+  const candidates = [
+    ...domainPreferred[domain],
+    ...DIVERSE_TEMPLATE_ROTATION,
+  ];
+  const start = idx % candidates.length;
+  for (let offset = 0; offset < candidates.length; offset++) {
+    const candidate = candidates[(start + offset) % candidates.length];
+    if (!recent.includes(candidate) && candidate !== 'pptx-slide') return candidate;
+  }
+  return desired;
+}
+
+function chooseDiverseEffect(
+  desired: RemotionEffect,
+  idx: number,
+  previousEffects: RemotionEffect[]
+): RemotionEffect {
+  const recent = previousEffects.slice(-2);
+  if (!recent.includes(desired)) return desired;
+
+  const start = idx % DIVERSE_EFFECT_ROTATION.length;
+  for (let offset = 0; offset < DIVERSE_EFFECT_ROTATION.length; offset++) {
+    const candidate = DIVERSE_EFFECT_ROTATION[(start + offset) % DIVERSE_EFFECT_ROTATION.length];
+    if (!recent.includes(candidate)) return candidate;
+  }
+  return desired;
+}
+
 function toSceneSpecs(
   payload: LlmPlanPayload,
   domain: TechDomain,
@@ -774,10 +850,17 @@ function toSceneSpecs(
   const total = payload.scenes.length;
   const now = Date.now();
 
+  const previousTemplates: VisualTemplate[] = [];
+  const previousEffects: RemotionEffect[] = [];
+
   return payload.scenes.map((raw, idx) => {
-    const template = clampTemplate(raw.template, idx, total);
+    const clampedTemplate = clampTemplate(raw.template, idx, total);
+    const template = chooseDiverseTemplate(clampedTemplate, idx, previousTemplates, domain);
     const script = (raw.script || raw.title || '').trim();
-    const effect = clampEffect(raw.effect, template, script);
+    const clampedEffect = clampEffect(raw.effect, template, script);
+    const effect = chooseDiverseEffect(clampedEffect, idx, previousEffects);
+    previousTemplates.push(template);
+    previousEffects.push(effect);
     const diagramData =
       raw.diagramData && Object.keys(raw.diagramData).length > 0
         ? raw.diagramData
@@ -890,7 +973,7 @@ Return strict JSON:
     {
       "slideNumber": 1,
       "durationSeconds": number,
-      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan",
+      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan|packet-traffic",
       "script": "Natural spoken narration matching this exact slide's content"
     }
   ]
@@ -1328,7 +1411,7 @@ export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promi
   const provider = params.defaultTtsProvider || 'openformosa';
   const language = getContentLanguage(params.language || DEFAULT_CONTENT_LANGUAGE);
   const targetDuration = Math.max(15, Math.min(1800, Math.round(params.durationSeconds || 60)));
-  const recommendedScenes = Math.max(3, Math.min(24, Math.round(targetDuration / 10)));
+  const recommendedScenes = Math.max(3, Math.min(48, Math.round(targetDuration / 10)));
 
   const canCallLlm = Boolean(cfg.apiKey || isLocalLlmEndpoint(cfg.baseUrl));
 
@@ -1365,6 +1448,7 @@ ${params.odmMode ? `ODM BEGINNER-MODE RULE:
 3. EFFECT-TO-SCRIPT ALIGNMENT:
    - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", "rf-link-budget", "summary-takeaways"].
    - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
+   - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
@@ -1394,7 +1478,7 @@ Return JSON schema:
       "subtitle": "string",
       "durationSeconds": number,
       "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|packet-simulator|ofdm-spectrum|beamforming-array|qam-constellation|mlo-multilink|rf-link-budget|summary-takeaways",
-      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan",
+      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan|packet-traffic",
       "visualDescription": "string describing what the Remotion graphic + effect shows and why it matches the script",
       "keyPoints": ["short visual anchor 1", "short visual anchor 2", "short visual anchor 3"],
       "script": "Natural spoken Traditional Chinese narration that explains the concept without reading the graphic verbatim",

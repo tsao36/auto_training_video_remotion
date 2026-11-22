@@ -420,6 +420,35 @@ export interface TrainingProject {
   ttsConfig: TtsEngineConfig;
   // When true, TTS is not auto-generated on open; the user starts it after reviewing the script.
   ttsDeferred?: boolean;
+  colorScheme?: {
+    preset: 'domain' | 'champagne' | 'blueprint' | 'sage' | 'coral' | 'mono' | 'custom';
+    primary: string;
+    secondary: string;
+    surface: string;
+  };
+  aiGenerationStages?: {
+    input: {
+      topic: string;
+      rawText: string;
+      sourceType: TrainingProject['sourceType'];
+      sourceFileName?: string;
+      odmMode?: boolean;
+      language?: ContentLanguage;
+      targetDurationSeconds?: number;
+      fps?: number;
+      width?: number;
+      height?: number;
+    };
+    source: {
+      topic: string;
+      rawText: string;
+      pptxSlideCount?: number;
+      usedSources?: Array<{ kind: 'topic' | 'research' | 'pptx' | 'pdf'; label: string; chars: number }>;
+      logicNotes?: string[];
+    };
+    outline: { title: string; subtitle: string; domain: TechDomain; scenes: Array<Partial<SceneSpec>> };
+    remotionJson: { json: string };
+  };
   scenes: SceneSpec[];
 }
 

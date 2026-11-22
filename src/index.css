@@ -97,6 +97,166 @@
   outline-offset: 2px;
 }
 
+/* Animated previews for Remotion effect selection. */
+.effect-preview {
+  position: relative;
+  height: 38px;
+  overflow: hidden;
+  border-radius: 5px;
+  border: 1px solid #2a2723;
+  background: #12100e;
+}
+.effect-preview-card:hover .effect-preview,
+.effect-preview-card[aria-pressed="true"] .effect-preview {
+  border: 1px solid rgba(212, 180, 106, 0.28);
+}
+.effect-line {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 18px;
+  height: 2px;
+  background: #5a554d;
+}
+.effect-node {
+  position: absolute;
+  top: 13px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d4b46a;
+  box-shadow: 0 0 10px rgba(212, 180, 106, 0.5);
+  z-index: 2;
+}
+.effect-node-a { left: 18%; }
+.effect-node-b { right: 18%; }
+.effect-preview-signal-pulse .effect-line::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: -3px;
+  border-radius: 50%;
+  background: #fbf7ec;
+  animation: preview-pulse 1.4s ease-in-out infinite;
+}
+.effect-glitch-line {
+  position: absolute;
+  left: 16%;
+  width: 68%;
+  height: 2px;
+  background: #d4b46a;
+}
+.effect-glitch-a { top: 12px; }
+.effect-glitch-b { top: 19px; animation: preview-glitch 0.8s steps(2) infinite; }
+.effect-glitch-c { top: 26px; }
+.effect-cascade {
+  position: absolute;
+  bottom: 7px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #d4b46a;
+  background: rgba(212, 180, 106, 0.12);
+  opacity: 0.25;
+}
+.effect-cascade-a { left: 19%; animation: preview-cascade 1.8s infinite 0s; }
+.effect-cascade-b { left: 43%; animation: preview-cascade 1.8s infinite 0.35s; }
+.effect-cascade-c { right: 19%; animation: preview-cascade 1.8s infinite 0.7s; }
+.effect-focus-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #d4b46a;
+  border-radius: 50%;
+  animation: preview-focus 1.5s ease-in-out infinite;
+}
+.effect-focus-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fbf7ec;
+}
+.effect-sweep-grid {
+  position: absolute;
+  inset: 7px 12%;
+  border: 1px solid #5a554d;
+  background: linear-gradient(90deg, transparent 48%, rgba(212, 180, 106, 0.2) 49%, transparent 52%);
+}
+.effect-sweep-beam {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  background: #d4b46a;
+  box-shadow: 0 0 8px #d4b46a;
+  animation: preview-sweep 1.3s ease-in-out infinite;
+}
+.effect-device {
+  position: absolute;
+  top: 10px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #837b6f;
+  border-radius: 3px;
+  color: #e4ded3;
+  font-size: 8px;
+  font-weight: 700;
+}
+.effect-device-a { left: 8%; }
+.effect-device-b { right: 8%; }
+.effect-packet {
+  position: absolute;
+  top: 16px;
+  width: 7px;
+  height: 4px;
+  border-radius: 1px;
+  background: #d4b46a;
+  left: 28%;
+}
+.effect-packet-a { animation: preview-packet 1.2s linear infinite; }
+.effect-packet-b { animation: preview-packet 1.2s linear 0.55s infinite; }
+
+@keyframes preview-pulse {
+  0% { left: 0; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: calc(100% - 8px); opacity: 0; }
+}
+@keyframes preview-glitch {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  25% { transform: translateX(-5px); opacity: 0.55; }
+  50% { transform: translateX(7px); opacity: 1; }
+  75% { transform: translateX(-2px); }
+}
+@keyframes preview-cascade {
+  0%, 20% { opacity: 0.25; transform: translateY(5px); }
+  45%, 70% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0.25; }
+}
+@keyframes preview-focus {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.65); opacity: 0.45; }
+  50% { transform: translate(-50%, -50%) scale(1.35); opacity: 1; }
+}
+@keyframes preview-sweep {
+  0%, 100% { left: 12%; }
+  50% { left: calc(88% - 2px); }
+}
+@keyframes preview-packet {
+  0% { left: 28%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: calc(72% - 7px); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
