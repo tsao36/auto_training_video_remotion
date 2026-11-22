@@ -12,6 +12,12 @@ export type VisualTemplate =
   | 'code-log'
   | 'kpi-metrics'
   | 'fault-tree'
+  | 'packet-simulator'
+  | 'ofdm-spectrum'
+  | 'beamforming-array'
+  | 'qam-constellation'
+  | 'mlo-multilink'
+  | 'rf-link-budget'
   | 'summary-takeaways'
   | 'pptx-slide';
 
@@ -69,7 +75,8 @@ export type RemotionEffect =
   | 'glitch-alert'
   | 'cascade-reveal'
   | 'zoom-focus'
-  | 'sweep-scan';
+  | 'sweep-scan'
+  | 'packet-traffic';
 
 export interface LlmConfig {
   baseUrl: string;
@@ -144,6 +151,48 @@ export interface FaultTreeBranch {
   severity?: 'high' | 'medium' | 'low';
 }
 
+export interface PacketSimChannel {
+  id: string;
+  label: string;
+  band: string;
+  bandwidth?: string;
+  color: string;
+  interference?: boolean;
+}
+
+export interface PacketSimEvent {
+  seq: number;
+  channelId: string;
+  direction: 'A->B' | 'B->A';
+  label: string;
+  sizeBytes?: number;
+  status?: 'ok' | 'retry' | 'drop' | 'ack';
+}
+
+export interface OfdmRuBlock {
+  label: string;
+  tones: string;
+  widthRatio: number;
+  color: string;
+  punctured?: boolean;
+}
+
+export interface MloLinkLane {
+  band: string;
+  channel: string;
+  bandwidth: string;
+  color: string;
+  throughputMbps: number;
+  mode?: 'STR' | 'EMLSR' | 'NSTR';
+}
+
+export interface RfLinkBudgetStage {
+  label: string;
+  deltaDb: number;
+  note?: string;
+  type: 'tx' | 'gain' | 'loss' | 'rx';
+}
+
 export interface SceneDiagramData {
   nodes?: DiagramNode[];
   waveformFreqHz?: number;
@@ -160,6 +209,22 @@ export interface SceneDiagramData {
   kpiMetrics?: KpiMetricItem[];
   faultRoot?: string;
   faultBranches?: FaultTreeBranch[];
+  // Wireless-heavy template data
+  simDeviceA?: { name: string; role: string; ipOrMac?: string };
+  simDeviceB?: { name: string; role: string; ipOrMac?: string };
+  simChannels?: PacketSimChannel[];
+  simPackets?: PacketSimEvent[];
+  ofdmBandwidthMhz?: number;
+  ofdmRuBlocks?: OfdmRuBlock[];
+  beamformingElements?: number;
+  beamformingTargetAngleDeg?: number;
+  beamformingTargetLabel?: string;
+  qamOrder?: 16 | 64 | 256 | 1024;
+  qamSnrDb?: number;
+  qamEvmDb?: number;
+  mloLinks?: MloLinkLane[];
+  rfLinkStages?: RfLinkBudgetStage[];
+  rfSensitivityDbm?: number;
   badgeText?: string;
   highlightNodeIndex?: number;
   faultChannelIndex?: number;
@@ -342,12 +407,13 @@ export interface TrainingProject {
   subtitle: string;
   language?: ContentLanguage;
   topic?: string;
+  odmMode?: boolean;
   domain: TechDomain;
   targetDurationSeconds: number;
   fps: number; // 30
   width: number; // 1920
   height: number; // 1080
-  sourceType: 'topic-llm' | 'pptx' | 'pdf' | 'research-text' | 'preset';
+  sourceType: 'topic-llm' | 'pptx' | 'pdf' | 'research-text';
   sourceFileName?: string;
   rawSourceText: string;
   llmConfig?: LlmConfig;
@@ -482,6 +548,12 @@ export const TEMPLATE_LABELS: Record<VisualTemplate, string> = {
   'code-log': '程式碼 / CLI / Log 判讀',
   'kpi-metrics': '關鍵效能指標卡',
   'fault-tree': '根因排查決策樹',
+  'packet-simulator': '無線封包多通道模擬器 (A→B)',
+  'ofdm-spectrum': 'OFDM 頻譜與副載波分配',
+  'beamforming-array': '相控陣列與波束成形 (Beamforming)',
+  'qam-constellation': 'QAM 星座圖與 EVM / SNR 干擾',
+  'mlo-multilink': 'Wi-Fi 7 MLO 多鏈路聚合時序',
+  'rf-link-budget': 'RF 鏈路預算與 SNR 餘裕儀表',
   'summary-takeaways': '重點總結與實作',
   'pptx-slide': 'PowerPoint 原版投影片',
 };
@@ -492,4 +564,5 @@ export const EFFECT_LABELS: Record<RemotionEffect, string> = {
   'cascade-reveal': '逐級時序推進 (Cascade Reveal)',
   'zoom-focus': '關鍵節點聚焦 (Zoom Focus)',
   'sweep-scan': '掃描線檢測 (Sweep Scan)',
+  'packet-traffic': '網路模擬器封包流 (Packet Traffic A→B)',
 };

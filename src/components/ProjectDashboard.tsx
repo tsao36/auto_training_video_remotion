@@ -1,14 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import {
   Clock,
-  Cpu,
   Edit3,
   Film,
   FolderOpen,
   Layers,
   Loader2,
   Play,
-  Plus,
   RefreshCw,
   Search,
   Settings,
@@ -16,7 +14,7 @@ import {
   Tv,
   Wand2,
 } from 'lucide-react';
-import { DOMAIN_META, SavedProjectSummary, TechDomain } from '../types/training';
+import { DOMAIN_META, SavedProjectSummary } from '../types/training';
 import { formatDuration } from '../utils/planGenerator';
 import { SettingsPanel } from './SettingsPanel';
 
@@ -28,7 +26,6 @@ interface ProjectDashboardProps {
   onOpenPlayer: (projectId?: string) => void;
   onDeleteProject: (projectId: string) => Promise<void>;
   onCreateWithAi: () => void;
-  onCreateFromPreset: (domain: TechDomain) => void;
 }
 
 type FilterMode = 'all' | 'rendered' | 'draft';
@@ -59,7 +56,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   onOpenPlayer,
   onDeleteProject,
   onCreateWithAi,
-  onCreateFromPreset,
 }) => {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
@@ -320,33 +316,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             )}
           </section>
 
-          <section aria-labelledby="dash-presets">
-            <div className="flex items-center gap-2 mb-4">
-              <Plus className="w-4 h-4 text-cyan-400" />
-              <h2 id="dash-presets" className="text-sm font-bold text-slate-100">
-                從範本開始
-              </h2>
-            </div>
-            <ul className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-              {(Object.keys(DOMAIN_META) as TechDomain[]).map((d) => (
-                <li key={d}>
-                  <button
-                    type="button"
-                    onClick={() => onCreateFromPreset(d)}
-                    className="w-full h-full text-left p-3.5 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-slate-600 hover:bg-slate-900 transition"
-                  >
-                    <div className="flex items-center gap-2 text-xs font-bold" style={{ color: DOMAIN_META[d].accentColor }}>
-                      <Cpu className="w-4 h-4" aria-hidden="true" />
-                      {DOMAIN_META[d].shortLabel}
-                    </div>
-                    <p className="mt-1.5 text-[11px] text-slate-400 leading-relaxed line-clamp-3">
-                      {DOMAIN_META[d].description}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
           </>
           )}
         </div>

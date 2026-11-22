@@ -6,7 +6,6 @@ import http from 'node:http';
 import https from 'node:https';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import JSZip from 'jszip';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
@@ -87,22 +86,6 @@ interface PreviewStillsJob {
 
 const renderJobs = new Map<string, RenderJob>();
 const previewStillsJobs = new Map<string, PreviewStillsJob>();
-
-function extractXmlText(xml: string): string {
-  const matches = xml.match(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g) || [];
-  return matches
-    .map((m) =>
-      m
-        .replace(/<[^>]+>/g, '')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .trim()
-    )
-    .filter(Boolean)
-    .join(' ');
-}
 
 function createSilentOrToneWav(durationSec: number, filepath: string) {
   const sampleRate = 22050;
@@ -316,7 +299,7 @@ app.get('/api/llm/status', (_req, res) => {
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -329,6 +312,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       pptxSlides,
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
+      odmMode: Boolean(odmMode),
       llmConfig,
     });
     res.json(result);
@@ -341,7 +325,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
 // LLM Edit Logic: sync Remotion graphics/effects to edited script, or rewrite script without reading graphic
 app.post('/api/llm/regenerate-scene', async (req, res) => {
   try {
-    const { topic, scene, action, language, llmConfig } = req.body;
+    const { topic, scene, action, language, odmMode, llmConfig } = req.body;
     if (!scene) {
       res.status(400).json({ error: 'Missing scene payload' });
       return;
@@ -351,6 +335,7 @@ app.post('/api/llm/regenerate-scene', async (req, res) => {
       scene,
       action: action || 'sync-visual-to-script',
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
+      odmMode: Boolean(odmMode),
       llmConfig,
     });
     res.json(result);

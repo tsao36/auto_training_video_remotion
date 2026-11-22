@@ -29,7 +29,6 @@ import { DomainChoice, isTechDomain } from '../utils/domainInference';
 import { DEFAULT_GNAI_CONFIG, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
-import { createPresetProject } from '../utils/planGenerator';
 
 interface SourceWizardModalProps {
   isOpen: boolean;
@@ -67,8 +66,9 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     () => loadTtsSettings().defaultVoice?.fileName ?? ''
   );
   const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
-  const [inputMode, setInputMode] = useState<'topic-llm' | 'upload' | 'preset'>('topic-llm');
+  const [inputMode, setInputMode] = useState<'topic-llm' | 'upload'>('topic-llm');
   const [topic, setTopic] = useState('');
+  const [odmMode, setOdmMode] = useState(false);
   const [durationSeconds, setDurationSeconds] = useState<number>(60);
   const [researchText, setResearchText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -188,60 +188,6 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         : llmConfig;
       const selectedCustomVoice = selectedVoiceProfile ? toCustomVoice(selectedVoiceProfile) : undefined;
 
-      if (inputMode === 'preset') {
-        if (!isTechDomain(domainChoice)) {
-          setError('載入標準範本時請先手動選擇技術領域；AI 自動判斷只適用於主題或文件生成。');
-          setIsProcessing(false);
-          setCreateProgress(0);
-          return;
-        }
-        const domain = domainChoice;
-        setCreateProgress(60);
-        setCreateStage('載入 10 分鐘工程培訓標準範本...');
-        const proj = createPresetProject(domain);
-        if (language !== DEFAULT_CONTENT_LANGUAGE) {
-          setCreateStage('正在依所選語言生成範本內容...');
-          const localizedResp = await fetch('/api/llm/generate-plan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              topic: proj.title,
-              durationSeconds: proj.targetDurationSeconds,
-              domain,
-              rawText: [
-                proj.rawSourceText,
-                ...proj.scenes.map(
-                  (scene) => `${scene.title}\n${scene.keyPoints.join('、')}\n${scene.script}`
-                ),
-              ].join('\n\n'),
-              defaultTtsProvider: ttsProvider,
-              language,
-              llmConfig: requestLlmConfig,
-            }),
-          });
-          const localizedData = await localizedResp.json();
-          if (!localizedResp.ok) {
-            throw new Error(localizedData.error || '無法依所選語言生成範本');
-          }
-          proj.title = localizedData.title || proj.title;
-          proj.subtitle = localizedData.subtitle || proj.subtitle;
-          proj.scenes = localizedData.scenes;
-        }
-        proj.language = language;
-        proj.ttsConfig.defaultProvider = ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa';
-        proj.ttsConfig.customVoice = selectedCustomVoice;
-        proj.llmConfig = projectLlmConfig;
-        proj.scenes = proj.scenes.map((s) => ({
-          ...s,
-          tts: { ...s.tts, provider: ttsProvider },
-        }));
-        setCreateProgress(100);
-        setCreateStage('專案建立完成！');
-        onProjectCreated(proj);
-        onClose();
-        return;
-      }
-
       let rawTextForLlm = researchText.trim();
       let pptxSlidesForLlm: unknown[] | undefined;
       let resolvedTopic = topic.trim();
@@ -306,6 +252,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           topic: resolvedTopic,
           durationSeconds: targetSec,
           domain: domainChoice,
+          odmMode,
           rawText: rawTextForLlm,
           pptxSlides: pptxSlidesForLlm,
           defaultTtsProvider: ttsProvider,
@@ -333,6 +280,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         subtitle: data.subtitle || meta.description,
         language,
         topic: resolvedTopic,
+        odmMode,
         domain: resolvedDomain,
         targetDurationSeconds: targetSec,
         fps: 30,
@@ -414,7 +362,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               1. 建立方式
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setInputMode('topic-llm')}
@@ -436,17 +384,6 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                 }`}
               >
                 <FileUp className="w-4 h-4" /> 上傳 PPTX / PDF + AI
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputMode('preset')}
-                className={`py-2.5 px-3 rounded-lg text-xs font-semibold border flex items-center justify-center gap-2 transition ${
-                  inputMode === 'preset'
-                    ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200'
-                    : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-4 h-4" /> 載入 10 分鐘標準範本
               </button>
             </div>
           </div>
@@ -473,7 +410,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           </div>
 
           {/* Step 2: Topic & Duration (for topic-llm & upload) */}
-          {inputMode !== 'preset' && (
+          {(
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -489,6 +426,25 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               </div>
 
               <div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={odmMode}
+                  onClick={() => setOdmMode((enabled) => !enabled)}
+                  className={`mb-2 w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-left transition ${
+                    odmMode
+                      ? 'border-amber-400 bg-amber-400/10 text-amber-100'
+                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500'
+                  }`}
+                >
+                  <span>
+                    <span className="block text-xs font-bold">ODM 模式</span>
+                    <span className="block text-[10px] mt-0.5 text-slate-400">用比喻與生活例子講給新手工程師</span>
+                  </span>
+                  <span className={`relative w-9 h-5 shrink-0 rounded-full transition ${odmMode ? 'bg-amber-400' : 'bg-slate-700'}`}>
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${odmMode ? 'left-[18px]' : 'left-0.5'}`} />
+                  </span>
+                </button>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                   影片總時長 (秒)
                 </label>
@@ -571,16 +527,6 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </div>
           )}
 
-          {inputMode === 'preset' && (
-            <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-              將立即載入{' '}
-              <span className="text-cyan-300 font-semibold">
-                {isTechDomain(domainChoice) ? DOMAIN_META[domainChoice].label : '所選技術領域'}
-              </span>{' '}
-              的完整 10 分鐘（600 秒）PC 筆電工程培訓範本。AI 自動判斷不適用於標準範本。
-            </div>
-          )}
-
           {/* Step 3: Domain */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
@@ -645,7 +591,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           </div>
 
           {/* GNAI LLM Config (Prefers project .env, optional browser override) */}
-          {inputMode !== 'preset' && (
+          {(
             <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
               <button
                 type="button"
@@ -920,7 +866,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />{' '}
-                {inputMode === 'preset' ? '載入 10 分鐘標準範本' : `生成 ${durationSeconds} 秒 Remotion 專案`}
+                {`生成 ${durationSeconds} 秒 Remotion 專案`}
               </>
             )}
           </button>

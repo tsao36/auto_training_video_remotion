@@ -1,5 +1,6 @@
 import {
   DOMAIN_META,
+  SceneDiagramData,
   SceneSpec,
   TARGET_VIDEO_DURATION_SECONDS,
   TechDomain,
@@ -370,7 +371,10 @@ export function buildPlanFromSource(params: {
   };
 }
 
-export function getDefaultDiagramData(domain: TechDomain, template: VisualTemplate) {
+export function getDefaultDiagramData(
+  domain: TechDomain,
+  template: VisualTemplate
+): SceneDiagramData | undefined {
   if (template === 'signal-waveform') {
     if (domain === 'debug-logic') {
       return {
@@ -674,11 +678,145 @@ export function getDefaultDiagramData(domain: TechDomain, template: VisualTempla
     };
   }
 
+  if (template === 'packet-simulator') {
+    const isBt = domain === 'bluetooth';
+    return {
+      visualCaption: isBt ? 'BLE / BT 多通道跳頻封包即時模擬' : '裝置 A ↔ B 多通道無線封包逐一傳輸模擬',
+      simDeviceA: isBt
+        ? { name: 'Device A (Host Laptop)', role: 'BT 5.4 Central / Audio Source', ipOrMac: '00:1A:7D:DA:71:10' }
+        : { name: 'Device A (Wi-Fi 7 AP)', role: 'Multi-Link AP / Scheduler', ipOrMac: 'AA:BB:CC:01:00:01' },
+      simDeviceB: isBt
+        ? { name: 'Device B (LE Audio Earbuds)', role: 'Peripheral / Isochronous Sink', ipOrMac: '00:1A:7D:DA:71:99' }
+        : { name: 'Device B (Intel BE200 STA)', role: 'Client NIC / Receiver', ipOrMac: 'DD:EE:FF:02:00:88' },
+      simChannels: isBt
+        ? [
+            { id: 'ch37', label: 'ADV CH 37', band: '2402 MHz', bandwidth: '2 MHz', color: '#38BDF8', interference: false },
+            { id: 'ch12', label: 'DATA CH 12', band: '2428 MHz', bandwidth: '2 MHz', color: '#F59E0B', interference: true },
+            { id: 'ch28', label: 'ISO CH 28', band: '2462 MHz', bandwidth: '2 MHz', color: '#34D399', interference: false },
+          ]
+        : [
+            { id: 'ch1', label: 'CH 1', band: '2.4 GHz', bandwidth: '40 MHz', color: '#F59E0B', interference: true },
+            { id: 'ch36', label: 'CH 36', band: '5 GHz', bandwidth: '160 MHz', color: '#38BDF8', interference: false },
+            { id: 'ch69', label: 'CH 69', band: '6 GHz', bandwidth: '320 MHz', color: '#34D399', interference: false },
+          ],
+      simPackets: isBt
+        ? [
+            { seq: 1, channelId: 'ch37', direction: 'A->B', label: 'ADV_EXT', sizeBytes: 64, status: 'ok' },
+            { seq: 2, channelId: 'ch12', direction: 'A->B', label: 'LC3 #01', sizeBytes: 120, status: 'retry' },
+            { seq: 3, channelId: 'ch28', direction: 'A->B', label: 'LC3 #01 (AFH)', sizeBytes: 120, status: 'ok' },
+            { seq: 4, channelId: 'ch28', direction: 'B->A', label: 'ACK', sizeBytes: 16, status: 'ack' },
+            { seq: 5, channelId: 'ch28', direction: 'A->B', label: 'LC3 #02', sizeBytes: 120, status: 'ok' },
+            { seq: 6, channelId: 'ch28', direction: 'B->A', label: 'ACK', sizeBytes: 16, status: 'ack' },
+          ]
+        : [
+            { seq: 1, channelId: 'ch1', direction: 'A->B', label: 'BEACON', sizeBytes: 128, status: 'ok' },
+            { seq: 2, channelId: 'ch36', direction: 'A->B', label: 'DATA #01', sizeBytes: 1500, status: 'ok' },
+            { seq: 3, channelId: 'ch69', direction: 'A->B', label: 'DATA #02', sizeBytes: 1500, status: 'ok' },
+            { seq: 4, channelId: 'ch1', direction: 'A->B', label: 'DATA #03', sizeBytes: 1500, status: 'retry' },
+            { seq: 5, channelId: 'ch36', direction: 'B->A', label: 'BA-ACK', sizeBytes: 64, status: 'ack' },
+            { seq: 6, channelId: 'ch69', direction: 'A->B', label: 'DATA #03 RETX', sizeBytes: 1500, status: 'ok' },
+            { seq: 7, channelId: 'ch69', direction: 'B->A', label: 'BA-ACK', sizeBytes: 64, status: 'ack' },
+            { seq: 8, channelId: 'ch36', direction: 'A->B', label: 'DATA #04', sizeBytes: 1500, status: 'ok' },
+          ],
+    };
+  }
+
+  if (template === 'ofdm-spectrum') {
+    return {
+      visualCaption: 'OFDMA 320 MHz 副載波與 Preamble Puncturing 頻譜',
+      ofdmBandwidthMhz: 320,
+      ofdmRuBlocks: [
+        { label: 'RU 484 • STA-1 (4K Stream)', tones: '484 tones', widthRatio: 0.28, color: '#38BDF8' },
+        { label: 'PUNCTURED (Radar / DFS)', tones: '20 MHz Notch', widthRatio: 0.16, color: '#EF4444', punctured: true },
+        { label: 'RU 996 • STA-2 (Low-Latency)', tones: '996 tones', widthRatio: 0.34, color: '#34D399' },
+        { label: 'RU 242 • IoT / Voice', tones: '242 tones', widthRatio: 0.22, color: '#A78BFA' },
+      ],
+    };
+  }
+
+  if (template === 'beamforming-array') {
+    return {
+      visualCaption: '8-Element 相控陣列波束成形與零點干擾抑制',
+      beamformingElements: 8,
+      beamformingTargetAngleDeg: -16,
+      beamformingTargetLabel: 'Target STA (Laptop)',
+    };
+  }
+
+  if (template === 'qam-constellation') {
+    return {
+      visualCaption: '64/256-QAM 星座圖與 EVM / SNR 訊號品質分析',
+      qamOrder: 64,
+      qamSnrDb: 34.5,
+      qamEvmDb: -35.2,
+    };
+  }
+
+  if (template === 'mlo-multilink') {
+    return {
+      visualCaption: 'Wi-Fi 7 MLO 三頻並行排程與聚合吞吐量',
+      mloLinks: [
+        { band: '6 GHz Link', channel: 'CH 69', bandwidth: '320 MHz', color: '#34D399', throughputMbps: 4200, mode: 'STR' },
+        { band: '5 GHz Link', channel: 'CH 36', bandwidth: '160 MHz', color: '#38BDF8', throughputMbps: 2100, mode: 'STR' },
+        { band: '2.4 GHz Link', channel: 'CH 1', bandwidth: '40 MHz', color: '#F59E0B', throughputMbps: 450, mode: 'EMLSR' },
+      ],
+    };
+  }
+
+  if (template === 'rf-link-budget') {
+    return {
+      visualCaption: '6 GHz RF 鏈路預算瀑布圖與 SNR 餘裕評估',
+      rfSensitivityDbm: -78,
+      rfLinkStages: [
+        { label: 'TX Power', deltaDb: 20, note: 'AP PA Output', type: 'tx' },
+        { label: 'TX Ant Gain', deltaDb: 4, note: '2x2 MIMO', type: 'gain' },
+        { label: 'FSPL (15m)', deltaDb: -72, note: '6 GHz Path Loss', type: 'loss' },
+        { label: 'Wall / Body', deltaDb: -14, note: 'Attenuation', type: 'loss' },
+        { label: 'RX Ant Gain', deltaDb: 2, note: 'Laptop Antenna', type: 'gain' },
+        { label: 'RX Power', deltaDb: -60, note: 'Received RSSI', type: 'rx' },
+      ],
+    };
+  }
+
   return undefined;
 }
 
-export function createPresetProject(domain: TechDomain): TrainingProject {
-  const presets: Record<TechDomain, { title: string; rawText: string; slides: { title: string; body: string; notes: string }[] }> = {
+export function createEmptyProject(domain: TechDomain): TrainingProject {
+  const meta = DOMAIN_META[domain];
+  return {
+    id: `proj-${Date.now()}`,
+    title: `${meta.shortLabel} 技術培訓課程`,
+    subtitle: meta.description,
+    language: 'zh-TW',
+    domain,
+    targetDurationSeconds: TARGET_VIDEO_DURATION_SECONDS,
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    sourceType: 'topic-llm',
+    rawSourceText: '',
+    ttsConfig: {
+      defaultProvider: 'openformosa',
+      openformosa: {
+        baseUrl: 'http://127.0.0.1:8001/v1/tts',
+        apiKey: '',
+        model: 'OpenFormosa/BlueMagpie-TTS',
+        voice: 'hung_yi_lee',
+      },
+      mingTts: {
+        baseUrl: 'http://localhost:8000/v1/tts',
+        apiKey: '',
+        model: 'inclusionAI/Ming-3.0-tts',
+        speaker: 'ming-tech-zh-en',
+        style: 'professional-training',
+      },
+    },
+    scenes: [],
+  };
+}
+
+/* Legacy preloaded preset content removed.
+const removedPresetData: Record<TechDomain, unknown> = {
     'debug-logic': {
       title: 'PC/筆電硬體除錯共通邏輯：從 Power Sequence 到 Root-Cause',
       rawText: 'PC Laptop Hardware Debug Common Logic Training: Power Sequencing, EC/BIOS POST, SPI/I2C/PCIe probing, and systematic root-cause isolation.',
@@ -850,13 +988,5 @@ export function createPresetProject(domain: TechDomain): TrainingProject {
     },
   };
 
-  const p = presets[domain];
-  return buildPlanFromSource({
-    title: p.title,
-    domain,
-    sourceType: 'research-text',
-    rawText: p.rawText,
-    slides: p.slides,
-    defaultTtsProvider: 'openformosa',
-  });
-}
+};
+*/

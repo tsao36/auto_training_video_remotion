@@ -2,13 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import {
   Activity,
-  Check,
   CheckCircle2,
   Clock,
-  Copy,
   Cpu,
   Download,
-  Eye,
   Film,
   LayoutGrid,
   Layers,
@@ -24,7 +21,6 @@ import {
   Sparkles,
   Trash2,
   Tv,
-  Upload,
   Volume2,
   Wand2,
 } from 'lucide-react';
@@ -72,7 +68,7 @@ import {
 import {
   balanceScenesToDuration,
   computeRichnessDuration,
-  createPresetProject,
+  createEmptyProject,
   formatDuration,
   getDefaultDiagramData,
 } from './utils/planGenerator';
@@ -81,7 +77,7 @@ type InspectorTab = 'script-tts' | 'motion-visual' | 'engine-config';
 
 export function App() {
   const [project, setProject] = useState<TrainingProject>(() => ({
-    ...createPresetProject('debug-logic'),
+    ...createEmptyProject('debug-logic'),
     llmConfig: loadStoredLlmConfig(),
   }));
   const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
@@ -103,7 +99,6 @@ export function App() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [sceneAiLoading, setSceneAiLoading] = useState<string | null>(null);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
-  const [copiedDebugKey, setCopiedDebugKey] = useState<string | null>(null);
   const [renderState, setRenderState] = useState<{
     active: boolean;
     progress: number;
@@ -233,7 +228,7 @@ export function App() {
       }
       if (activeProjectIdRef.current === projectId) {
         setProject((prev) => ({
-          ...createPresetProject(prev.domain),
+          ...createEmptyProject(prev.domain),
           llmConfig: prev.llmConfig || loadStoredLlmConfig(),
         }));
         setSelectedSceneIdx(0);
@@ -259,7 +254,7 @@ export function App() {
 
   useEffect(() => {
     if (deletedProjectIdsRef.current.has(project.id)) return;
-    // Unsaved presets (page load, or the placeholder left after a delete) must not be written to disk.
+    // Unsaved empty projects (page load, or the placeholder left after a delete) must not be written to disk.
     if (!isCurrentProjectSaved) return;
     const timer = setTimeout(() => {
       void saveProjectToDisk(project, false);
@@ -350,7 +345,7 @@ export function App() {
 
   const handleDomainSwitch = (domain: TechDomain) => {
     setProject((prev) => ({
-      ...createPresetProject(domain),
+      ...createEmptyProject(domain),
       language: DEFAULT_CONTENT_LANGUAGE,
       llmConfig: prev.llmConfig || loadStoredLlmConfig(),
     }));
@@ -382,6 +377,7 @@ export function App() {
           scene,
           action,
           language: project.language || DEFAULT_CONTENT_LANGUAGE,
+          odmMode: Boolean(project.odmMode),
           llmConfig: project.llmConfig,
         }),
       });
@@ -997,16 +993,6 @@ export function App() {
     }
   };
 
-  const copyDebugMessage = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedDebugKey(key);
-      setTimeout(() => setCopiedDebugKey((curr) => (curr === key ? null : curr)), 2000);
-    } catch {
-      // Clipboard API may be blocked in non-HTTPS contexts
-    }
-  };
-
   const isExactTargetDuration = totalSeconds === project.targetDurationSeconds;
 
   // Flush the debounced auto-save so reopening the project from disk shows the latest edits.
@@ -1025,23 +1011,6 @@ export function App() {
     setPlayerInitialProjectId(projectId ?? null);
     setView('player');
     void fetchSavedProjects();
-  };
-
-  const handleCreateFromPreset = (domain: TechDomain) => {
-    const next: TrainingProject = applyTtsSettings(
-      {
-        ...createPresetProject(domain),
-        language: DEFAULT_CONTENT_LANGUAGE,
-        llmConfig: project.llmConfig || loadStoredLlmConfig(),
-      },
-      loadTtsSettings(),
-      { overrideProvider: true }
-    );
-    setProject(next);
-    setSelectedSceneIdx(0);
-    playerRef.current?.seekTo(0);
-    void saveProjectToDisk(next, false);
-    setView('editor');
   };
 
   const wizardModal = (
@@ -1072,7 +1041,6 @@ export function App() {
           onOpenPlayer={(projectId) => void openPlayerMode(projectId)}
           onDeleteProject={handleDeleteSavedProject}
           onCreateWithAi={() => setIsWizardOpen(true)}
-          onCreateFromPreset={handleCreateFromPreset}
         />
         {aiNotice && (
           <div
@@ -1182,15 +1150,6 @@ export function App() {
             <span>
               {formatDuration(totalSeconds)} / {formatDuration(project.targetDurationSeconds)}
             </span>
-            {!isExactTargetDuration && (
-              <button
-                onClick={handleAutoBalance}
-                className="ml-1 underline hover:text-white"
-                title={`自動平衡各場景時間至目標時長 (${project.targetDurationSeconds}秒)`}
-              >
-                校正時長
-              </button>
-            )}
           </div>
 
           <SavedProjectsMenu
@@ -1270,21 +1229,6 @@ export function App() {
           </button>
 
           <button
-            type="button"
-            onClick={() => void startPreviewStills()}
-            disabled={stillsState.active}
-            title="一次輸出每一幕的中點 PNG 截圖，快速檢查排版"
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
-          >
-            {stillsState.active ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-            ) : (
-              <Eye className="w-3.5 h-3.5 text-cyan-400" />
-            )}
-            靜態預覽
-          </button>
-
-          <button
             onClick={() => startRender(selectedSceneIdx)}
             disabled={renderState.active || isSelectedSceneTtsRendering}
             title={
@@ -1343,22 +1287,6 @@ export function App() {
             <span className="break-all select-text">{aiNotice}</span>
           </span>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => void copyDebugMessage('ai-notice', aiNotice)}
-              className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 hover:text-white flex items-center gap-1 transition cursor-pointer"
-              title="複製除錯訊息"
-            >
-              {copiedDebugKey === 'ai-notice' ? (
-                <>
-                  <Check className="w-3 h-3 text-emerald-400" /> 已複製
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" /> 複製訊息
-                </>
-              )}
-            </button>
             <button
               type="button"
               onClick={() => setAiNotice(null)}
@@ -1455,21 +1383,6 @@ export function App() {
           {renderState.error && (
             <div className="flex items-center justify-between gap-3 w-full text-rose-300 font-medium">
               <span className="break-all select-text">輸出錯誤：{renderState.error}</span>
-              <button
-                type="button"
-                onClick={() => void copyDebugMessage('render-error', renderState.error || '')}
-                className="px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-200 flex items-center gap-1 shrink-0 transition cursor-pointer"
-              >
-                {copiedDebugKey === 'render-error' ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-400" /> 已複製
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3" /> 複製訊息
-                  </>
-                )}
-              </button>
             </div>
           )}
         </div>

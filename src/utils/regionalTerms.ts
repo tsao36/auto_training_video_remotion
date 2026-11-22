@@ -48,14 +48,28 @@ const ZH_TW_TERM_RULES: readonly RegionalTermRule[] = [
   { wrong: '默認', preferred: '預設' },
   { wrong: '兼容', preferred: '相容' },
   { wrong: '字節', preferred: '位元組' },
-  { wrong: '比特', preferred: '位元' },
   { wrong: '信道', preferred: '通道' },
   { wrong: '視頻', preferred: '影片' },
+  { wrong: '高清', preferred: '高畫質', reason: '台灣工程與多媒體用語為「高畫質」（high definition），非中國大陸用語「高清」' },
   { wrong: '音頻', preferred: '音訊' },
   { wrong: '報錯', preferred: '回報錯誤' },
   { wrong: '延時', preferred: '延遲' },
-  { wrong: '校驗', preferred: '驗證' },
-  { wrong: '鏈路', preferred: '連結' },
+  { wrong: '函數', preferred: '函式' },
+  { wrong: '變量', preferred: '變數' },
+  { wrong: '數組', preferred: '陣列' },
+  { wrong: '字符串', preferred: '字串' },
+  { wrong: '隊列', preferred: '佇列' },
+  { wrong: '堆棧', preferred: '堆疊' },
+  { wrong: '用戶', preferred: '使用者' },
+  { wrong: '實時', preferred: '即時' },
+  { wrong: '圖像', preferred: '影像' },
+  { wrong: '鼠標', preferred: '滑鼠' },
+  { wrong: '打印機', preferred: '印表機' },
+  { wrong: '文件', preferred: '檔案' },
+  { wrong: '存儲', preferred: '儲存' },
+  { wrong: '性能', preferred: '效能' },
+  { wrong: '交換機', preferred: '交換器' },
+  { wrong: '指針', preferred: '指標' },
 ];
 
 /**
@@ -83,6 +97,28 @@ const ZH_CN_TERM_RULES: readonly RegionalTermRule[] = [
   { wrong: '頻寬', preferred: '带宽' },
   { wrong: '預設', preferred: '默认' },
   { wrong: '位元組', preferred: '字节' },
+  { wrong: '位元', preferred: '比特' },
+  { wrong: '衍生', preferred: '派生' },
+  { wrong: '函式', preferred: '函数' },
+  { wrong: '變數', preferred: '变量' },
+  { wrong: '陣列', preferred: '数组' },
+  { wrong: '字串', preferred: '字符串' },
+  { wrong: '佇列', preferred: '队列' },
+  { wrong: '堆疊', preferred: '堆栈' },
+  { wrong: '使用者', preferred: '用户' },
+  { wrong: '即時', preferred: '实时' },
+  { wrong: '影像', preferred: '图像' },
+  { wrong: '圖片', preferred: '图片' },
+  { wrong: '高畫質', preferred: '高清' },
+  { wrong: '影片', preferred: '视频' },
+  { wrong: '音訊', preferred: '音频' },
+  { wrong: '滑鼠', preferred: '鼠标' },
+  { wrong: '印表機', preferred: '打印机' },
+  { wrong: '檔案', preferred: '文件' },
+  { wrong: '儲存', preferred: '存储' },
+  { wrong: '效能', preferred: '性能' },
+  { wrong: '交換器', preferred: '交换机' },
+  { wrong: '指標', preferred: '指针' },
 ];
 
 export function getRegionalTermRules(language?: string): readonly RegionalTermRule[] {
@@ -150,10 +186,16 @@ export function getRegionalTerminologyPromptGuidance(language?: string): string 
     case 'zh-TW':
       return `REGIONAL TERMINOLOGY (Traditional Chinese — Taiwan engineering standard):
 - Use authentic Taiwan hardware/network/software engineering terminology, NEVER Mainland China terms.
-- Examples: 衍生/推導 (NOT 派生), 金鑰 (NOT 鑰匙/密钥), 欄位 (NOT 字段), 訊息 (NOT 信息), 封包 (NOT 數據包/報文), 網路 (NOT 網絡), 協定 (NOT 協議), 除錯 (NOT 調試), 記憶體 (NOT 內存), 快取 (NOT 緩存), 硬體/軟體/韌體 (NOT 硬件/軟件/固件), 晶片 (NOT 芯片), 匯流排 (NOT 總線), 伺服器 (NOT 服務器), 介面 (NOT 接口), 執行緒 (NOT 線程), 預設 (NOT 默認), 頻寬 (NOT 寬帶), 位元/位元組 (NOT 比特/字節).
-- Keep standard English acronyms and protocol names intact (e.g., EAPOL, PTK, PMK, MIC, PCIe, OFDMA).`;
+- Cryptography example: use 金鑰 and 衍生/derive (NOT 鑰匙 or 派生). Keep PTK, PMK, MIC, EAPOL, and ANonce unchanged.
+- Taiwan technical writing commonly mixes English and Traditional Chinese. English-first wording is natural when it is standard in Taiwan engineering, including API, SDK, cache, firmware, chipset, server, packet/frame, field, register, debug, driver, latency, throughput, array, queue, stack, pointer, file, storage, performance, interface, and cloud/AI product terms.
+- Prefer the exact English term or code identifier when it is the established engineering label. Do not force an awkward Chinese translation or remove a short English term for consistency.
+- Multimedia examples: 高畫質/HD (NOT 高清), 影片/video (NOT 視頻), 音訊/audio (NOT 音頻).
+- Common system terms: 函式 (NOT 函數), 變數 (NOT 變量), 陣列/array (NOT 數組), 字串/string (NOT 字符串), 佇列/queue (NOT 隊列), 堆疊/stack (NOT 堆棧), 使用者/user (NOT 用戶), 即時/realtime (NOT 實時), 影像/圖片/image (NOT 圖像), 檔案/file (NOT 文件), 儲存/storage (NOT 存儲), 效能/performance (NOT 性能), 指標/pointer (NOT 指針).
+- Keep standard English acronyms and protocol names intact (e.g., EAPOL, PTK, PMK, MIC, PCIe, OFDMA, API, SDK, CPU, GPU, RAM, DMA, I/O, USB, TCP, UDP, HTTP, DNS, TLS, AES).
+- When a Mainland China term is clear, replace it with the natural Taiwan equivalent or established English term; do not translate already-English names unless Taiwan engineers commonly do so.`;
     case 'zh-CN':
       return `REGIONAL TERMINOLOGY (Simplified Chinese — Mainland China engineering standard):
+- Common system terms: 函数 (NOT 函式), 变量 (NOT 變數), 数组 (NOT 陣列), 字符串 (NOT 字串), 队列 (NOT 佇列), 堆栈 (NOT 堆疊), 用户 (NOT 使用者), 实时 (NOT 即時), 图像/图片 (NOT 影像/圖片), 视频/高清 (NOT 影片/高畫質), 文件 (NOT 檔案), 存储 (NOT 儲存), 性能 (NOT 效能), 指针 (NOT 指標).
 - Use standard Mainland China technical terminology consistently (e.g., 密钥, 字段, 信息, 数据包/报文, 网络, 协议, 调试, 内存, 缓存, 硬件/软件/固件, 芯片, 总线, 服务器, 接口, 线程, 默认, 带宽). Do NOT mix Taiwan-specific Traditional Chinese terms.
 - Keep standard English acronyms and protocol names intact.`;
     case 'en-US':

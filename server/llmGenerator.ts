@@ -29,6 +29,7 @@ export interface GeneratePlanParams {
   pptxSlides?: PptxSlideData[];
   defaultTtsProvider?: TtsProvider;
   language?: ContentLanguage;
+  odmMode?: boolean;
   llmConfig?: Partial<LlmConfig>;
 }
 
@@ -39,6 +40,7 @@ export interface RegenerateSceneParams {
   scene: SceneSpec;
   action: 'sync-visual-to-script' | 'rewrite-script-no-read' | 'regenerate-both';
   language?: ContentLanguage;
+  odmMode?: boolean;
   llmConfig?: Partial<LlmConfig>;
 }
 
@@ -72,6 +74,12 @@ const VALID_TEMPLATES: VisualTemplate[] = [
   'code-log',
   'kpi-metrics',
   'fault-tree',
+  'packet-simulator',
+  'ofdm-spectrum',
+  'beamforming-array',
+  'qam-constellation',
+  'mlo-multilink',
+  'rf-link-budget',
   'summary-takeaways',
 ];
 
@@ -81,6 +89,7 @@ const VALID_EFFECTS: RemotionEffect[] = [
   'cascade-reveal',
   'zoom-focus',
   'sweep-scan',
+  'packet-traffic',
 ];
 
 const DEFAULT_GNAI_URL = 'https://gnai.intel.com/api/providers/openai/v1';
@@ -192,11 +201,35 @@ export function inferEffectFromScriptAndTemplate(script: string, template: Visua
   if (template === 'code-log') return 'sweep-scan';
   if (template === 'kpi-metrics') return 'zoom-focus';
   if (template === 'fault-tree') return 'cascade-reveal';
+  if (template === 'packet-simulator') return 'packet-traffic';
+  if (template === 'ofdm-spectrum') return 'sweep-scan';
+  if (template === 'beamforming-array') return 'sweep-scan';
+  if (template === 'qam-constellation') return 'zoom-focus';
+  if (template === 'mlo-multilink') return 'cascade-reveal';
+  if (template === 'rf-link-budget') return 'cascade-reveal';
   return 'signal-pulse';
 }
 
 export function inferTemplateFromScript(script: string, current?: VisualTemplate): VisualTemplate {
   const s = script.toLowerCase();
+  if (/多通道.*封包|封包模擬|模擬傳輸|重傳.*通道|packet sim|multi-channel packet|channel.*packet/.test(s)) {
+    return 'packet-simulator';
+  }
+  if (/ofdm|ofdma|副載波|subcarrier|resource unit|preamble puncturing|頻譜分配/.test(s)) {
+    return 'ofdm-spectrum';
+  }
+  if (/波束成形|相控陣列|beamforming|phased array|null steering|陣列天線/.test(s)) {
+    return 'beamforming-array';
+  }
+  if (/星座圖|qam|evm|constellation|i\/q|調變階數/.test(s)) {
+    return 'qam-constellation';
+  }
+  if (/mlo|多鏈路|multi-link|emlsr|str.*link|三頻聚合/.test(s)) {
+    return 'mlo-multilink';
+  }
+  if (/鏈路預算|link budget|fspl|路徑損耗|path loss|接收靈敏度|link margin/.test(s)) {
+    return 'rf-link-budget';
+  }
   if (/封包|訊框|標頭|欄位|packet|frame|header|payload|beacon|eapol|tlv|fcs/.test(s)) {
     return 'packet-frame';
   }
@@ -533,6 +566,85 @@ function buildSmartFallbackDiagram(
     };
   }
 
+  if (template === 'packet-simulator') {
+    return {
+      visualCaption: `${shortTopic} 多通道封包傳輸模擬 (A ↔ B)`,
+      simDeviceA: { name: 'Device A (Wi-Fi 7 AP)', role: 'Transmitter / Scheduler', ipOrMac: 'AA:BB:CC:01:00:01' },
+      simDeviceB: { name: 'Device B (Client STA)', role: 'Receiver / Multi-Link NIC', ipOrMac: 'DD:EE:FF:02:00:88' },
+      simChannels: [
+        { id: 'ch1', label: 'CH 1', band: '2.4 GHz', bandwidth: '40 MHz', color: '#F59E0B', interference: true },
+        { id: 'ch36', label: 'CH 36', band: '5 GHz', bandwidth: '160 MHz', color: '#38BDF8', interference: false },
+        { id: 'ch69', label: 'CH 69', band: '6 GHz', bandwidth: '320 MHz', color: '#34D399', interference: false },
+      ],
+      simPackets: [
+        { seq: 1, channelId: 'ch1', direction: 'A->B', label: 'BEACON', sizeBytes: 128, status: 'ok' },
+        { seq: 2, channelId: 'ch36', direction: 'A->B', label: 'DATA #01', sizeBytes: 1500, status: 'ok' },
+        { seq: 3, channelId: 'ch69', direction: 'A->B', label: 'DATA #02', sizeBytes: 1500, status: 'ok' },
+        { seq: 4, channelId: 'ch1', direction: 'A->B', label: 'DATA #03', sizeBytes: 1500, status: 'retry' },
+        { seq: 5, channelId: 'ch36', direction: 'B->A', label: 'BA-ACK', sizeBytes: 64, status: 'ack' },
+        { seq: 6, channelId: 'ch69', direction: 'A->B', label: 'DATA #03 RETX', sizeBytes: 1500, status: 'ok' },
+        { seq: 7, channelId: 'ch69', direction: 'B->A', label: 'BA-ACK', sizeBytes: 64, status: 'ack' },
+      ],
+    };
+  }
+
+  if (template === 'ofdm-spectrum') {
+    return {
+      visualCaption: `${shortTopic} OFDMA 頻譜與 RU 分配`,
+      ofdmBandwidthMhz: 320,
+      ofdmRuBlocks: [
+        { label: 'RU 484 • STA-1', tones: '484 tones', widthRatio: 0.28, color: '#38BDF8' },
+        { label: 'PUNCTURED (Interferer)', tones: '20 MHz Notch', widthRatio: 0.16, color: '#EF4444', punctured: true },
+        { label: 'RU 996 • STA-2', tones: '996 tones', widthRatio: 0.34, color: '#34D399' },
+        { label: 'RU 242 • IoT', tones: '242 tones', widthRatio: 0.22, color: '#A78BFA' },
+      ],
+    };
+  }
+
+  if (template === 'beamforming-array') {
+    return {
+      visualCaption: `${shortTopic} 相控陣列與波束成形`,
+      beamformingElements: 8,
+      beamformingTargetAngleDeg: -16,
+      beamformingTargetLabel: 'Target STA',
+    };
+  }
+
+  if (template === 'qam-constellation') {
+    return {
+      visualCaption: `${shortTopic} QAM 星座圖與 EVM / SNR`,
+      qamOrder: 64,
+      qamSnrDb: 34.5,
+      qamEvmDb: -35.2,
+    };
+  }
+
+  if (template === 'mlo-multilink') {
+    return {
+      visualCaption: `${shortTopic} Wi-Fi 7 MLO 多鏈路排程`,
+      mloLinks: [
+        { band: '6 GHz Link', channel: 'CH 69', bandwidth: '320 MHz', color: '#34D399', throughputMbps: 4200, mode: 'STR' },
+        { band: '5 GHz Link', channel: 'CH 36', bandwidth: '160 MHz', color: '#38BDF8', throughputMbps: 2100, mode: 'STR' },
+        { band: '2.4 GHz Link', channel: 'CH 1', bandwidth: '40 MHz', color: '#F59E0B', throughputMbps: 450, mode: 'EMLSR' },
+      ],
+    };
+  }
+
+  if (template === 'rf-link-budget') {
+    return {
+      visualCaption: `${shortTopic} RF 鏈路預算與 SNR 餘裕`,
+      rfSensitivityDbm: -78,
+      rfLinkStages: [
+        { label: 'TX Power', deltaDb: 20, note: 'PA Output', type: 'tx' },
+        { label: 'TX Ant Gain', deltaDb: 4, note: 'MIMO Array', type: 'gain' },
+        { label: 'FSPL', deltaDb: -72, note: 'Path Loss', type: 'loss' },
+        { label: 'Wall Loss', deltaDb: -14, note: 'Attenuation', type: 'loss' },
+        { label: 'RX Ant Gain', deltaDb: 2, note: 'Client Ant', type: 'gain' },
+        { label: 'RX Power', deltaDb: -60, note: 'RSSI', type: 'rx' },
+      ],
+    };
+  }
+
   return {
     visualCaption: /排查|除錯|檢查/.test(script) ? '逐步隔離驗證 SOP' : `${shortTopic} 核心架構`,
   };
@@ -622,6 +734,9 @@ function generateFallbackPlan(params: ResolvedGeneratePlanParams): LlmPlanPayloa
       rawText && rawText.trim().length > 10 && i === 1
         ? `結合您提供的技術筆記重點，${bp.script}`
         : bp.script;
+    const spokenContext = params.odmMode
+      ? `先用生活情境理解「${topic}」：把它想成一個有入口、規則、流量和例外狀況的系統。專業術語只是用來準確描述這些步驟。${contextHint}`
+      : contextHint;
 
     selected.push({
       title: bp.title,
@@ -631,8 +746,8 @@ function generateFallbackPlan(params: ResolvedGeneratePlanParams): LlmPlanPayloa
       effect: bp.effect,
       visualDescription: bp.visualDescription,
       keyPoints: bp.keyPoints,
-      script: contextHint,
-      diagramData: buildSmartFallbackDiagram(topic, domain, bp.template, bp.effect, contextHint),
+      script: spokenContext,
+      diagramData: buildSmartFallbackDiagram(topic, domain, bp.template, bp.effect, spokenContext),
     });
   }
 
@@ -753,7 +868,13 @@ async function generatePptxPlan(
 The user imported a PowerPoint (.pptx) deck. Remotion will render EVERY slide 100% identically to the PowerPoint slide.
 Your job is to generate the spoken narration script for EACH slide in exact order.
 
-CRITICAL RULES:
+${params.odmMode ? `ODM BEGINNER-MODE RULE:
+- Teach as if the audience consists of entry-level engineers with very little topic background.
+- Start from a concrete everyday metaphor or familiar example, then explain the technical concept it maps to.
+- Define jargon immediately in plain language. Avoid unexplained acronyms and abstract leaps.
+- Explain one cause-and-effect step at a time, while keeping every script strictly aligned to its exact slide content.
+- Use short spoken sentences and one practical example or analogy per slide.
+` : ''}CRITICAL RULES:
 1. You MUST return exactly ${pptxSlides.length} items in "slides", one for each slide (slideNumber 1..${pptxSlides.length}).
 2. STRICT CONTENT MATCHING: Every slide's "script" MUST accurately match, cover, and explain the exact content shown on THAT slide (title, bullets, tables, numbers, terminology, and speaker notes). Do NOT invent unrelated topics or skip the slide's key points.
 3. If speaker notes ("notes") are provided for a slide, faithfully incorporate them into the spoken script.
@@ -968,8 +1089,8 @@ ${getRegionalTerminologyPromptGuidance(params.language)}
 
 STRICT RULES:
 1. Keep the EXACT same number of scenes, order, meaning, and speaking length (do not expand or shorten scripts).
-2. Fix any cross-region technical wording, unnatural literal translations, or mixed-region terminology (for example in Taiwan zh-TW: replace 派生 with 衍生, 鑰匙 with 金鑰, 字段 with 欄位, 信息 with 訊息, 數據包/報文 with 封包, 網絡 with 網路, 協議 with 協定, 調試 with 除錯).
-3. Preserve all English acronyms, protocol names, register names, numbers, and units verbatim (e.g., EAPOL, PTK, PMK, MIC, ANonce, SNonce, PCIe, 802.11ax/be).
+2. Fix cross-region technical wording and unnatural literal translations. In Taiwan zh-TW, use natural Taiwan English/Traditional-Chinese mixing instead of forcing Chinese translations. Prefer established English terms such as API, SDK, cache, firmware, chipset, server, packet/frame, field, register, debug, driver, latency, throughput, array, queue, stack, pointer, file, storage, performance, and interface when they are the common Taiwan engineering form.
+3. Preserve all English acronyms, protocol names, product names, code identifiers, register names, numbers, and units verbatim (e.g., EAPOL, PTK, PMK, MIC, ANonce, SNonce, PCIe, 802.11ax/be).
 4. If a field is already completely natural and accurate for ${langMeta.promptName}, return it unchanged.
 ${params.preservePptxTitles ? '5. Keep slide titles/subtitles/keyPoints unchanged; only review the spoken "script".' : ''}
 
@@ -1226,7 +1347,13 @@ export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promi
       const systemPrompt = `You are a senior technical video director and Remotion motion-graphics designer.
 Given a topic, total video duration (in seconds), and optional reference notes, generate a complete multi-scene Remotion training video plan as strict JSON.
 
-CRITICAL RULES:
+${params.odmMode ? `ODM BEGINNER-MODE RULE:
+- Explain to entry-level engineers who have very little background on the topic.
+- Use relatable metaphors and concrete everyday examples before technical details.
+- Define jargon and acronyms immediately in plain language.
+- Build cause-and-effect in small steps, use short spoken sentences, and include a simple real-world example in each scene when relevant.
+- Do not weaken technical accuracy; make unfamiliar concepts understandable through analogy and familiar observations.
+` : ''}CRITICAL RULES:
 1. Total sum of all scenes' durationSeconds MUST equal ${targetDuration} seconds. Aim for ~${recommendedScenes} scenes (each 5–20 seconds).
 2. LANGUAGE AND SPEECH PACING (VERY IMPORTANT):
   - Write ALL video content in ${language.promptName}: titles, subtitles, narration, key points, visual descriptions, and diagram labels. Translate reference notes when necessary. Preserve technical acronyms, model numbers, units, and product names.
@@ -1236,8 +1363,8 @@ CRITICAL RULES:
    - "keyPoints" and "diagramData" labels MUST be short, scannable visual anchors (keywords, component names, metrics, 2–8 words max).
   - "script" (spoken narration) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
 3. EFFECT-TO-SCRIPT ALIGNMENT:
-   - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "summary-takeaways"].
-   - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, and "fault-tree" for root-cause decision branches.
+   - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", "rf-link-budget", "summary-takeaways"].
+   - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
@@ -1249,6 +1376,12 @@ CRITICAL RULES:
      * code-log: { codeLanguage, codeTitle, codeLines: [{lineNo, text, level: "normal"|"highlight"|"warn"|"error"|"success", annotation}], visualCaption }
      * kpi-metrics: { kpiMetrics: [{label, value, delta, target, status: "good"|"warn"|"bad"|"neutral"}], visualCaption }
      * fault-tree: { faultRoot, faultBranches: [{symptom, check, passAction, failRootCause, severity: "high"|"medium"|"low"}], visualCaption }
+     * packet-simulator: { simDeviceA: {name, role, ipOrMac}, simDeviceB: {name, role, ipOrMac}, simChannels: [{id, label, band, bandwidth, color, interference}], simPackets: [{seq, channelId, direction: "A->B"|"B->A", label, sizeBytes, status: "ok"|"retry"|"drop"|"ack"}], visualCaption }
+     * ofdm-spectrum: { ofdmBandwidthMhz, ofdmRuBlocks: [{label, tones, widthRatio, color, punctured}], visualCaption }
+     * beamforming-array: { beamformingElements, beamformingTargetAngleDeg, beamformingTargetLabel, visualCaption }
+     * qam-constellation: { qamOrder: 16|64|256|1024, qamSnrDb, qamEvmDb, visualCaption }
+     * mlo-multilink: { mloLinks: [{band, channel, bandwidth, color, throughputMbps, mode: "STR"|"EMLSR"|"NSTR"}], visualCaption }
+     * rf-link-budget: { rfSensitivityDbm, rfLinkStages: [{label, deltaDb, note, type: "tx"|"gain"|"loss"|"rx"}], visualCaption }
      * title-hero / debug-checklist / summary-takeaways: { visualCaption }
 
 Return JSON schema:
@@ -1260,7 +1393,7 @@ Return JSON schema:
       "title": "string",
       "subtitle": "string",
       "durationSeconds": number,
-      "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|summary-takeaways",
+      "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|packet-simulator|ofdm-spectrum|beamforming-array|qam-constellation|mlo-multilink|rf-link-budget|summary-takeaways",
       "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan",
       "visualDescription": "string describing what the Remotion graphic + effect shows and why it matches the script",
       "keyPoints": ["short visual anchor 1", "short visual anchor 2", "short visual anchor 3"],
@@ -1311,10 +1444,19 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
   }
 
   const fallback = generateFallbackPlan({ ...params, durationSeconds: targetDuration });
-  return {
+  const fallbackScenes = toSceneSpecs(fallback, params.domain, provider, params.topic);
+  const checkedFallback = await runRegionalTerminologyCheckStage({
     title: fallback.title,
     subtitle: fallback.subtitle,
-    scenes: toSceneSpecs(fallback, params.domain, provider, params.topic),
+    scenes: fallbackScenes,
+    language: language.value,
+    cfg,
+    canCallLlm: false,
+  });
+  return {
+    title: checkedFallback.title,
+    subtitle: checkedFallback.subtitle,
+    scenes: checkedFallback.scenes,
     mode: 'smart-fallback',
     note: '未設定 LLM API Key，已使用內建智慧引擎生成（可於設定中填入 OpenAI / 本地 Ollama 金鑰以啟用雲端 LLM）',
     ...resolvedDomain,
@@ -1341,7 +1483,11 @@ export async function regenerateSceneWithLlm(params: RegenerateSceneParams): Pro
       try {
         const systemPrompt = `You are a technical presentation narrator.
 Return strict JSON rewriting the spoken narration script for this PowerPoint slide.
-CRITICAL:
+${params.odmMode ? `ODM BEGINNER-MODE:
+- Explain for entry-level engineers with very little background.
+- Start with a concrete everyday metaphor or familiar example, then connect it to the exact slide content.
+- Define jargon and acronyms in plain language and explain cause-and-effect step by step.
+` : ''}CRITICAL:
 - Write in ${language.promptName}. Preserve acronyms, numbers, and product names.
 - The script MUST strictly match and explain the exact content on this PowerPoint slide (title, bodyText, and speaker notes).`;
         const userPrompt = `Slide Title: ${scene.pptxSlide.title}
@@ -1351,8 +1497,9 @@ Current Script: ${scene.script}
 Return JSON: { "script": "..." }`;
         const res = (await callChatCompletionJson(cfg, systemPrompt, userPrompt)) as { script?: string };
         if (res?.script) {
+          const fixedScript = applyDeterministicRegionalFixes(res.script.trim(), language.value).text;
           return {
-            scenePatch: { script: res.script.trim() },
+            scenePatch: { script: fixedScript },
             mode: 'llm',
             note: `已依投影片原內容透過 LLM (${cfg.model}) 更新腳本（保留 100% 原版投影片視覺）`,
           };
@@ -1364,8 +1511,12 @@ Return JSON: { "script": "..." }`;
         console.warn('LLM PPTX scene regenerate failed, using slide fallback:', err);
       }
     }
+    const fixedFallbackScript = applyDeterministicRegionalFixes(
+      buildPptxFallbackScript(scene.pptxSlide),
+      language.value
+    ).text;
     return {
-      scenePatch: { script: buildPptxFallbackScript(scene.pptxSlide) },
+      scenePatch: { script: fixedFallbackScript },
       mode: 'smart-fallback',
       note: '已依 PowerPoint 投影片原內容重設腳本（保留 100% 原版投影片視覺）',
     };
@@ -1374,14 +1525,18 @@ Return JSON: { "script": "..." }`;
   if (canCallLlm) {
     try {
       const systemPrompt = `You are a Remotion motion-graphics director and technical scriptwriter.
-Return strict JSON updating a single scene.
-CRITICAL:
+Return strict JSON updating a single scene.packet-simulator","ofdm-spectrum","beamforming-array","qam-constellation","mlo-multilink","rf-link-budget","
+${params.odmMode ? `ODM BEGINNER-MODE:
+- Use metaphors and concrete examples appropriate for entry-level engineers.
+- Define unfamiliar terms immediately and explain cause-and-effect in small steps.
+- Keep the narration accessible without losing technical accuracy.
+` : ''}CRITICAL:
 - Write any regenerated narration and visual text in ${language.promptName}. Preserve technical acronyms and identifiers.
 - ${getRegionalTerminologyPromptGuidance(language.value)}
 - The spoken "script" (台詞) MUST NOT just read the "keyPoints" or diagram labels. Script explains WHY/HOW; graphics show concise visual anchors.
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
 Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","summary-takeaways"]
-Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan"]
+Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan","packet-traffic"]
 
 Return JSON:
 {
@@ -1481,7 +1636,10 @@ ${
   }
 
   if (action === 'rewrite-script-no-read') {
-    const rewritten = `在「${scene.title}」這個環節中，畫面上標示的只是關鍵量測指標；真正決定系統成敗的，是訊號在極限負載下的邊界餘裕與前後級時序配合，這也是我們在除錯時最需要優先釐清的因果關鍵。`;
+    const rewritten = applyDeterministicRegionalFixes(
+      `在「${scene.title}」這個環節中，畫面上標示的只是關鍵量測指標；真正決定系統成敗的，是訊號在極限負載下的邊界餘裕與前後級時序配合，這也是我們在除錯時最需要優先釐清的因果關鍵。`,
+      language.value
+    ).text;
     return {
       scenePatch: {
         script: rewritten,
@@ -1493,7 +1651,10 @@ ${
 
   const nextTemplate = inferTemplateFromScript(scene.title, scene.template);
   const nextEffect = inferEffectFromScriptAndTemplate(scene.title, nextTemplate);
-  const nextScript = `針對「${scene.title}」，請觀察畫面上的結構關係：我們關注的不只是靜態規格，而是動態切換瞬間是否會引發連鎖時序異常。`;
+  const nextScript = applyDeterministicRegionalFixes(
+    `針對「${scene.title}」，請觀察畫面上的結構關係：我們關注的不只是靜態規格，而是動態切換瞬間是否會引發連鎖時序異常。`,
+    language.value
+  ).text;
   return {
     scenePatch: {
       template: nextTemplate,

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RemotionEffect, SentenceEffectCue, TechDomain } from '../types/training';
-import { createPresetProject } from './planGenerator';
+import { RemotionEffect, SentenceEffectCue } from '../types/training';
 import {
   analyzeSentencePairEffect,
   buildSentenceEffectCues,
@@ -9,17 +8,14 @@ import {
   splitScriptIntoSentences,
 } from './sentenceEffects';
 
-const DOMAINS: TechDomain[] = ['debug-logic', 'wifi', 'bluetooth', 'rf'];
 const VALID_EFFECTS: RemotionEffect[] = [
   'signal-pulse',
   'glitch-alert',
   'cascade-reveal',
   'zoom-focus',
   'sweep-scan',
+  'packet-traffic',
 ];
-
-// Measured ceiling of the current presets.
-const REGRESSION_AVG_SECONDS_PER_BEAT = 15;
 
 /** Shared invariants every generated cue list must satisfy. */
 function expectValidCues(cues: SentenceEffectCue[]) {
@@ -210,46 +206,5 @@ describe('getActiveSentenceCue', () => {
   it('derives cues from the script when none are supplied', () => {
     const r = getActiveSentenceCue(undefined, 0.5, script, 'architecture-flow');
     expect(r.cues.length).toBeGreaterThan(0);
-  });
-});
-
-describe('preset projects: animation pacing self-validation', () => {
-  describe.each(DOMAINS)('%s', (domain) => {
-    const project = createPresetProject(domain);
-
-    it('has scenes with scripts and positive durations', () => {
-      expect(project.scenes.length).toBeGreaterThan(0);
-      project.scenes.forEach((s) => {
-        expect(s.script.trim().length).toBeGreaterThan(0);
-        expect(s.durationSeconds).toBeGreaterThan(0);
-      });
-    });
-
-    it('yields valid cues for every scene', () => {
-      project.scenes.forEach((s) => {
-        expectValidCues(
-          buildSentenceEffectCues(s.script, s.template, s.animation.effect || 'signal-pulse', s.sentenceCues)
-        );
-      });
-    });
-
-    const slowScenes = (limit: number) =>
-      project.scenes
-        .map((s) => ({
-          title: s.title,
-          secPerBeat: s.durationSeconds / buildSentenceEffectCues(s.script, s.template).length,
-        }))
-        .filter((x) => x.secPerBeat > limit);
-
-    it(`never regresses beyond ${REGRESSION_AVG_SECONDS_PER_BEAT}s per beat`, () => {
-      expect(slowScenes(REGRESSION_AVG_SECONDS_PER_BEAT)).toEqual([]);
-    });
-
-    it('uses more than one effect across the video', () => {
-      const effects = new Set(
-        project.scenes.flatMap((s) => buildSentenceEffectCues(s.script, s.template).map((c) => c.effect))
-      );
-      expect(effects.size).toBeGreaterThan(1);
-    });
   });
 });

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Composition } from 'remotion';
 import { TARGET_TOTAL_FRAMES, VIDEO_FPS } from '../types/training';
-import { createPresetProject } from '../utils/planGenerator';
+import { createEmptyProject } from '../utils/planGenerator';
 import { TechTrainingVideo, TechTrainingVideoProps } from './TechTrainingVideo';
 
-const defaultPreset = createPresetProject('debug-logic');
+const defaultProject = createEmptyProject('debug-logic');
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -16,8 +16,8 @@ export const RemotionRoot: React.FC = () => {
       width={1920}
       height={1080}
       defaultProps={{
-        projectTitle: defaultPreset.title,
-        scenes: defaultPreset.scenes,
+        projectTitle: defaultProject.title,
+        scenes: defaultProject.scenes,
         audioBaseUrl: '',
       }}
       calculateMetadata={({ props }) => {

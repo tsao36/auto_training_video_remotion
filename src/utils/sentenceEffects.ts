@@ -127,6 +127,18 @@ export function analyzeSentencePairEffect(
   }
 
   if (
+    /封包.*傳輸|逐一傳送|通道.*封包|重傳|吞吐量|packet traffic|packet flow|simulator|tx.*rx|retransmit|throughput/.test(
+      s
+    )
+  ) {
+    return {
+      effect: 'packet-traffic',
+      targetIndex: beatIndex % 4,
+      rationale: '此組句子描述裝置間多通道封包流量、重傳或吞吐模擬，以 Packet Traffic A→B 動態呈現封包逐一傳輸。',
+    };
+  }
+
+  if (
     /訊號|流向|傳輸|發出|經過|進入|驅動|耦合|總線|鏈路|拓撲|架構|匯流排|signal|flow|bus|link|tx|rx|path|drive|mac|phy/.test(
       s
     )
@@ -151,6 +163,12 @@ export function analyzeSentencePairEffect(
     'code-log': beatIndex % 2 === 0 ? 'sweep-scan' : 'glitch-alert',
     'kpi-metrics': 'zoom-focus',
     'fault-tree': beatIndex % 2 === 0 ? 'cascade-reveal' : 'glitch-alert',
+    'packet-simulator': 'packet-traffic',
+    'ofdm-spectrum': beatIndex % 2 === 0 ? 'sweep-scan' : 'zoom-focus',
+    'beamforming-array': beatIndex % 2 === 0 ? 'sweep-scan' : 'signal-pulse',
+    'qam-constellation': beatIndex % 2 === 0 ? 'zoom-focus' : 'glitch-alert',
+    'mlo-multilink': beatIndex % 2 === 0 ? 'cascade-reveal' : 'signal-pulse',
+    'rf-link-budget': beatIndex % 2 === 0 ? 'cascade-reveal' : 'zoom-focus',
     'summary-takeaways': beatIndex === 0 ? 'cascade-reveal' : 'zoom-focus',
     'pptx-slide': 'zoom-focus',
   };

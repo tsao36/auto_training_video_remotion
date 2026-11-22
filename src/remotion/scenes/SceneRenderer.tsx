@@ -39,6 +39,7 @@ import {
   SvgFlowConnector,
 } from '../components/DynamicPrimitives';
 import { PptxSlideRenderer } from './PptxSlideRenderer';
+import { WIRELESS_TEMPLATES, WirelessTemplateRenderer } from './WirelessTemplates';
 
 interface SceneRendererProps {
   scene: SceneSpec;
@@ -164,6 +165,25 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       </div>
     </div>
   );
+
+  // WIRELESS-HEAVY TEMPLATES (Packet Simulator, OFDM Spectrum, Beamforming, QAM, MLO, RF Link Budget)
+  if (WIRELESS_TEMPLATES.has(scene.template)) {
+    return (
+      <WirelessTemplateRenderer
+        scene={scene}
+        renderHeader={renderHeader}
+        accent={accent}
+        activeCue={activeCue}
+        allCues={allCues}
+        cueProgress={cueProgress}
+        effect={effect}
+        targetIndex={targetIndex}
+        beatSpring={beatSpring}
+        cameraBreath={cameraBreath}
+        sceneTotalFrames={sceneTotalFrames}
+      />
+    );
+  }
 
   // 1. TITLE HERO
   if (scene.template === 'title-hero') {
