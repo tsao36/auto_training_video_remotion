@@ -20,8 +20,8 @@ export async function fetchRandomBrandPalette(signal?: AbortSignal): Promise<Ran
     // Try the public read API directly below when the local Node proxy cannot reach it.
   }
 
-  const offset = Math.floor(Math.random() * 816);
-  const upstream = await fetch(`https://www.colorpalettegenerator.ai/api/v1/brands?offset=${offset}&limit=100&_=${Date.now()}`, {
+  const offset = Math.floor(Math.random() * 24);
+  const upstream = await fetch(`https://www.colorpalettegenerator.ai/api/v1/palettes/recent?offset=${offset}&limit=24&_=${Date.now()}`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
     signal,
@@ -38,7 +38,7 @@ export async function fetchRandomBrandPalette(signal?: AbortSignal): Promise<Ran
   if (brands.length === 0) throw new Error('API 未回傳品牌資料');
 
   const brand = brands[Math.floor(Math.random() * brands.length)];
-  const roles = ['primary', 'secondary', 'accent', 'surface', 'background', 'warning', 'success', 'error'];
+  const roles = ['primary', 'secondary', 'accent', 'background', 'textPrimary'];
   const colors = roles
     .map((role) => brand.colors?.[role]?.hex)
     .filter((color): color is string => typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color));
@@ -46,9 +46,15 @@ export async function fetchRandomBrandPalette(signal?: AbortSignal): Promise<Ran
   const unique = [...new Set(colors)].slice(0, 5);
   if (unique.length < 2) throw new Error('API 回傳的配色不足');
 
+  while (unique.length < 5) {
+    const fallback = brand.colors?.surface?.hex || brand.colors?.background?.hex || brand.colors?.secondary?.hex;
+    if (fallback && !unique.includes(fallback)) unique.push(fallback);
+    else unique.push(unique[unique.length % 2 === 0 ? 0 : 1] || unique[0]);
+  }
+
   return {
     name: brand.name || 'Random brand palette',
-    colors: unique,
+    colors: unique.slice(0, 5),
     source: 'colorpalettegenerator.ai',
   };
 }

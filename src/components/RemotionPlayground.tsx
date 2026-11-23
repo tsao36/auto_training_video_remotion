@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AudioLines,
   ChartColumn,
+  Component,
   Layers3,
+  Map,
+  Shapes,
   Plus,
   RefreshCw,
   Save,
@@ -14,8 +18,8 @@ import {
 import { EFFECT_LABELS, RemotionEffect, TEMPLATE_LABELS, VisualTemplate } from '../types/training';
 import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
 
-type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates';
-type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds';
+type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates' | 'audio' | 'backgrounds' | 'overlays' | 'maps' | 'storytelling' | 'text-effects';
+type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds' | 'basic-captions' | 'rounded-captions' | 'moving-pill-captions' | 'popping-word-captions' | 'word-highlight-captions' | 'horizontal-bar-chart' | 'line-chart' | 'number-counter' | 'pie-chart' | 'vertical-bar-chart' | 'wiggling-callout' | 'peel' | 'shine' | 'tear-apart' | 'rotating-cards' | 'picture-in-picture' | 'slide-to-split' | 'map-flyover' | 'spinning-globe' | 'watercolor-map' | 'location-lower-third' | 'name-lower-third' | 'social-safe-zones' | 'news-article-highlight' | 'speed-lines' | 'on-screen-messages' | 'polaroid-pictures' | 'circle-marker' | 'crossed-off' | 'cylinder-text' | 'spinning-text-wheel' | 'strike-through' | 'text-marker' | 'oscilloscope' | 'voice-note' | 'mirrored-spectrum' | 'notebook-paper' | 'paper-texture' | 'rotating-starburst' | 'moving-waves' | 'moving-zigzags' | 'liquid-contours' | 'youtube-comment' | 'youtube-end-card' | 'youtube-subscribe';
 
 interface CatalogItem {
   id: PlaygroundItem;
@@ -31,6 +35,12 @@ const CATEGORIES: { key: PlaygroundCategory; label: string; description: string 
   { key: 'charts', label: '圖表與儀表', description: '圓餅圖、儀表、比較條與指標卡' },
   { key: 'transitions', label: '場景轉場', description: '模糊、掃掠、推移與百葉窗轉場' },
   { key: 'templates', label: '場景模板', description: 'AI 可組裝的完整視覺場景類型' },
+  { key: 'audio', label: '音訊視覺化', description: '示波器、語音進度與鏡像頻譜等音訊元件' },
+  { key: 'backgrounds', label: '背景與環境', description: '紙張質感、星爆、流動波浪與輪廓背景' },
+  { key: 'overlays', label: '覆疊與下三分之一', description: '地點、人名、社群安全區與畫面標註' },
+  { key: 'maps', label: '地圖與區域', description: '地圖飛越、旋轉地球與水彩地圖' },
+  { key: 'storytelling', label: '敘事與故事元素', description: '新聞標註、訊息卡、速度線與照片卡' },
+  { key: 'text-effects', label: '文字特效', description: '標記、劃掉、圓柱文字與文字輪轉效果' },
 ];
 
 const MOTION_DESCRIPTIONS: Record<RemotionEffect, { description: string; aiUse: string }> = {
@@ -84,20 +94,77 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
   'bottom-captions': [
     { id: 'srt-caption-track', label: 'SRT / VTT 下方字幕', description: '由既有字幕檔載入時間碼，以穩定軌道持續顯示在畫面下方。', aiUse: '外部配音、投影片逐字稿、多語字幕' },
     { id: 'karaoke-captions', label: 'Karaoke 下方逐字字幕', description: '畫面下方依時間軌道逐字縮放或畫線，形成朗讀節奏。', aiUse: '逐句解說、教學步驟、口頭重點' },
+    { id: 'basic-captions', label: 'Basic Captions 基本字幕', description: '簡潔穩定的逐字字幕版型。', aiUse: '一般配音、課程講解、逐句文字' },
+    { id: 'rounded-captions', label: 'Rounded Captions 圓角字幕', description: '單行資訊以圓角底板呈現。', aiUse: '重點旁白、術語解說、柔和畫面' },
+    { id: 'moving-pill-captions', label: 'Moving Pill Captions 移動膠囊', description: '文字標籤像膠囊般跟隨節奏移動。', aiUse: '動態字幕、產品特寫、口頭重點' },
   ],
   'critical-captions': [
     { id: 'caption-highlight', label: '關鍵資訊 Highlight', description: '只在關鍵數值、協定名稱或重要術語出現時，短暫突顯於畫面資訊層。', aiUse: '警示數值、術語、指令、重要結論' },
+    { id: 'popping-word-captions', label: 'Popping Word Captions 彈跳字詞', description: '逐字彈入並強調目前朗讀位置。', aiUse: '關鍵字、口號、逐字強調' },
+    { id: 'word-highlight-captions', label: 'Word Highlight 字詞高亮', description: '朗讀時依時間高亮單字或片語。', aiUse: '術語、指令、重要名詞' },
+    { id: 'circle-marker', label: 'Circle Marker 圈選標記', description: '以圓圈動態標記畫面重點。', aiUse: '設備位置、參數位置、異常區域' },
+    { id: 'text-marker', label: 'Text Marker 螢光筆', description: '像螢光筆般掃過重點文字。', aiUse: '術語、結論、關鍵數值' },
   ],
   charts: [
     { id: 'donut-chart', label: '圓環圖 / Pie Chart', description: '分段掃入並同步更新中心總值，適合展示占比與組成。', aiUse: '頻譜占比、頻道分配、資源構成' },
     { id: 'gauge-dial', label: 'Gauge 儀表盤', description: '指針與數值同步掃向目標，適合表現門檻或裕量。', aiUse: 'SNR、S11、功率餘裕、風險指標' },
     { id: 'comparison-bars', label: '前後對照條', description: '成對長條依序成長並標示變化幅度。', aiUse: '產品規格比較、最佳化前後對照' },
+    { id: 'horizontal-bar-chart', label: 'Horizontal Bar Chart橫向條圖', description: '比較多項數值與門檻的橫向條圖。', aiUse: '規格比較、效能排名、裕量分析' },
+    { id: 'line-chart', label: 'Line Chart 線圖', description: '長時間序列與趨勢變化。', aiUse: '量測曲線、時序趨勢、異常變化' },
+    { id: 'number-counter', label: 'Number Counter 數字計數', description: '數值從起點平滑計數至目標。', aiUse: '吞吐量、延遲、成功率、版本數字' },
+    { id: 'pie-chart', label: 'Pie Chart 圓餅圖', description: '以圓形比例呈現組成結構。', aiUse: '頻道占比、資源分配、構成比例' },
+    { id: 'vertical-bar-chart', label: 'Vertical Bar Chart直條圖', description: '垂直比較類別與數量。', aiUse: '效能差異、頻道量、成績指標' },
   ],
   transitions: [
     { id: 'blur-reveal', label: '模糊淡入轉場', description: '由模糊與縮放進入或退出下一幕。', aiUse: '概念切換、主題切換、柔和過場' },
     { id: 'directional-wipe', label: '方向性 Wipe', description: '由指定方向擦除畫面，保留輕微視差深度。', aiUse: '流程前進、資料流方向、橫向章節' },
     { id: 'spatial-push', label: '空間推移 Push', description: '兩個場景在同一空間軸上推入與推出。', aiUse: '前後場景、分支結果、步驟切換' },
     { id: 'transition-blinds', label: '百葉窗轉場', description: '畫面分成多條帶狀區塊依序揭開。', aiUse: '節奏強烈的章節切換、偵錯流程' },
+    { id: 'picture-in-picture', label: 'Picture in Picture 畫中畫', description: '主畫面切換時保留小型畫中畫內容。', aiUse: '示波器與講解同步、實機與架構切換' },
+    { id: 'slide-to-split', label: 'Split Screen 分屏切換', description: '畫面滑動切換為左右或上下分屏。', aiUse: '前後對照、正常與異常比較' },
+    { id: 'peel', label: 'Peel 翻頁揭示', description: '畫面或卡片像翻頁般揭開新資訊。', aiUse: '細節揭示、規格切換、步驟展開' },
+  ],
+  audio: [
+    { id: 'oscilloscope', label: 'Oscilloscope 示波器', description: '音訊波形轉換為示波器軌跡，適合量測與訊號分析場景。', aiUse: '音訊訊號、示波器量測、傳輸異常' },
+    { id: 'voice-note', label: 'Voice Note 語音進度', description: '以時間軸進度呈現語音片段或旁白播放。', aiUse: '語音說明、朗讀進度、配音片段' },
+    { id: 'mirrored-spectrum', label: 'Mirrored Spectrum 頻譜', description: '左右鏡像的音訊頻譜視覺化。', aiUse: '頻率內容、音訊能量、頻譜分析' },
+  ],
+  backgrounds: [
+    { id: 'notebook-paper', label: 'Notebook Paper 筆記紙', description: '以筆記紙與格線做為技術講解背景。', aiUse: '工程筆記、手寫流程、除錯紀錄' },
+    { id: 'paper-texture', label: 'Paper Texture 紙張質感', description: '以自然紙張質感建立背景層次。', aiUse: '文件風格、投影片、技術白皮書' },
+    { id: 'rotating-starburst', label: 'Rotating Starburst 星爆背景', description: '旋轉星形光線作為動態背景。', aiUse: '重點揭示、啟動頁、成果展示' },
+    { id: 'moving-waves', label: 'Moving Waves 流動波浪', description: '連續流動的波浪背景。', aiUse: 'RF 訊號、頻率、液體與流場比喻' },
+    { id: 'moving-zigzags', label: 'Moving Zigzags 波折背景', description: '運動中的鋸齒線條背景。', aiUse: '資料流、異常訊號、時序波動' },
+    { id: 'liquid-contours', label: 'Liquid Contours 液態輪廓', description: '柔和流動輪廓與漸層色塊。', aiUse: '概念背景、主題過場、現代科技' },
+  ],
+  overlays: [
+    { id: 'location-lower-third', label: 'Location Lower Third 地點圖示', description: '畫面下方顯示地點與場域。', aiUse: '實驗室、辦公室、測試站、部署地點' },
+    { id: 'name-lower-third', label: 'Name Lower Third 人名圖示', description: '畫面下方顯示講者或章節資訊。', aiUse: '講者、工程角色、章節標題' },
+    { id: 'social-safe-zones', label: 'Social Safe Zones 安全區域', description: '標示社群平台介面遮罩與安全區域。', aiUse: '短影音裁切、平台預覽、文字安全範圍' },
+  ],
+  maps: [
+    { id: 'map-flyover', label: 'A-to-B Map Flyover 地圖飛越', description: '地圖路線從起點飛向終點。', aiUse: '部署路徑、基地台連線、區域關係' },
+    { id: 'spinning-globe', label: 'Spinning Globe 地球', description: '旋轉地球呈現區域節點與連線。', aiUse: '全球部署、區域流量、網路拓撲' },
+    { id: 'watercolor-map', label: 'Watercolor Map 水彩地圖', description: '柔和水彩風格地圖背景。', aiUse: '地區概念、區域介紹、專案範圍' },
+  ],
+  storytelling: [
+    { id: 'wiggling-callout', label: 'Wiggling Callout 抖動標註', description: '標註異常節點並帶有輕微抖動。', aiUse: '故障位置、警示節點、異常標記' },
+    { id: 'shine', label: 'Shine 光掃效果', description: '在重點物件上掃過高光。', aiUse: '新產品、關鍵零件、驗收成果' },
+    { id: 'tear-apart', label: 'Tear Apart 分裂揭示', description: '畫面分裂後顯示下一層細節。', aiUse: '拆解硬體、因果分支、元件爆炸圖' },
+    { id: 'rotating-cards', label: 'Rotating Cards 卡片輪轉', description: '以旋轉卡片輪播資訊。', aiUse: '規格清單、檢查項目、功能展示' },
+    { id: 'news-article-highlight', label: 'News Article Highlight 新聞標註', description: '模擬新聞文章並高亮關鍵段落。', aiUse: '規格新聞、技術摘要、來源重點' },
+    { id: 'speed-lines', label: 'Speed Lines 速度線', description: '高速背景線條呈現動能與緊迫感。', aiUse: '快速傳輸、效能提升、緊急故障' },
+    { id: 'on-screen-messages', label: 'On-Screen Messages 訊息卡', description: '像對話或通知般顯示畫面訊息。', aiUse: '系統提示、警示、步驟通知' },
+    { id: 'polaroid-pictures', label: 'Polaroid Pictures 照片卡', description: '相片以拍立得風格堆疊或翻開。', aiUse: '實機照片、測試場景、版本歷史' },
+  ],
+  'text-effects': [
+    { id: 'crossed-off', label: 'Crossed Off 劃掉完成', description: '項目完成後以筆觸劃掉。', aiUse: '檢查清單、排除項目、已驗證節點' },
+    { id: 'cylinder-text', label: 'Cylinder Text 圓柱文字', description: '文字沿圓柱或環面進行旋轉展現。', aiUse: '主題標題、規格品牌、強調文字' },
+    { id: 'spinning-text-wheel', label: 'Spinning Text Wheel 文字輪', description: '文字環繞中心輪轉。', aiUse: '章節標籤、關鍵字輪播、主題展示' },
+    { id: 'strike-through', label: 'Strike Through 刪除線', description: '以線條劃掉不適用或失敗選項。', aiUse: '排除假設、失敗方案、規格淘汰' },
+    { id: 'youtube-comment', label: 'YouTube Comment Highlight 留言高亮', description: '以留言卡片呈現重點評論。', aiUse: '社群回饋、提問、知識摘要' },
+    { id: 'youtube-end-card', label: 'YouTube End Card 結尾卡', description: '影片結尾的訂閱與導流卡。', aiUse: '課程結尾、下一章、相關影片' },
+    { id: 'youtube-subscribe', label: 'YouTube Subscribe 追蹤提示', description: '畫面內浮現追蹤與通知提示。', aiUse: '頻道提示、課程系列、結尾提醒' },
   ],
   templates: (Object.keys(TEMPLATE_LABELS) as VisualTemplate[]).map((id) => ({
     id,
@@ -114,6 +181,12 @@ const ITEM_ICONS: Record<PlaygroundCategory, React.ComponentType<{ className?: s
   charts: ChartColumn,
   transitions: Layers3,
   templates: Timer,
+  audio: AudioLines,
+  backgrounds: Shapes,
+  overlays: Component,
+  maps: Map,
+  storytelling: Sparkles,
+  'text-effects': Text,
 };
 
 const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item, large = false }) => {
@@ -142,6 +215,16 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
   if (item === 'directional-wipe') return <div className={visualClass} aria-hidden="true"><span className="catalog-wipe-panel" /><span className="catalog-wipe-edge" /></div>;
   if (item === 'spatial-push') return <div className={visualClass} aria-hidden="true"><span className="catalog-push-a" /><span className="catalog-push-b" /></div>;
   if (item === 'transition-blinds') return <div className={visualClass} aria-hidden="true">{[0, 1, 2, 3, 4].map((n) => <span key={n} className="catalog-blind" />)}</div>;
+  if (Object.values(CATALOG).some((items) => items.some((entry) => entry.id === item))) {
+    return (
+      <div className={visualClass} aria-hidden="true">
+        <span className="catalog-template-bar" />
+        <span className="catalog-template-node catalog-template-node-a" />
+        <span className="catalog-template-node catalog-template-node-b" />
+        <span className="catalog-template-node catalog-template-node-c" />
+      </div>
+    );
+  }
   return <div className={visualClass} aria-hidden="true"><span className="catalog-template-bar" /><span className="catalog-template-node catalog-template-node-a" /><span className="catalog-template-node catalog-template-node-b" /><span className="catalog-template-node catalog-template-node-c" /></div>;
 };
 
@@ -169,6 +252,12 @@ export const RemotionPlayground: React.FC = () => {
     charts: ['comparison-bars'],
     transitions: ['directional-wipe'],
     templates: ['architecture-flow'],
+    audio: ['oscilloscope'],
+    backgrounds: ['notebook-paper'],
+    overlays: ['name-lower-third'],
+    maps: ['map-flyover'],
+    storytelling: ['wiggling-callout'],
+    'text-effects': ['text-marker'],
   });
   const [presets, setPresets] = useState<TemplatePreset[]>([]);
 
@@ -186,7 +275,9 @@ export const RemotionPlayground: React.FC = () => {
               key,
               Array.isArray(preset.selections[key])
                 ? preset.selections[key]
-                : [preset.selections[key]].filter(Boolean),
+                : preset.selections[key]
+                  ? [preset.selections[key] as PlaygroundItem]
+                  : [],
             ])
           ) as Record<PlaygroundCategory, PlaygroundItem[]>,
         }));
@@ -226,7 +317,7 @@ export const RemotionPlayground: React.FC = () => {
     setPaletteError(null);
     try {
       const result = await fetchRandomBrandPalette();
-      setPaletteDraft([...result.colors].slice(0, 5));
+      setPaletteDraft([...result.colors, result.colors[0], result.colors[1], '#FFFFFF'].slice(0, 5));
       setPaletteSource(result.name);
     } catch (error) {
       setPaletteError(error instanceof Error ? error.message : '無法取得隨機配色');
@@ -245,11 +336,11 @@ export const RemotionPlayground: React.FC = () => {
     });
   };
 
-  const resolvedCategory = CATALOG[category] ? category : 'motion';
-  const visibleItems = CATALOG[resolvedCategory];
+  const resolvedCategory = CATALOG[category]?.length ? category : 'motion';
+  const visibleItems = CATALOG[resolvedCategory] || CATALOG.motion || [];
   const activeItem = visibleItems.find((item) => item.id === selected) ?? visibleItems[0];
   const CategoryIcon = ITEM_ICONS[resolvedCategory];
-  const totalItems = CATEGORIES.reduce((sum, entry) => sum + CATALOG[entry.key].length, 0);
+  const totalItems = CATEGORIES.reduce((sum, entry) => sum + (CATALOG[entry.key]?.length || 0), 0);
 
   return (
     <section aria-labelledby="remotion-playground-heading" className="space-y-5">
@@ -273,7 +364,7 @@ export const RemotionPlayground: React.FC = () => {
             aria-selected={resolvedCategory === item.key}
             onClick={() => {
               setCategory(item.key);
-              setSelected(CATALOG[item.key][0].id);
+              setSelected(CATALOG[item.key]?.[0]?.id || 'signal-pulse');
             }}
             className={`text-left px-3 py-2.5 rounded-lg border transition ${
               resolvedCategory === item.key
@@ -364,7 +455,7 @@ export const RemotionPlayground: React.FC = () => {
               <legend className="px-1 text-[10px] font-bold uppercase text-slate-500">{itemCategory.label}</legend>
               <div className="mt-1 grid max-h-44 gap-1 overflow-y-auto pr-1">
                 {CATALOG[itemCategory.key].map((option) => {
-                  const checked = presetSelections[itemCategory.key].includes(option.id);
+                  const checked = (presetSelections[itemCategory.key] || []).includes(option.id);
                   return (
                     <label
                       key={option.id}
@@ -445,7 +536,7 @@ export const RemotionPlayground: React.FC = () => {
           <div className="text-[10px] font-bold uppercase text-cyan-400">組合預覽</div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {CATEGORIES.map((itemCategory, index) => {
-              const presetItems = CATALOG[itemCategory.key].filter((option) => presetSelections[itemCategory.key].includes(option.id));
+              const presetItems = (CATALOG[itemCategory.key] || []).filter((option) => (presetSelections[itemCategory.key] || []).includes(option.id));
               return (
                 <React.Fragment key={itemCategory.key}>
                   {index > 0 && <span className="text-slate-600" aria-hidden="true">/</span>}

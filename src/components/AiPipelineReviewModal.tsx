@@ -168,7 +168,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
     setPaletteError(null);
     try {
       const result = await fetchRandomBrandPalette();
-      const colors = [...result.colors].slice(0, 5);
+      const colors = [...result.colors, result.colors[0], result.colors[1], '#FFFFFF'].slice(0, 5);
       setPaletteDraft(colors);
       setPrimaryColorDraft(colors[0] || primaryColorDraft);
       setSecondaryColorDraft(colors[1] || secondaryColorDraft);

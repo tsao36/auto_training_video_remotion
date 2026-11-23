@@ -145,13 +145,11 @@ function createSilentOrToneWav(durationSec: number, filepath: string) {
   fs.writeFileSync(filepath, buffer);
 }
 
-app.get('/api/palette/random', async (req, res) => {
+app.get('/api/palette/random', async (_req, res) => {
   try {
-    const categories = ['tech', 'consumer', 'social', 'entertainment', 'ecommerce', 'finance', 'gaming', 'travel', 'fashion'];
-    const category = String(req.query.category || categories[Math.floor(Math.random() * categories.length)]);
-    const limit = 100;
-    const offset = Math.floor(Math.random() * 800);
-    const upstream = await fetch(`https://www.colorpalettegenerator.ai/api/v1/brands?category=${encodeURIComponent(category)}&offset=${offset}&limit=${limit}`, {
+    const limit = 24;
+    const offset = Math.floor(Math.random() * 24);
+    const upstream = await fetch(`https://www.colorpalettegenerator.ai/api/v1/palettes/recent?offset=${offset}&limit=${limit}`, {
       signal: AbortSignal.timeout(15_000),
       headers: { Accept: 'application/json' },
     });
@@ -171,7 +169,7 @@ app.get('/api/palette/random', async (req, res) => {
     }
 
     const brand = brands[Math.floor(Math.random() * brands.length)];
-    const roles = ['primary', 'secondary', 'accent', 'surface', 'background', 'warning', 'success', 'error'];
+    const roles = ['primary', 'secondary', 'accent', 'background', 'textPrimary'];
     const colors = roles
       .map((role) => brand.colors?.[role]?.hex)
       .filter((color): color is string => typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color));
@@ -182,8 +180,12 @@ app.get('/api/palette/random', async (req, res) => {
       return;
     }
 
+    while (unique.length < 5) {
+      unique.push(unique[unique.length % 2 === 0 ? 0 : 1] || unique[0]);
+    }
+
     res.setHeader('Cache-Control', 'no-store');
-    res.json({ name: brand.name || 'Random brand palette', colors: unique, source: 'colorpalettegenerator.ai' });
+    res.json({ name: brand.name || 'Random brand palette', colors: unique.slice(0, 5), source: 'colorpalettegenerator.ai' });
   } catch (err) {
     res.status(502).json({ error: err instanceof Error ? err.message : '無法連線至 Color Palette API' });
   }
