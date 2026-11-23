@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { EFFECT_LABELS, RemotionEffect, TEMPLATE_LABELS, VisualTemplate } from '../types/training';
 
-type PlaygroundCategory = 'motion' | 'captions' | 'charts' | 'transitions' | 'templates';
+type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates';
 type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds';
 
 interface CatalogItem {
@@ -21,7 +21,8 @@ interface CatalogItem {
 
 const CATEGORIES: { key: PlaygroundCategory; label: string; description: string }[] = [
   { key: 'motion', label: '動態效果', description: 'AI 為場景選擇的六種內容動態模式' },
-  { key: 'captions', label: '字幕與文字', description: '逐字、關鍵字與外部字幕軌道' },
+  { key: 'bottom-captions', label: '畫面下方字幕', description: '持續顯示於畫面下方的逐字或外部字幕軌道' },
+  { key: 'critical-captions', label: '關鍵資訊字幕', description: '只在重點資訊出現時強調的文字與高亮字幕' },
   { key: 'charts', label: '圖表與儀表', description: '圓餅圖、儀表、比較條與指標卡' },
   { key: 'transitions', label: '場景轉場', description: '模糊、掃掠、推移與百葉窗轉場' },
   { key: 'templates', label: '場景模板', description: 'AI 可組裝的完整視覺場景類型' },
@@ -75,10 +76,12 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
     description: MOTION_DESCRIPTIONS[id].description,
     aiUse: MOTION_DESCRIPTIONS[id].aiUse,
   })),
-  captions: [
-    { id: 'caption-highlight', label: '關鍵字字幕 Highlight', description: '自動放大並突顯字幕中的數值、協定名稱或技術關鍵字。', aiUse: '術語、指令、數值與重點詞彙' },
-    { id: 'karaoke-captions', label: 'Karaoke 逐字字幕', description: '依時間軌道逐字縮放或畫線，形成歌詞式朗讀節奏。', aiUse: '逐句解說、教學步驟、口頭重點' },
-    { id: 'srt-caption-track', label: 'SRT / VTT 字幕軌道', description: '由既有字幕檔載入時間碼，支援 Speaker 與逐頁文字。', aiUse: '外部配音、投影片逐字稿、多語字幕' },
+  'bottom-captions': [
+    { id: 'srt-caption-track', label: 'SRT / VTT 下方字幕', description: '由既有字幕檔載入時間碼，以穩定軌道持續顯示在畫面下方。', aiUse: '外部配音、投影片逐字稿、多語字幕' },
+    { id: 'karaoke-captions', label: 'Karaoke 下方逐字字幕', description: '畫面下方依時間軌道逐字縮放或畫線，形成朗讀節奏。', aiUse: '逐句解說、教學步驟、口頭重點' },
+  ],
+  'critical-captions': [
+    { id: 'caption-highlight', label: '關鍵資訊 Highlight', description: '只在關鍵數值、協定名稱或重要術語出現時，短暫突顯於畫面資訊層。', aiUse: '警示數值、術語、指令、重要結論' },
   ],
   charts: [
     { id: 'donut-chart', label: '圓環圖 / Pie Chart', description: '分段掃入並同步更新中心總值，適合展示占比與組成。', aiUse: '頻譜占比、頻道分配、資源構成' },
@@ -101,7 +104,8 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
 
 const ITEM_ICONS: Record<PlaygroundCategory, React.ComponentType<{ className?: string }>> = {
   motion: WandSparkles,
-  captions: Text,
+  'bottom-captions': Text,
+  'critical-captions': Sparkles,
   charts: ChartColumn,
   transitions: Layers3,
   templates: Timer,
@@ -126,7 +130,9 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
   if (item === 'donut-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-donut" /><span className="catalog-donut-copy">68%</span></div>;
   if (item === 'gauge-dial') return <div className={visualClass} aria-hidden="true"><span className="catalog-gauge-arc" /><span className="catalog-gauge-needle" /><span className="catalog-gauge-value">72 dB</span></div>;
   if (item === 'comparison-bars') return <div className={visualClass} aria-hidden="true"><span className="catalog-bar catalog-bar-a" /><span className="catalog-bar catalog-bar-b" /><span className="catalog-bar catalog-bar-c" /></div>;
-  if (item === 'caption-highlight' || item === 'karaoke-captions' || item === 'srt-caption-track') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-line">The PHY link is stable</span><span className="catalog-caption-track" /></div>;
+  if (item === 'caption-highlight') return <div className={visualClass} aria-hidden="true"><span className="catalog-critical-label">重要資訊</span><span className="catalog-critical-value">SNR +12 dB</span></div>;
+  if (item === 'srt-caption-track') return <div className={visualClass} aria-hidden="true"><span className="catalog-bottom-caption">The PHY link is stable</span><span className="catalog-caption-track" /></div>;
+  if (item === 'karaoke-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-bottom-caption catalog-karaoke-line">PHY link is <strong>stable</strong></span><span className="catalog-caption-track" /></div>;
   if (item === 'blur-reveal') return <div className={visualClass} aria-hidden="true"><span className="catalog-blur-panel" /><span className="catalog-blur-orb" /></div>;
   if (item === 'directional-wipe') return <div className={visualClass} aria-hidden="true"><span className="catalog-wipe-panel" /><span className="catalog-wipe-edge" /></div>;
   if (item === 'spatial-push') return <div className={visualClass} aria-hidden="true"><span className="catalog-push-a" /><span className="catalog-push-b" /></div>;
@@ -137,9 +143,10 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
 export const RemotionPlayground: React.FC = () => {
   const [category, setCategory] = useState<PlaygroundCategory>('motion');
   const [selected, setSelected] = useState<PlaygroundItem>('signal-pulse');
-  const visibleItems = CATALOG[category];
+  const resolvedCategory = CATALOG[category] ? category : 'motion';
+  const visibleItems = CATALOG[resolvedCategory];
   const activeItem = visibleItems.find((item) => item.id === selected) ?? visibleItems[0];
-  const CategoryIcon = ITEM_ICONS[category];
+  const CategoryIcon = ITEM_ICONS[resolvedCategory];
   const totalItems = CATEGORIES.reduce((sum, entry) => sum + CATALOG[entry.key].length, 0);
 
   return (
@@ -155,24 +162,24 @@ export const RemotionPlayground: React.FC = () => {
         <div className="text-[11px] text-slate-500">共 {totalItems} 個可用效果</div>
       </div>
 
-      <div role="tablist" aria-label="Remotion 效果分類" className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+      <div role="tablist" aria-label="Remotion 效果分類" className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
         {CATEGORIES.map((item) => (
           <button
             key={item.key}
             type="button"
             role="tab"
-            aria-selected={category === item.key}
+            aria-selected={resolvedCategory === item.key}
             onClick={() => {
               setCategory(item.key);
               setSelected(CATALOG[item.key][0].id);
             }}
             className={`text-left px-3 py-2.5 rounded-lg border transition ${
-              category === item.key
+              resolvedCategory === item.key
                 ? 'border-cyan-500/60 bg-cyan-500/10'
                 : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
             }`}
           >
-            <div className={`text-xs font-bold ${category === item.key ? 'text-cyan-300' : 'text-slate-200'}`}>{item.label}</div>
+            <div className={`text-xs font-bold ${resolvedCategory === item.key ? 'text-cyan-300' : 'text-slate-200'}`}>{item.label}</div>
             <div className="mt-1 text-[10px] text-slate-500 leading-4">{item.description}</div>
           </button>
         ))}

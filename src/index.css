@@ -296,9 +296,12 @@
 .catalog-visual-comparison-bars { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 8px 12%; }
 .catalog-bar { height: 5px; border-radius: 2px; background: #d4b46a; transform-origin: left; animation: catalog-bars 1.8s ease-out infinite; }
 .catalog-bar-a { width: 72%; } .catalog-bar-b { width: 48%; background: #64748b; } .catalog-bar-c { width: 88%; }
-.catalog-caption-line { position: absolute; left: 10%; right: 10%; top: 34%; text-align: center; color: #e2e8f0; font-size: clamp(8px, 1vw, 12px); font-weight: 700; }
-.catalog-caption-track { position: absolute; left: 18%; right: 18%; bottom: 24%; height: 2px; background: linear-gradient(90deg, #d4b46a 55%, #334155 55%); }
-.catalog-visual-caption-highlight .catalog-caption-line { animation: catalog-caption 1.8s ease-in-out infinite; }
+.catalog-bottom-caption { position: absolute; left: 8%; right: 8%; bottom: 18%; min-height: 24px; display: grid; place-items: center; padding: 4px 8px; border: 1px solid #475569; border-radius: 4px; background: rgba(2, 6, 23, .88); color: #e2e8f0; font-size: clamp(8px, 1vw, 12px); font-weight: 700; }
+.catalog-karaoke-line strong { color: #d4b46a; }
+.catalog-caption-track { position: absolute; left: 18%; right: 18%; bottom: 10%; height: 2px; background: linear-gradient(90deg, #d4b46a 55%, #334155 55%); }
+.catalog-visual-caption-highlight { display: grid; place-content: center; align-items: center; }
+.catalog-critical-label { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); color: #fbbf24; font-size: 8px; font-weight: 800; animation: catalog-caption 1.8s ease-in-out infinite; }
+.catalog-critical-value { min-width: 78px; text-align: center; padding: 7px 10px; border: 1px solid #d4b46a88; border-radius: 4px; background: #d4b46a16; color: #f8fafc; font-size: clamp(9px, 1.2vw, 14px); font-weight: 800; box-shadow: 0 8px 24px rgba(212,180,106,.10); animation: catalog-caption 1.8s ease-in-out infinite; }
 .catalog-visual-karaoke-captions .catalog-caption-track { animation: catalog-karaoke 1.8s ease-in-out infinite; }
 .catalog-visual-blur-reveal { display: grid; place-items: center; }
 .catalog-blur-panel { width: 66%; height: 55%; border: 1px solid #d4b46a55; background: #d4b46a16; animation: catalog-blur 2.2s ease-in-out infinite; }
