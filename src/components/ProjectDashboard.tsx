@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  Sparkles,
   Trash2,
   Tv,
   Wand2,
@@ -17,6 +18,7 @@ import {
 import { DOMAIN_META, SavedProjectSummary } from '../types/training';
 import { formatDuration } from '../utils/planGenerator';
 import { SettingsPanel } from './SettingsPanel';
+import { RemotionPlayground } from './RemotionPlayground';
 
 interface ProjectDashboardProps {
   projects: SavedProjectSummary[];
@@ -60,7 +62,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [openingId, setOpeningId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'projects' | 'settings'>('projects');
+  const [tab, setTab] = useState<'projects' | 'playground' | 'settings'>('projects');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -130,6 +132,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           <div role="tablist" aria-label="總覽分頁" className="flex items-center gap-1 border-b border-slate-800">
             {([
               { key: 'projects', label: '專案', icon: <FolderOpen className="w-3.5 h-3.5" /> },
+              { key: 'playground', label: 'Remotion Playground', icon: <Sparkles className="w-3.5 h-3.5" /> },
               { key: 'settings', label: '設定', icon: <Settings className="w-3.5 h-3.5" /> },
             ] as const).map((t) => (
               <button
@@ -152,6 +155,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
           {tab === 'settings' ? (
             <SettingsPanel />
+          ) : tab === 'playground' ? (
+            <RemotionPlayground />
           ) : (
           <>
           <section aria-labelledby="dash-projects">

@@ -250,6 +250,24 @@
   0%, 100% { left: 12%; }
   50% { left: calc(88% - 2px); }
 }
+.playground-effect-preview {
+  height: 180px;
+}
+.playground-effect-preview .effect-line {
+  top: calc(50% - 1px);
+}
+.playground-effect-preview .effect-node {
+  top: calc(50% - 5px);
+}
+.playground-effect-preview .effect-glitch-a { top: calc(50% - 15px); }
+.playground-effect-preview .effect-glitch-b { top: calc(50% - 1px); }
+.playground-effect-preview .effect-glitch-c { top: calc(50% + 13px); }
+.playground-effect-preview .effect-cascade { bottom: calc(50% - 8px); }
+.playground-effect-preview .effect-sweep-grid { top: 18%; bottom: 18%; }
+.playground-effect-preview .effect-sweep-beam { top: 18%; bottom: 18%; }
+.playground-effect-preview .effect-device { top: calc(50% - 8px); }
+.playground-effect-preview .effect-packet { top: calc(50% - 2px); }
+
 @keyframes preview-packet {
   0% { left: 28%; opacity: 0; }
   15% { opacity: 1; }
