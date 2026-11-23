@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ChartColumn,
   Layers3,
+  Plus,
+  RefreshCw,
+  Save,
   Sparkles,
   Text,
+  Trash2,
   Timer,
   WandSparkles,
 } from 'lucide-react';
 import { EFFECT_LABELS, RemotionEffect, TEMPLATE_LABELS, VisualTemplate } from '../types/training';
+import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
 
 type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates';
 type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds';
@@ -140,9 +145,106 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
   return <div className={visualClass} aria-hidden="true"><span className="catalog-template-bar" /><span className="catalog-template-node catalog-template-node-a" /><span className="catalog-template-node catalog-template-node-b" /><span className="catalog-template-node catalog-template-node-c" /></div>;
 };
 
+interface TemplatePreset {
+  id: string;
+  name: string;
+  selections: Record<PlaygroundCategory, PlaygroundItem[]>;
+  palette: string[];
+}
+
+const PRESET_STORAGE_KEY = 'remotion-training:custom-template-presets';
+
 export const RemotionPlayground: React.FC = () => {
   const [category, setCategory] = useState<PlaygroundCategory>('motion');
   const [selected, setSelected] = useState<PlaygroundItem>('signal-pulse');
+  const [presetName, setPresetName] = useState('');
+  const [paletteDraft, setPaletteDraft] = useState<string[]>(['#B56876', '#7DD0BC', '#EEEBB6', '#FCAEB2', '#F3667D']);
+  const [paletteLoading, setPaletteLoading] = useState(false);
+  const [paletteError, setPaletteError] = useState<string | null>(null);
+  const [paletteSource, setPaletteSource] = useState<string | null>(null);
+  const [presetSelections, setPresetSelections] = useState<Record<PlaygroundCategory, PlaygroundItem[]>>({
+    motion: ['signal-pulse'],
+    'bottom-captions': ['karaoke-captions'],
+    'critical-captions': ['caption-highlight'],
+    charts: ['comparison-bars'],
+    transitions: ['directional-wipe'],
+    templates: ['architecture-flow'],
+  });
+  const [presets, setPresets] = useState<TemplatePreset[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PRESET_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const normalized = parsed.map((preset: TemplatePreset & { selections: Record<PlaygroundCategory, PlaygroundItem | PlaygroundItem[]> }) => ({
+          ...preset,
+          palette: Array.isArray(preset.palette) ? preset.palette.slice(0, 5) : ['#B56876', '#7DD0BC', '#EEEBB6', '#FCAEB2', '#F3667D'],
+          selections: Object.fromEntries(
+            CATEGORIES.map(({ key }) => [
+              key,
+              Array.isArray(preset.selections[key])
+                ? preset.selections[key]
+                : [preset.selections[key]].filter(Boolean),
+            ])
+          ) as Record<PlaygroundCategory, PlaygroundItem[]>,
+        }));
+        setPresets(normalized);
+      }
+    } catch {
+      setPresets([]);
+    }
+  }, []);
+
+  const persistPresets = (next: TemplatePreset[]) => {
+    setPresets(next);
+    window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next));
+  };
+
+  const savePreset = () => {
+    const name = presetName.trim();
+    if (!name) return;
+    const preset: TemplatePreset = {
+      id: `preset-${Date.now()}`,
+      name,
+      selections: { ...presetSelections },
+      palette: paletteDraft.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)).slice(0, 5),
+    };
+    persistPresets([preset, ...presets]);
+    setPresetName('');
+  };
+
+  const loadPreset = (preset: TemplatePreset) => {
+    setPresetSelections(preset.selections);
+    setPaletteDraft(preset.palette?.length ? preset.palette.slice(0, 5) : ['#B56876', '#7DD0BC', '#EEEBB6', '#FCAEB2', '#F3667D']);
+    setPresetName(preset.name);
+  };
+
+  const fetchRandomPalette = async () => {
+    setPaletteLoading(true);
+    setPaletteError(null);
+    try {
+      const result = await fetchRandomBrandPalette();
+      setPaletteDraft([...result.colors].slice(0, 5));
+      setPaletteSource(result.name);
+    } catch (error) {
+      setPaletteError(error instanceof Error ? error.message : '無法取得隨機配色');
+    } finally {
+      setPaletteLoading(false);
+    }
+  };
+
+  const togglePresetSelection = (categoryKey: PlaygroundCategory, itemId: PlaygroundItem) => {
+    setPresetSelections((current) => {
+      const selectedItems = current[categoryKey];
+      const nextItems = selectedItems.includes(itemId)
+        ? selectedItems.filter((id) => id !== itemId)
+        : [...selectedItems, itemId];
+      return { ...current, [categoryKey]: nextItems };
+    });
+  };
+
   const resolvedCategory = CATALOG[category] ? category : 'motion';
   const visibleItems = CATALOG[resolvedCategory];
   const activeItem = visibleItems.find((item) => item.id === selected) ?? visibleItems[0];
@@ -223,6 +325,173 @@ export const RemotionPlayground: React.FC = () => {
           </div>
         </aside>
       </div>
+
+      <section aria-labelledby="template-builder-heading" className="border-t border-slate-800 pt-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4 text-cyan-400" />
+              <h2 id="template-builder-heading" className="text-sm font-bold text-slate-100">建立自訂模板組合</h2>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">每個分類可選多項，組成可儲存的視覺預設。</p>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              value={presetName}
+              onChange={(event) => setPresetName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') savePreset();
+              }}
+              placeholder="例如：EC POST 排查版"
+              aria-label="自訂模板名稱"
+              className="h-9 min-w-0 flex-1 sm:w-64 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={savePreset}
+              disabled={!presetName.trim()}
+              className="h-9 px-3 rounded-lg border border-cyan-500/50 bg-cyan-500/10 text-cyan-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Save className="w-3.5 h-3.5" />
+              儲存組合
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {CATEGORIES.map((itemCategory) => (
+            <fieldset key={itemCategory.key} className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
+              <legend className="px-1 text-[10px] font-bold uppercase text-slate-500">{itemCategory.label}</legend>
+              <div className="mt-1 grid max-h-44 gap-1 overflow-y-auto pr-1">
+                {CATALOG[itemCategory.key].map((option) => {
+                  const checked = presetSelections[itemCategory.key].includes(option.id);
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-xs transition ${
+                        checked ? 'bg-cyan-500/10 text-cyan-100' : 'text-slate-300 hover:bg-slate-900'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => togglePresetSelection(itemCategory.key, option.id)}
+                        className="mt-0.5 accent-cyan-400"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase text-slate-500">自訂配色方案（最多 5 色）</div>
+              <p className="mt-1 text-[11px] text-slate-400">AI 會依效果語意，在這組色碼中分配主色、次色與警示色。</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void fetchRandomPalette()}
+              disabled={paletteLoading}
+              className="shrink-0 inline-flex h-8 items-center gap-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-2.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/15 disabled:cursor-wait disabled:opacity-60"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${paletteLoading ? 'animate-spin' : ''}`} />
+              {paletteLoading ? '取得配色中' : '隨機配色'}
+            </button>
+          </div>
+          {(paletteSource || paletteError) && (
+            <div className={`mt-2 text-[11px] ${paletteError ? 'text-amber-300' : 'text-slate-500'}`}>
+              {paletteError || `來源：${paletteSource}`}
+            </div>
+          )}
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {paletteDraft.slice(0, 5).map((color, index) => (
+              <label key={index} className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-2 py-2">
+                <input
+                  type="color"
+                  value={/^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#000000'}
+                  onChange={(event) => {
+                    const next = [...paletteDraft];
+                    next[index] = event.target.value.toUpperCase();
+                    setPaletteDraft(next);
+                  }}
+                  aria-label={`配色 ${index + 1} 色塊`}
+                  className="h-8 w-8 shrink-0 rounded border border-slate-700 bg-slate-950 p-1"
+                />
+                <input
+                  type="text"
+                  value={color}
+                  maxLength={7}
+                  aria-label={`配色代碼 ${index + 1}`}
+                  onChange={(event) => {
+                    const raw = event.target.value.trim();
+                    const value = raw.startsWith('#') ? raw.toUpperCase() : `#${raw.toUpperCase()}`;
+                    const next = [...paletteDraft];
+                    next[index] = value.slice(0, 7);
+                    setPaletteDraft(next);
+                  }}
+                  className="min-w-0 w-full bg-transparent text-xs font-semibold uppercase text-slate-100 outline-none"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.04] px-3 py-3">
+          <div className="text-[10px] font-bold uppercase text-cyan-400">組合預覽</div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {CATEGORIES.map((itemCategory, index) => {
+              const presetItems = CATALOG[itemCategory.key].filter((option) => presetSelections[itemCategory.key].includes(option.id));
+              return (
+                <React.Fragment key={itemCategory.key}>
+                  {index > 0 && <span className="text-slate-600" aria-hidden="true">/</span>}
+                  {presetItems.length > 0 ? presetItems.map((presetItem) => (
+                    <span key={presetItem.id} className="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] text-slate-200">
+                      {presetItem.label}
+                    </span>
+                  )) : (
+                    <span className="rounded-md border border-dashed border-slate-700 px-2.5 py-1.5 text-[11px] text-slate-500">
+                      未選擇
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {presets.length > 0 && (
+          <div className="mt-4">
+            <div className="text-[10px] font-bold uppercase text-slate-500">已儲存組合</div>
+            <div className="mt-2 grid gap-2">
+              {presets.map((preset) => (
+                <div key={preset.id} className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => loadPreset(preset)}
+                    className="min-w-0 flex-1 text-left text-xs font-bold text-slate-200 hover:text-cyan-300"
+                  >
+                    {preset.name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => persistPresets(presets.filter((item) => item.id !== preset.id))}
+                    aria-label={`刪除 ${preset.name}`}
+                    title="刪除組合"
+                    className="w-8 h-8 rounded-md border border-slate-800 text-slate-500 hover:border-red-500/50 hover:text-red-300 inline-grid place-items-center"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
     </section>
   );
 };

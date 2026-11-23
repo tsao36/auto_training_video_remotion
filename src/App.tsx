@@ -1623,6 +1623,9 @@ export function App() {
                 style={{ width: '100%', height: '100%' }}
                 controls
                 clickToPlay
+                bufferStateDelayInMilliseconds={250}
+                defaultPremountInSeconds={2}
+                showPosterWhenBuffering
               />
               {isTtsRendering && (
                 <div

@@ -1,3 +1,5 @@
+import type { Caption } from '@remotion/captions';
+
 export type TechDomain = 'debug-logic' | 'wifi' | 'bluetooth' | 'rf';
 
 export type VisualTemplate =
@@ -356,6 +358,7 @@ export interface SceneSpec {
   tts: SceneTtsState;
   animation: SceneAnimationConfig;
   sentenceCues?: SentenceEffectCue[];
+  captions?: Caption[];
 }
 
 export interface TtsEngineConfig {
@@ -425,6 +428,7 @@ export interface TrainingProject {
     primary: string;
     secondary: string;
     surface: string;
+    palette?: string[];
   };
   aiGenerationStages?: {
     input: {

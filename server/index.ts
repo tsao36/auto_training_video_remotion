@@ -10,7 +10,8 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
+import { makeCancelSignal, renderMedia, renderStill, selectComposition } from '@remotion/renderer';
+import { parseSrt } from '@remotion/captions';
 import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, getEnvLlmStatus, regenerateSceneWithLlm } from './llmGenerator';
 import { loadLocalEnv } from './loadEnv';
@@ -72,6 +73,8 @@ interface RenderJob {
   outputUrl?: string;
   mediaQa?: MediaQaResult;
   error?: string;
+  cancel?: () => void;
+  cancelled?: boolean;
 }
 
 interface PreviewStillsJob {
@@ -86,6 +89,31 @@ interface PreviewStillsJob {
 
 const renderJobs = new Map<string, RenderJob>();
 const previewStillsJobs = new Map<string, PreviewStillsJob>();
+const MAX_CONCURRENT_RENDERS = Math.max(1, Number(process.env.REMOTION_MAX_CONCURRENT_RENDERS) || 2);
+const REMOTION_RENDER_TOKEN = process.env.REMOTION_RENDER_TOKEN?.trim() || '';
+const REMOTION_ENTRY = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
+let remotionBundlePromise: Promise<string> | null = null;
+
+function getRemotionBundle(): Promise<string> {
+  if (!remotionBundlePromise) {
+    remotionBundlePromise = bundle({ entryPoint: REMOTION_ENTRY }).catch((error) => {
+      remotionBundlePromise = null;
+      throw error;
+    });
+  }
+  return remotionBundlePromise;
+}
+
+function isRenderAuthorized(req: express.Request): boolean {
+  if (!REMOTION_RENDER_TOKEN) return true;
+  return req.headers['x-remotion-token'] === REMOTION_RENDER_TOKEN;
+}
+
+function activeRenderCount(): number {
+  return [...renderJobs.values()].filter((job) =>
+    job.status === 'bundling' || job.status === 'rendering' || job.status === 'qa'
+  ).length;
+}
 
 function createSilentOrToneWav(durationSec: number, filepath: string) {
   const sampleRate = 22050;
@@ -116,6 +144,50 @@ function createSilentOrToneWav(durationSec: number, filepath: string) {
   }
   fs.writeFileSync(filepath, buffer);
 }
+
+app.get('/api/palette/random', async (req, res) => {
+  try {
+    const categories = ['tech', 'consumer', 'social', 'entertainment', 'ecommerce', 'finance', 'gaming', 'travel', 'fashion'];
+    const category = String(req.query.category || categories[Math.floor(Math.random() * categories.length)]);
+    const limit = 100;
+    const offset = Math.floor(Math.random() * 800);
+    const upstream = await fetch(`https://www.colorpalettegenerator.ai/api/v1/brands?category=${encodeURIComponent(category)}&offset=${offset}&limit=${limit}`, {
+      signal: AbortSignal.timeout(15_000),
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!upstream.ok) {
+      res.status(upstream.status).json({ error: `Color Palette API 回應 ${upstream.status}` });
+      return;
+    }
+
+    const payload = await upstream.json() as {
+      data?: Array<{ name?: string; colors?: Record<string, { hex?: string }> }>;
+    };
+    const brands = payload.data || [];
+    if (brands.length === 0) {
+      res.status(502).json({ error: 'Color Palette API 未回傳品牌資料' });
+      return;
+    }
+
+    const brand = brands[Math.floor(Math.random() * brands.length)];
+    const roles = ['primary', 'secondary', 'accent', 'surface', 'background', 'warning', 'success', 'error'];
+    const colors = roles
+      .map((role) => brand.colors?.[role]?.hex)
+      .filter((color): color is string => typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color));
+
+    const unique = [...new Set(colors)].slice(0, 5);
+    if (unique.length < 2) {
+      res.status(502).json({ error: 'API 回傳的配色不足' });
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ name: brand.name || 'Random brand palette', colors: unique, source: 'colorpalettegenerator.ai' });
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : '無法連線至 Color Palette API' });
+  }
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'remotion-tech-training-api' });
@@ -299,7 +371,7 @@ app.get('/api/llm/status', (_req, res) => {
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, colorPalette, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -313,6 +385,9 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       odmMode: Boolean(odmMode),
+      colorPalette: Array.isArray(colorPalette)
+        ? colorPalette.filter((color): color is string => typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color)).slice(0, 5)
+        : undefined,
       llmConfig,
     });
     res.json(result);
@@ -1114,6 +1189,14 @@ app.post('/api/validate', (req, res) => {
 // Render midpoint PNG preview stills for every scene
 app.post('/api/preview-stills', async (req, res) => {
   try {
+    if (!isRenderAuthorized(req)) {
+      res.status(401).json({ error: 'Invalid render token' });
+      return;
+    }
+    if (activeRenderCount() + previewStillsJobs.size >= MAX_CONCURRENT_RENDERS) {
+      res.status(429).json({ error: `Render queue limit reached (${MAX_CONCURRENT_RENDERS} active)` });
+      return;
+    }
     const { projectTitle, scenes } = req.body as {
       projectTitle: string;
       scenes: SceneSpec[];
@@ -1136,14 +1219,9 @@ app.post('/api/preview-stills', async (req, res) => {
 
     (async () => {
       try {
-        const entry = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
-        const bundleLocation = await bundle({
-          entryPoint: entry,
-          onProgress: (p) => {
-            const job = previewStillsJobs.get(jobId);
-            if (job) job.progress = Math.round(p * 20);
-          },
-        });
+        const bundleLocation = await getRemotionBundle();
+        const job = previewStillsJobs.get(jobId);
+        if (job) job.progress = 20;
 
         const inputProps = {
           projectTitle: projectTitle || 'Technical Training',
@@ -1160,10 +1238,10 @@ app.post('/api/preview-stills', async (req, res) => {
         const jobDir = path.join(PREVIEW_STILLS_DIR, jobId);
         fs.mkdirSync(jobDir, { recursive: true });
 
-        const job = previewStillsJobs.get(jobId);
-        if (job) {
-          job.status = 'rendering';
-          job.progress = 20;
+        const previewJob = previewStillsJobs.get(jobId);
+        if (previewJob) {
+          previewJob.status = 'rendering';
+          previewJob.progress = 20;
         }
 
         const stills: ScenePreviewStill[] = [];
@@ -1230,6 +1308,20 @@ app.post('/api/preview-stills', async (req, res) => {
   }
 });
 
+app.post('/api/captions/srt', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: '請上傳 .srt 或 .vtt 字幕檔' });
+    return;
+  }
+  try {
+    const input = req.file.buffer.toString('utf8');
+    const parsed = parseSrt({ input, strict: false });
+    res.json({ captions: parsed.captions });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : '字幕解析失敗' });
+  }
+});
+
 app.get('/api/preview-stills/:jobId', (req, res) => {
   const job = previewStillsJobs.get(req.params.jobId);
   if (!job) {
@@ -1242,6 +1334,14 @@ app.get('/api/preview-stills/:jobId', (req, res) => {
 // Start Remotion MP4 Render Job
 app.post('/api/render', async (req, res) => {
   try {
+    if (!isRenderAuthorized(req)) {
+      res.status(401).json({ error: 'Invalid render token' });
+      return;
+    }
+    if (activeRenderCount() >= MAX_CONCURRENT_RENDERS) {
+      res.status(429).json({ error: `Render queue limit reached (${MAX_CONCURRENT_RENDERS} active)` });
+      return;
+    }
     const { projectTitle, scenes, previewOnlySceneIndex, project } = req.body as {
       projectTitle: string;
       scenes: SceneSpec[];
@@ -1250,20 +1350,17 @@ app.post('/api/render', async (req, res) => {
     };
 
     const jobId = `render-${Date.now()}`;
-    renderJobs.set(jobId, { id: jobId, status: 'bundling', progress: 0 });
+    const { cancelSignal, cancel } = makeCancelSignal();
+    renderJobs.set(jobId, { id: jobId, status: 'bundling', progress: 0, cancel });
     res.json({ jobId });
 
     // Run async render in background
     (async () => {
       try {
-        const entry = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
-        const bundleLocation = await bundle({
-          entryPoint: entry,
-          onProgress: (p) => {
-            const job = renderJobs.get(jobId);
-            if (job) job.progress = Math.round(p * 20);
-          },
-        });
+        const bundleLocation = await getRemotionBundle();
+        const job = renderJobs.get(jobId);
+        if (job) job.progress = 20;
+        if (job?.cancelled) throw new Error('Render cancelled');
 
         const isPreview = typeof previewOnlySceneIndex === 'number' && Boolean(scenes[previewOnlySceneIndex]);
         const selectedScenes = isPreview
@@ -1293,6 +1390,7 @@ app.post('/api/render', async (req, res) => {
           codec: 'h264',
           outputLocation,
           inputProps,
+          cancelSignal,
           onProgress: ({ progress }) => {
             const job = renderJobs.get(jobId);
             if (job) job.progress = 20 + Math.round(progress * 75);
@@ -1336,18 +1434,48 @@ app.post('/api/render', async (req, res) => {
           mediaQa,
         });
       } catch (err) {
-        console.error('Remotion render failed:', err);
-        renderJobs.set(jobId, {
-          id: jobId,
-          status: 'error',
-          progress: 0,
-          error: err instanceof Error ? err.message : 'Render failed',
-        });
+        const job = renderJobs.get(jobId);
+        if (job?.cancelled) {
+          renderJobs.set(jobId, {
+            id: jobId,
+            status: 'error',
+            progress: job?.progress || 0,
+            cancelled: true,
+            error: 'Render cancelled',
+          });
+        } else {
+          console.error('Remotion render failed:', err);
+          renderJobs.set(jobId, {
+            id: jobId,
+            status: 'error',
+            progress: 0,
+            error: err instanceof Error ? err.message : 'Render failed',
+          });
+        }
       }
     })();
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to start render' });
   }
+});
+
+app.post('/api/render/:jobId/cancel', (req, res) => {
+  if (!isRenderAuthorized(req)) {
+    res.status(401).json({ error: 'Invalid render token' });
+    return;
+  }
+  const job = renderJobs.get(req.params.jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  if (!job.cancel) {
+    res.status(409).json({ error: 'Job cannot be cancelled' });
+    return;
+  }
+  job.cancelled = true;
+  job.cancel();
+  res.json({ ok: true });
 });
 
 app.get('/api/render/:jobId', (req, res) => {
@@ -1360,6 +1488,29 @@ app.get('/api/render/:jobId', (req, res) => {
 });
 
 const PORT = 3001;
+function cleanExpiredOutputFiles(): void {
+  const now = Date.now();
+  const previewMaxAgeMs = 24 * 60 * 60 * 1000;
+  const mp4MaxAgeMs = 7 * 24 * 60 * 60 * 1000;
+
+  for (const entry of fs.readdirSync(PREVIEW_STILLS_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const dir = path.join(PREVIEW_STILLS_DIR, entry.name);
+    const stat = fs.statSync(dir);
+    if (now - stat.mtimeMs > previewMaxAgeMs) fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  for (const entry of fs.readdirSync(OUTPUT_DIR, { withFileTypes: true })) {
+    if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== '.mp4') continue;
+    const file = path.join(OUTPUT_DIR, entry.name);
+    const stat = fs.statSync(file);
+    if (now - stat.mtimeMs > mp4MaxAgeMs) fs.rmSync(file, { force: true });
+  }
+}
+
+cleanExpiredOutputFiles();
+setInterval(cleanExpiredOutputFiles, 60 * 60 * 1000).unref();
+
 app.listen(PORT, () => {
   console.log(`Remotion Tech Training API running at http://localhost:${PORT}`);
 });

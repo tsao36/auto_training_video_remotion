@@ -14,6 +14,7 @@ import {
   VisualTemplate,
 } from '../src/types/training';
 import { inferDomainFromText, isTechDomain } from '../src/utils/domainInference';
+import { generateCaptionsFromScript } from '../src/utils/captions';
 import {
   applyDeterministicRegionalFixes,
   collectSceneTextForTermCheck,
@@ -30,6 +31,7 @@ export interface GeneratePlanParams {
   defaultTtsProvider?: TtsProvider;
   language?: ContentLanguage;
   odmMode?: boolean;
+  colorPalette?: string[];
   llmConfig?: Partial<LlmConfig>;
 }
 
@@ -843,7 +845,8 @@ function toSceneSpecs(
   payload: LlmPlanPayload,
   domain: TechDomain,
   defaultTtsProvider: TtsProvider,
-  topic: string
+  topic: string,
+  colorPalette?: string[]
 ): SceneSpec[] {
   const meta = DOMAIN_META[domain];
   const voiceId = defaultTtsProvider === 'ming-3.0' ? 'ming-tech-zh-en' : 'formosa-pro-tw';
@@ -878,6 +881,7 @@ function toSceneSpecs(
         ? raw.keyPoints.slice(0, 4).map((k) => String(k).slice(0, 48))
         : ['核心架構指標', '實機量測驗證'],
       script,
+      captions: generateCaptionsFromScript(script, Math.max(3, Math.round(raw.durationSeconds || 8))),
       visualDescription: raw.visualDescription || `Remotion ${template} 搭配 ${effect} 特效`,
       diagramData,
       tts: {
@@ -889,7 +893,7 @@ function toSceneSpecs(
       animation: {
         motionStyle: idx % 2 === 0 ? 'spring-snappy' : 'step-reveal',
         effect,
-        accentColor: meta.accentColor,
+        accentColor: colorPalette?.[idx % colorPalette.length] || meta.accentColor,
         showSubtitles: true,
         showProgressHud: true,
       },
@@ -1053,6 +1057,7 @@ ${JSON.stringify(slideSummaries, null, 2)}`;
     durationSeconds: balancedDurations[idx],
     keyPoints: buildPptxKeyPoints(r.slide),
     script: r.script,
+    captions: generateCaptionsFromScript(r.script, balancedDurations[idx]),
     visualDescription: `100% 還原 PowerPoint 第 ${r.slide.slideNumber} 頁原始版面、文字、圖形、表格與圖片`,
     pptxSlide: r.slide,
     pptxNotes: r.slide.notes,
@@ -1430,7 +1435,11 @@ export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promi
       const systemPrompt = `You are a senior technical video director and Remotion motion-graphics designer.
 Given a topic, total video duration (in seconds), and optional reference notes, generate a complete multi-scene Remotion training video plan as strict JSON.
 
-${params.odmMode ? `ODM BEGINNER-MODE RULE:
+${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
+- Use only these hex codes for accent/highlight/diagram/status colors: ${params.colorPalette.join(', ')}.
+- Let visual and effect semantics decide which palette color fits each scene; do not always reuse the first color.
+- Never introduce an unrelated hex color outside this palette.
+` : ''}${params.odmMode ? `ODM BEGINNER-MODE RULE:
 - Explain to entry-level engineers who have very little background on the topic.
 - Use relatable metaphors and concrete everyday examples before technical details.
 - Define jargon and acronyms immediately in plain language.
@@ -1499,7 +1508,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
         rawResult.scenes.forEach((s, i) => {
           s.durationSeconds = balanced[i];
         });
-        const initialScenes = toSceneSpecs(rawResult, params.domain, provider, params.topic);
+        const initialScenes = toSceneSpecs(rawResult, params.domain, provider, params.topic, params.colorPalette);
         const checked = await runRegionalTerminologyCheckStage({
           title: rawResult.title || params.topic,
           subtitle: rawResult.subtitle || DOMAIN_META[params.domain].description,
@@ -1528,7 +1537,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
   }
 
   const fallback = generateFallbackPlan({ ...params, durationSeconds: targetDuration });
-  const fallbackScenes = toSceneSpecs(fallback, params.domain, provider, params.topic);
+  const fallbackScenes = toSceneSpecs(fallback, params.domain, provider, params.topic, params.colorPalette);
   const checkedFallback = await runRegionalTerminologyCheckStage({
     title: fallback.title,
     subtitle: fallback.subtitle,

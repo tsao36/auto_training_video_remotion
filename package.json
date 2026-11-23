@@ -16,12 +16,19 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@remotion/bundler": "^4.0.242",
-    "@remotion/cli": "^4.0.242",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@remotion/bundler": "^4.0.545",
+    "@remotion/captions": "^4.0.545",
+    "@remotion/cli": "^4.0.545",
+    "@remotion/google-fonts": "^4.0.545",
     "@remotion/layout-utils": "^4.0.545",
-    "@remotion/player": "^4.0.242",
-    "@remotion/renderer": "^4.0.242",
-    "@remotion/transitions": "^4.0.242",
+    "@remotion/media": "^4.0.545",
+    "@remotion/player": "^4.0.545",
+    "@remotion/preload": "^4.0.545",
+    "@remotion/renderer": "^4.0.545",
+    "@remotion/three": "^4.0.545",
+    "@remotion/transitions": "^4.0.545",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "jszip": "^3.10.1",
@@ -31,7 +38,8 @@
     "pdf-parse": "^1.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "remotion": "^4.0.242"
+    "remotion": "^4.0.545",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.6",

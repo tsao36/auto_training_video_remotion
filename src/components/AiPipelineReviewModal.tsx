@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, GitBranch, Save, X } from 'lucide-react';
+import { Check, Copy, GitBranch, RefreshCw, Save, X } from 'lucide-react';
+import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
 import {
   CONTENT_LANGUAGES,
   DOMAIN_META,
@@ -64,6 +65,14 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
   const [primaryColorDraft, setPrimaryColorDraft] = useState(project.colorScheme?.primary ?? DOMAIN_META[project.domain].accentColor);
   const [secondaryColorDraft, setSecondaryColorDraft] = useState(project.colorScheme?.secondary ?? DOMAIN_META[project.domain].secondaryColor);
   const [surfaceColorDraft, setSurfaceColorDraft] = useState(project.colorScheme?.surface ?? '#12100E');
+  const [paletteLoading, setPaletteLoading] = useState(false);
+  const [paletteError, setPaletteError] = useState<string | null>(null);
+  const [paletteSource, setPaletteSource] = useState<string | null>(null);
+  const [paletteDraft, setPaletteDraft] = useState<string[]>(
+    project.colorScheme?.palette?.length
+      ? project.colorScheme.palette.slice(0, 5)
+      : [project.colorScheme?.primary ?? DOMAIN_META[project.domain].accentColor, project.colorScheme?.secondary ?? DOMAIN_META[project.domain].secondaryColor, project.colorScheme?.surface ?? '#12100E', '#FCAEB2', '#F3667D']
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -89,6 +98,11 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
     setPrimaryColorDraft(project.colorScheme?.primary ?? DOMAIN_META[project.domain].accentColor);
     setSecondaryColorDraft(project.colorScheme?.secondary ?? DOMAIN_META[project.domain].secondaryColor);
     setSurfaceColorDraft(project.colorScheme?.surface ?? '#12100E');
+    setPaletteDraft(
+      project.colorScheme?.palette?.length
+        ? project.colorScheme.palette.slice(0, 5)
+        : [project.colorScheme?.primary ?? DOMAIN_META[project.domain].accentColor, project.colorScheme?.secondary ?? DOMAIN_META[project.domain].secondaryColor, project.colorScheme?.surface ?? '#12100E', '#FCAEB2', '#F3667D']
+    );
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -149,6 +163,25 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
     { id: 'custom', label: '自訂配色', primary: primaryColorDraft, secondary: secondaryColorDraft, surface: surfaceColorDraft },
   ];
 
+  const fetchRandomPalette = async () => {
+    setPaletteLoading(true);
+    setPaletteError(null);
+    try {
+      const result = await fetchRandomBrandPalette();
+      const colors = [...result.colors].slice(0, 5);
+      setPaletteDraft(colors);
+      setPrimaryColorDraft(colors[0] || primaryColorDraft);
+      setSecondaryColorDraft(colors[1] || secondaryColorDraft);
+      setSurfaceColorDraft(colors[2] || surfaceColorDraft);
+      setColorPresetDraft('custom');
+      setPaletteSource(result.name);
+    } catch (error) {
+      setPaletteError(error instanceof Error ? error.message : '無法取得隨機配色');
+    } finally {
+      setPaletteLoading(false);
+    }
+  };
+
   const applyColorPreset = (preset: NonNullable<TrainingProject['colorScheme']>['preset']) => {
     setColorPresetDraft(preset);
     if (preset === 'custom') return;
@@ -157,6 +190,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
     setPrimaryColorDraft(selected.primary);
     setSecondaryColorDraft(selected.secondary);
     setSurfaceColorDraft(selected.surface);
+    setPaletteDraft([selected.primary, selected.secondary, selected.surface, selected.primary, selected.secondary]);
   };
 
   const buildLogicNotes = (odmEnabled: boolean, language: ContentLanguage) => {
@@ -219,6 +253,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
             rawText: sourceDraft,
             defaultTtsProvider: next.ttsConfig.defaultProvider,
             language: languageDraft,
+            colorPalette: paletteDraft.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)).slice(0, 5),
             llmConfig: next.llmConfig,
           }),
         });
@@ -557,19 +592,64 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
                       </button>
                     ))}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <label className="px-2.5 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-[10px] text-slate-400">
-                      主色
-                      <input type="color" value={primaryColorDraft} onChange={(e) => { setPrimaryColorDraft(e.target.value); setColorPresetDraft('custom'); }} className="mt-1 block w-full h-8 rounded border border-slate-700 bg-slate-950 p-1" />
-                    </label>
-                    <label className="px-2.5 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-[10px] text-slate-400">
-                      次色
-                      <input type="color" value={secondaryColorDraft} onChange={(e) => { setSecondaryColorDraft(e.target.value); setColorPresetDraft('custom'); }} className="mt-1 block w-full h-8 rounded border border-slate-700 bg-slate-950 p-1" />
-                    </label>
-                    <label className="px-2.5 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-[10px] text-slate-400">
-                      背景色
-                      <input type="color" value={surfaceColorDraft} onChange={(e) => { setSurfaceColorDraft(e.target.value); setColorPresetDraft('custom'); }} className="mt-1 block w-full h-8 rounded border border-slate-700 bg-slate-950 p-1" />
-                    </label>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => void fetchRandomPalette()}
+                      disabled={paletteLoading}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-2.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/15 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${paletteLoading ? 'animate-spin' : ''}`} />
+                      {paletteLoading ? '取得配色中' : '隨機配色'}
+                    </button>
+                    {(paletteSource || paletteError) && (
+                      <span className={`text-[10px] ${paletteError ? 'text-amber-300' : 'text-slate-500'}`}>
+                        {paletteError || `來源：${paletteSource}`}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {paletteDraft.slice(0, 5).map((color, index) => (
+                      <label key={index} className="px-2.5 py-2 rounded-lg border border-slate-800 bg-slate-950/60 text-[10px] text-slate-400">
+                        {index === 0 ? '主色' : index === 1 ? '次色' : index === 2 ? '背景色' : `配色 ${index + 1}`}
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={/^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#000000'}
+                            onChange={(event) => {
+                              const next = [...paletteDraft];
+                              next[index] = event.target.value.toUpperCase();
+                              setPaletteDraft(next);
+                              if (index === 0) setPrimaryColorDraft(event.target.value.toUpperCase());
+                              if (index === 1) setSecondaryColorDraft(event.target.value.toUpperCase());
+                              if (index === 2) setSurfaceColorDraft(event.target.value.toUpperCase());
+                              setColorPresetDraft('custom');
+                            }}
+                            className="w-7 h-7 shrink-0 rounded border border-slate-700 bg-slate-950 p-1"
+                          />
+                          <input
+                            type="text"
+                            value={color}
+                            maxLength={7}
+                            pattern="#[0-9A-Fa-f]{6}"
+                            onChange={(event) => {
+                              const value = event.target.value.startsWith('#') ? event.target.value.toUpperCase() : `#${event.target.value.toUpperCase()}`;
+                              const next = [...paletteDraft];
+                              next[index] = value.slice(0, 7);
+                              setPaletteDraft(next);
+                              if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                                if (index === 0) setPrimaryColorDraft(value);
+                                if (index === 1) setSecondaryColorDraft(value);
+                                if (index === 2) setSurfaceColorDraft(value);
+                              }
+                              setColorPresetDraft('custom');
+                            }}
+                            aria-label={`配色代碼 ${index + 1}`}
+                            className="min-w-0 w-full h-7 rounded border border-slate-700 bg-slate-950 px-1.5 text-[11px] text-white outline-none focus:border-cyan-500"
+                          />
+                        </div>
+                      </label>
+                    ))}
                   </div>
                 </div>
 

@@ -22,7 +22,13 @@ export const RemotionRoot: React.FC = () => {
       }}
       calculateMetadata={({ props }) => {
         const typed = props as unknown as TechTrainingVideoProps;
-        const totalSec = (typed.scenes || []).reduce((sum, s) => sum + (s.durationSeconds || 0), 0);
+        const totalSec = (typed.scenes || []).reduce((sum, scene) => {
+          const actualDuration = scene.tts?.actualDurationSec;
+          const effectiveDuration = actualDuration && actualDuration > 0
+            ? actualDuration
+            : scene.durationSeconds || 0;
+          return sum + effectiveDuration;
+        }, 0);
         return {
           durationInFrames: Math.max(VIDEO_FPS, Math.round((totalSec || 600) * VIDEO_FPS)),
           fps: VIDEO_FPS,

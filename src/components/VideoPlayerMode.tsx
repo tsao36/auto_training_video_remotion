@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
+import { preloadAudio } from '@remotion/preload';
 import {
   AlertTriangle,
   Clock,
@@ -106,6 +107,16 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
 
   const projectCacheRef = useRef<Map<string, TrainingProject>>(new Map());
   const playerRef = useRef<PlayerRef>(null);
+
+  useEffect(() => {
+    if (!loadedProject) return;
+    const cleanups = loadedProject.scenes
+      .filter((scene) => scene.tts.status === 'ready' && Boolean(scene.tts.audioUrl))
+      .map((scene) => preloadAudio(scene.tts.audioUrl!.startsWith('http')
+        ? scene.tts.audioUrl!
+        : `${window.location.origin}${scene.tts.audioUrl}`));
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [loadedProject]);
 
   const renderedCount = useMemo(
     () => projects.filter((p) => p.renders.length > 0).length,
@@ -499,6 +510,9 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
                     autoPlay={shouldAutoPlay}
                     spaceKeyToPlayOrPause
                     showPlaybackRateControl
+                    bufferStateDelayInMilliseconds={250}
+                    defaultPremountInSeconds={2}
+                    showPosterWhenBuffering
                   />
                 )}
 

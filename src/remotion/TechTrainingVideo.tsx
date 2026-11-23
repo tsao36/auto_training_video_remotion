@@ -22,7 +22,10 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
     <AbsoluteFill style={{ backgroundColor: '#070B14' }}>
       <Series>
         {scenes.map((scene) => {
-          const sceneFrames = Math.max(30, Math.round(scene.durationSeconds * fps));
+          const effectiveDuration = scene.tts.actualDurationSec && scene.tts.actualDurationSec > 0
+            ? scene.tts.actualDurationSec
+            : scene.durationSeconds;
+          const sceneFrames = Math.max(30, Math.round(effectiveDuration * fps));
           const resolvedAudio =
             scene.tts.audioUrl && scene.tts.status === 'ready'
               ? scene.tts.audioUrl.startsWith('http')
