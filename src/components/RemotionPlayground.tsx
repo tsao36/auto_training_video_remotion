@@ -215,13 +215,33 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
   if (item === 'directional-wipe') return <div className={visualClass} aria-hidden="true"><span className="catalog-wipe-panel" /><span className="catalog-wipe-edge" /></div>;
   if (item === 'spatial-push') return <div className={visualClass} aria-hidden="true"><span className="catalog-push-a" /><span className="catalog-push-b" /></div>;
   if (item === 'transition-blinds') return <div className={visualClass} aria-hidden="true">{[0, 1, 2, 3, 4].map((n) => <span key={n} className="catalog-blind" />)}</div>;
-  if (Object.values(CATALOG).some((items) => items.some((entry) => entry.id === item))) {
+
+  if (item === 'crossed-off') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy">完成項目</span><span className="catalog-crossed-line" /></div>;
+  if (item === 'cylinder-text') return <div className={visualClass} aria-hidden="true"><span className="catalog-cylinder-band catalog-cylinder-a">SNR</span><span className="catalog-cylinder-band catalog-cylinder-b">RF</span><span className="catalog-cylinder-band catalog-cylinder-c">PHY</span></div>;
+  if (item === 'spinning-text-wheel') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-wheel catalog-text-wheel-a">A</span><span className="catalog-text-wheel catalog-text-wheel-b">B</span><span className="catalog-text-wheel catalog-text-wheel-c">C</span><span className="catalog-wheel-center" /></div>;
+  if (item === 'strike-through') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy">不適用方案</span><span className="catalog-strike-line" /></div>;
+  if (item === 'text-marker') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy catalog-marker-copy">關鍵結論</span><span className="catalog-marker-swipe" /></div>;
+  if (item === 'youtube-comment') return <div className={visualClass} aria-hidden="true"><span className="catalog-social-avatar" /><span className="catalog-social-card"><span /><span /></span></div>;
+  if (item === 'youtube-end-card') return <div className={visualClass} aria-hidden="true"><span className="catalog-end-card catalog-end-main" /><span className="catalog-end-card catalog-end-side" /><span className="catalog-end-cta">訂閱</span></div>;
+  if (item === 'youtube-subscribe') return <div className={visualClass} aria-hidden="true"><span className="catalog-subscribe-ring" /><span className="catalog-subscribe-button">訂閱</span></div>;
+
+  const catalogEntry = CATEGORIES.flatMap((entryCategory) => CATALOG[entryCategory.key]).find((entry) => entry.id === item);
+  const catalogCategory = CATEGORIES.find((entryCategory) => CATALOG[entryCategory.key].some((entry) => entry.id === item));
+  if (catalogEntry && catalogCategory) {
+    const label = catalogEntry.label.split(/\s+/).slice(0, 3).join(' ');
     return (
-      <div className={visualClass} aria-hidden="true">
-        <span className="catalog-template-bar" />
-        <span className="catalog-template-node catalog-template-node-a" />
-        <span className="catalog-template-node catalog-template-node-b" />
-        <span className="catalog-template-node catalog-template-node-c" />
+      <div className={`${visualClass} catalog-category-${catalogCategory.key}`} aria-hidden="true">
+        {catalogCategory.key === 'audio' && <span className="catalog-equalizer">{[24, 48, 32, 62, 42, 72, 36].map((height, index) => <i key={index} style={{ height }} />)}</span>}
+        {catalogCategory.key === 'backgrounds' && <span className="catalog-background-flow"><i /><i /><i /></span>}
+        {catalogCategory.key === 'overlays' && <span className="catalog-lower-third"><i /><b /></span>}
+        {catalogCategory.key === 'maps' && <span className="catalog-map-route"><i /><b /><em /></span>}
+        {catalogCategory.key === 'storytelling' && <span className="catalog-story-card"><i /><b /><em /></span>}
+        {catalogCategory.key === 'charts' && <span className="catalog-mini-chart"><i /><i /><i /><i /></span>}
+        {catalogCategory.key === 'templates' && <><span className="catalog-template-bar" /><span className="catalog-template-node catalog-template-node-a" /><span className="catalog-template-node catalog-template-node-b" /><span className="catalog-template-node catalog-template-node-c" /></>}
+        {catalogCategory.key === 'bottom-captions' && <span className="catalog-bottom-caption catalog-category-caption">逐字字幕</span>}
+        {catalogCategory.key === 'critical-captions' && <span className="catalog-category-highlight">關鍵資訊</span>}
+        {catalogCategory.key === 'transitions' && <span className="catalog-category-transition"><i /><i /><i /></span>}
+        <span className="catalog-preview-label">{label}</span>
       </div>
     );
   }
@@ -382,23 +402,39 @@ export const RemotionPlayground: React.FC = () => {
         <div className="grid gap-3 sm:grid-cols-2">
           {visibleItems.map((item) => {
             const active = activeItem.id === item.id;
-            const Icon = ITEM_ICONS[category];
+            const checked = (presetSelections[resolvedCategory] || []).includes(item.id);
+            const Icon = ITEM_ICONS[resolvedCategory];
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setSelected(item.id)}
-                className={`group text-left rounded-xl border p-3 transition ${
+                className={`relative rounded-xl border p-3 transition ${
                   active ? 'border-cyan-400/70 bg-cyan-500/[0.07]' : 'border-slate-800 bg-[#131110] hover:border-slate-600'
                 }`}
               >
-                <ItemVisual item={item.id} />
-                <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSelected(item.id)}
+                  className="w-full text-left"
+                >
+                  <ItemVisual item={item.id} />
+                </button>
+                <div className="mt-3 flex items-center gap-2 pr-8">
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-cyan-300' : 'text-slate-500'}`} />
                   <span className={`text-xs font-bold ${active ? 'text-cyan-300' : 'text-slate-200'}`}>{item.label}</span>
                 </div>
-              </button>
+                <label className="absolute bottom-3 right-3 grid h-7 w-7 cursor-pointer place-items-center rounded-md border border-slate-700 bg-slate-950 text-cyan-300 transition hover:border-cyan-500/60" title={checked ? '移出自訂模板' : '加入自訂模板'}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => togglePresetSelection(resolvedCategory, item.id)}
+                    className="sr-only"
+                  />
+                  <span className={`h-3.5 w-3.5 rounded-sm border ${checked ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'}`} aria-hidden="true">
+                    {checked && <span className="block h-2 w-1 rotate-45 translate-x-[4px] translate-y-[1px] border-b-2 border-r-2 border-slate-950" />}
+                  </span>
+                </label>
+              </div>
             );
           })}
         </div>
@@ -414,68 +450,51 @@ export const RemotionPlayground: React.FC = () => {
             <div className="text-[10px] font-bold uppercase text-slate-500">AI 選用情境</div>
             <div className="mt-1.5 text-xs text-cyan-200">{activeItem.aiUse}</div>
           </div>
+
+          <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2">
+            <span className="text-[10px] font-bold uppercase text-slate-500">已加入模板</span>
+            <span className="text-xs font-bold text-cyan-300">
+              {CATEGORIES.reduce((count, itemCategory) => count + (presetSelections[itemCategory.key]?.length || 0), 0)} 個效果
+            </span>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-800">
+            <label htmlFor="template-preset-name" className="text-[10px] font-bold uppercase text-slate-500">新模板名稱</label>
+            <div className="mt-2 flex gap-2">
+              <input
+                id="template-preset-name"
+                value={presetName}
+                onChange={(event) => setPresetName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') savePreset();
+                }}
+                placeholder="例如：EC POST 排查版"
+                aria-label="自訂模板名稱"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={savePreset}
+                disabled={!presetName.trim()}
+                className="h-9 shrink-0 px-3 rounded-lg border border-cyan-500/50 bg-cyan-500/10 text-cyan-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Save className="w-3.5 h-3.5" />
+                儲存
+              </button>
+            </div>
+          </div>
         </aside>
       </div>
 
-      <section aria-labelledby="template-builder-heading" className="border-t border-slate-800 pt-5">
+      <section aria-label="自訂模板配色與已儲存組合" className="border-t border-slate-800 pt-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <Plus className="w-4 h-4 text-cyan-400" />
-              <h2 id="template-builder-heading" className="text-sm font-bold text-slate-100">建立自訂模板組合</h2>
+              <h2 className="text-sm font-bold text-slate-100">模板配色與已儲存組合</h2>
             </div>
-            <p className="mt-1 text-xs text-slate-400">每個分類可選多項，組成可儲存的視覺預設。</p>
+            <p className="mt-1 text-xs text-slate-400">配色會套用於已勾選效果；右側可直接命名並儲存。</p>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <input
-              value={presetName}
-              onChange={(event) => setPresetName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') savePreset();
-              }}
-              placeholder="例如：EC POST 排查版"
-              aria-label="自訂模板名稱"
-              className="h-9 min-w-0 flex-1 sm:w-64 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={savePreset}
-              disabled={!presetName.trim()}
-              className="h-9 px-3 rounded-lg border border-cyan-500/50 bg-cyan-500/10 text-cyan-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Save className="w-3.5 h-3.5" />
-              儲存組合
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {CATEGORIES.map((itemCategory) => (
-            <fieldset key={itemCategory.key} className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
-              <legend className="px-1 text-[10px] font-bold uppercase text-slate-500">{itemCategory.label}</legend>
-              <div className="mt-1 grid max-h-44 gap-1 overflow-y-auto pr-1">
-                {CATALOG[itemCategory.key].map((option) => {
-                  const checked = (presetSelections[itemCategory.key] || []).includes(option.id);
-                  return (
-                    <label
-                      key={option.id}
-                      className={`flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-xs transition ${
-                        checked ? 'bg-cyan-500/10 text-cyan-100' : 'text-slate-300 hover:bg-slate-900'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => togglePresetSelection(itemCategory.key, option.id)}
-                        className="mt-0.5 accent-cyan-400"
-                      />
-                      <span>{option.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ))}
         </div>
 
         <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-3">
