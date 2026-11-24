@@ -70,6 +70,7 @@ import {
   loadStoredLlmConfig,
   saveStoredLlmConfig,
 } from './utils/llmConfigStorage';
+import { getSceneIndexAtFrame } from './utils/playerPlaylist';
 import {
   balanceScenesToDuration,
   computeRichnessDuration,
@@ -86,6 +87,7 @@ export function App() {
     llmConfig: loadStoredLlmConfig(),
   }));
   const [selectedSceneIdx, setSelectedSceneIdx] = useState(0);
+  const [playbackSceneIdx, setPlaybackSceneIdx] = useState(0);
   const [view, setView] = useState<'dashboard' | 'editor' | 'player'>('dashboard');
   const [playerInitialProjectId, setPlayerInitialProjectId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('script-tts');
@@ -340,9 +342,23 @@ export function App() {
 
   const jumpToScene = (idx: number) => {
     setSelectedSceneIdx(idx);
+    setPlaybackSceneIdx(idx);
     const frame = sceneStartFrames[idx] ?? 0;
     playerRef.current?.seekTo(frame);
   };
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || project.scenes.length === 0) return;
+
+    const onFrameUpdate = (event: { detail: { frame: number } }) => {
+      const nextIdx = getSceneIndexAtFrame(project.scenes, event.detail.frame, VIDEO_FPS);
+      setPlaybackSceneIdx((current) => (current === nextIdx ? current : nextIdx));
+    };
+
+    player.addEventListener('frameupdate', onFrameUpdate);
+    return () => player.removeEventListener('frameupdate', onFrameUpdate);
+  }, [project.scenes, view]);
 
   const updateCaptionStyle = (patch: Partial<VideoCaptionStyle>) => {
     setProject((prev) => ({
@@ -1668,7 +1684,7 @@ export function App() {
             <div className="flex h-11 gap-1 w-full rounded-lg overflow-hidden bg-slate-950 p-1 border border-slate-800">
               {project.scenes.map((s, idx) => {
                 const widthPct = (s.durationSeconds / Math.max(1, totalSeconds)) * 100;
-                const active = idx === selectedSceneIdx;
+                const active = idx === playbackSceneIdx;
                 return (
                   <button
                     key={s.id}
