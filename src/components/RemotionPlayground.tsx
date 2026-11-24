@@ -19,7 +19,7 @@ import { EFFECT_LABELS, RemotionEffect, TEMPLATE_LABELS, VisualTemplate } from '
 import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
 
 type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates' | 'audio' | 'backgrounds' | 'overlays' | 'maps' | 'storytelling' | 'text-effects';
-type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds' | 'basic-captions' | 'rounded-captions' | 'moving-pill-captions' | 'popping-word-captions' | 'word-highlight-captions' | 'horizontal-bar-chart' | 'line-chart' | 'number-counter' | 'pie-chart' | 'vertical-bar-chart' | 'wiggling-callout' | 'peel' | 'shine' | 'tear-apart' | 'rotating-cards' | 'picture-in-picture' | 'slide-to-split' | 'map-flyover' | 'spinning-globe' | 'watercolor-map' | 'location-lower-third' | 'name-lower-third' | 'social-safe-zones' | 'news-article-highlight' | 'speed-lines' | 'on-screen-messages' | 'polaroid-pictures' | 'circle-marker' | 'crossed-off' | 'cylinder-text' | 'spinning-text-wheel' | 'strike-through' | 'text-marker' | 'oscilloscope' | 'voice-note' | 'mirrored-spectrum' | 'notebook-paper' | 'paper-texture' | 'rotating-starburst' | 'moving-waves' | 'moving-zigzags' | 'liquid-contours' | 'youtube-comment' | 'youtube-end-card' | 'youtube-subscribe';
+type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'kinetic-caption' | 'svg-trace-path' | 'pop-badge' | 'state-card' | 'animated-counter' | 'camera-pan-zoom' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds' | 'basic-captions' | 'rounded-captions' | 'moving-pill-captions' | 'popping-word-captions' | 'word-highlight-captions' | 'horizontal-bar-chart' | 'line-chart' | 'number-counter' | 'pie-chart' | 'vertical-bar-chart' | 'wiggling-callout' | 'peel' | 'shine' | 'tear-apart' | 'rotating-cards' | 'picture-in-picture' | 'slide-to-split' | 'map-flyover' | 'spinning-globe' | 'watercolor-map' | 'location-lower-third' | 'name-lower-third' | 'social-safe-zones' | 'news-article-highlight' | 'speed-lines' | 'on-screen-messages' | 'polaroid-pictures' | 'circle-marker' | 'crossed-off' | 'cylinder-text' | 'spinning-text-wheel' | 'text-marker' | 'oscilloscope' | 'voice-note' | 'mirrored-spectrum' | 'notebook-paper' | 'paper-texture' | 'rotating-starburst' | 'moving-waves' | 'moving-zigzags' | 'liquid-contours' | 'youtube-comment' | 'youtube-end-card' | 'youtube-subscribe';
 
 interface CatalogItem {
   id: PlaygroundItem;
@@ -85,12 +85,15 @@ const TEMPLATE_AI_USE: Record<VisualTemplate, string> = {
 };
 
 const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
-  motion: (Object.keys(EFFECT_LABELS) as RemotionEffect[]).map((id) => ({
-    id,
-    label: EFFECT_LABELS[id],
-    description: MOTION_DESCRIPTIONS[id].description,
-    aiUse: MOTION_DESCRIPTIONS[id].aiUse,
-  })),
+  motion: [
+    ...(Object.keys(EFFECT_LABELS) as RemotionEffect[]).map((id) => ({
+      id,
+      label: EFFECT_LABELS[id],
+      description: MOTION_DESCRIPTIONS[id].description,
+      aiUse: MOTION_DESCRIPTIONS[id].aiUse,
+    })),
+    { id: 'svg-trace-path', label: 'SVG Trace Path 路徑描繪', description: '沿 PCB、RF 或封包路徑描繪線條並投放發光節點。', aiUse: 'PCB trace、RF 波形、封包移動' },
+  ],
   'bottom-captions': [
     { id: 'srt-caption-track', label: 'SRT / VTT 下方字幕', description: '由既有字幕檔載入時間碼，以穩定軌道持續顯示在畫面下方。', aiUse: '外部配音、投影片逐字稿、多語字幕' },
     { id: 'karaoke-captions', label: 'Karaoke 下方逐字字幕', description: '畫面下方依時間軌道逐字縮放或畫線，形成朗讀節奏。', aiUse: '逐句解說、教學步驟、口頭重點' },
@@ -100,12 +103,14 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
   ],
   'critical-captions': [
     { id: 'caption-highlight', label: '關鍵資訊 Highlight', description: '只在關鍵數值、協定名稱或重要術語出現時，短暫突顯於畫面資訊層。', aiUse: '警示數值、術語、指令、重要結論' },
+    { id: 'kinetic-caption', label: 'Kinetic Caption 動態關鍵字', description: '逐字滑入並在口白節奏上反覆高亮核心詞。', aiUse: '2–3 秒語音節點、術語強調、逐字同步' },
     { id: 'popping-word-captions', label: 'Popping Word Captions 彈跳字詞', description: '逐字彈入並強調目前朗讀位置。', aiUse: '關鍵字、口號、逐字強調' },
     { id: 'word-highlight-captions', label: 'Word Highlight 字詞高亮', description: '朗讀時依時間高亮單字或片語。', aiUse: '術語、指令、重要名詞' },
     { id: 'circle-marker', label: 'Circle Marker 圈選標記', description: '以圓圈動態標記畫面重點。', aiUse: '設備位置、參數位置、異常區域' },
     { id: 'text-marker', label: 'Text Marker 螢光筆', description: '像螢光筆般掃過重點文字。', aiUse: '術語、結論、關鍵數值' },
   ],
   charts: [
+    { id: 'animated-counter', label: 'Animated Counter 動態計數', description: '數值平滑計數至頻率、跳數或倒數目標。', aiUse: '頻率、hops/sec、計時、效能門檻' },
     { id: 'donut-chart', label: '圓環圖 / Pie Chart', description: '分段掃入並同步更新中心總值，適合展示占比與組成。', aiUse: '頻譜占比、頻道分配、資源構成' },
     { id: 'gauge-dial', label: 'Gauge 儀表盤', description: '指針與數值同步掃向目標，適合表現門檻或裕量。', aiUse: 'SNR、S11、功率餘裕、風險指標' },
     { id: 'comparison-bars', label: '前後對照條', description: '成對長條依序成長並標示變化幅度。', aiUse: '產品規格比較、最佳化前後對照' },
@@ -138,6 +143,7 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
     { id: 'liquid-contours', label: 'Liquid Contours 液態輪廓', description: '柔和流動輪廓與漸層色塊。', aiUse: '概念背景、主題過場、現代科技' },
   ],
   overlays: [
+    { id: 'pop-badge', label: 'Pop Badge 彈出徽章', description: '在節拍點彈出術語、警示或 pin name。', aiUse: 'Key term、Warning、Pin name、狀態標示' },
     { id: 'location-lower-third', label: 'Location Lower Third 地點圖示', description: '畫面下方顯示地點與場域。', aiUse: '實驗室、辦公室、測試站、部署地點' },
     { id: 'name-lower-third', label: 'Name Lower Third 人名圖示', description: '畫面下方顯示講者或章節資訊。', aiUse: '講者、工程角色、章節標題' },
     { id: 'social-safe-zones', label: 'Social Safe Zones 安全區域', description: '標示社群平台介面遮罩與安全區域。', aiUse: '短影音裁切、平台預覽、文字安全範圍' },
@@ -148,6 +154,7 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
     { id: 'watercolor-map', label: 'Watercolor Map 水彩地圖', description: '柔和水彩風格地圖背景。', aiUse: '地區概念、區域介紹、專案範圍' },
   ],
   storytelling: [
+    { id: 'camera-pan-zoom', label: 'Camera Pan / Zoom 鏡頭推進', description: '以平滑貝茲曲線推進並平移至零件、表格或插槽。', aiUse: 'M.2、晶片、介面、規格表特寫' },
     { id: 'wiggling-callout', label: 'Wiggling Callout 抖動標註', description: '標註異常節點並帶有輕微抖動。', aiUse: '故障位置、警示節點、異常標記' },
     { id: 'shine', label: 'Shine 光掃效果', description: '在重點物件上掃過高光。', aiUse: '新產品、關鍵零件、驗收成果' },
     { id: 'tear-apart', label: 'Tear Apart 分裂揭示', description: '畫面分裂後顯示下一層細節。', aiUse: '拆解硬體、因果分支、元件爆炸圖' },
@@ -161,17 +168,19 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
     { id: 'crossed-off', label: 'Crossed Off 劃掉完成', description: '項目完成後以筆觸劃掉。', aiUse: '檢查清單、排除項目、已驗證節點' },
     { id: 'cylinder-text', label: 'Cylinder Text 圓柱文字', description: '文字沿圓柱或環面進行旋轉展現。', aiUse: '主題標題、規格品牌、強調文字' },
     { id: 'spinning-text-wheel', label: 'Spinning Text Wheel 文字輪', description: '文字環繞中心輪轉。', aiUse: '章節標籤、關鍵字輪播、主題展示' },
-    { id: 'strike-through', label: 'Strike Through 刪除線', description: '以線條劃掉不適用或失敗選項。', aiUse: '排除假設、失敗方案、規格淘汰' },
     { id: 'youtube-comment', label: 'YouTube Comment Highlight 留言高亮', description: '以留言卡片呈現重點評論。', aiUse: '社群回饋、提問、知識摘要' },
     { id: 'youtube-end-card', label: 'YouTube End Card 結尾卡', description: '影片結尾的訂閱與導流卡。', aiUse: '課程結尾、下一章、相關影片' },
     { id: 'youtube-subscribe', label: 'YouTube Subscribe 追蹤提示', description: '畫面內浮現追蹤與通知提示。', aiUse: '頻道提示、課程系列、結尾提醒' },
   ],
-  templates: (Object.keys(TEMPLATE_LABELS) as VisualTemplate[]).map((id) => ({
-    id,
-    label: TEMPLATE_LABELS[id],
-    description: TEMPLATE_DESCRIPTIONS[id],
-    aiUse: TEMPLATE_AI_USE[id],
-  })),
+  templates: [
+    { id: 'state-card', label: 'State Card 狀態卡片', description: '高亮作用中的區塊並同時淡化其他區塊。', aiUse: 'Active block、象限、狀態、流程焦點' },
+    ...(Object.keys(TEMPLATE_LABELS) as VisualTemplate[]).map((id) => ({
+      id,
+      label: TEMPLATE_LABELS[id],
+      description: TEMPLATE_DESCRIPTIONS[id],
+      aiUse: TEMPLATE_AI_USE[id],
+    })),
+  ],
 };
 
 const ITEM_ICONS: Record<PlaygroundCategory, React.ComponentType<{ className?: string }>> = {
@@ -189,6 +198,16 @@ const ITEM_ICONS: Record<PlaygroundCategory, React.ComponentType<{ className?: s
   'text-effects': Text,
 };
 
+const getCatalogSeedStyle = (item: PlaygroundItem) => {
+  const seed = Array.from(String(item)).reduce((value, character) => value + character.charCodeAt(0), 0);
+  return {
+    '--catalog-angle': `${(seed % 48) - 24}deg`,
+    '--catalog-x': `${(seed % 28) - 14}%`,
+    '--catalog-y': `${(seed % 18) - 9}%`,
+    '--catalog-scale': `${0.78 + (seed % 32) / 100}`,
+  } as React.CSSProperties;
+};
+
 const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item, large = false }) => {
   if (typeof item === 'string' && item in EFFECT_LABELS) {
     const effect = item as RemotionEffect;
@@ -204,11 +223,21 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
     );
   }
 
-  const visualClass = `catalog-visual ${large ? 'playground-effect-preview' : ''} catalog-visual-${item}`;
+  const visualSeed = Array.from(String(item)).reduce((value, character) => value + character.charCodeAt(0), 0) % 12;
+  const visualClass = `catalog-visual ${large ? 'playground-effect-preview' : ''} catalog-visual-${item} catalog-seed-${visualSeed}`;
   if (item === 'donut-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-donut" /><span className="catalog-donut-copy">68%</span></div>;
   if (item === 'gauge-dial') return <div className={visualClass} aria-hidden="true"><span className="catalog-gauge-arc" /><span className="catalog-gauge-needle" /><span className="catalog-gauge-value">72 dB</span></div>;
   if (item === 'comparison-bars') return <div className={visualClass} aria-hidden="true"><span className="catalog-bar catalog-bar-a" /><span className="catalog-bar catalog-bar-b" /><span className="catalog-bar catalog-bar-c" /></div>;
+  if (item === 'oscilloscope') return <div className={visualClass} aria-hidden="true"><span className="catalog-oscilloscope-grid" /><span className="catalog-oscilloscope-wave"><i /><i /><i /><i /><i /><i /><i /></span></div>;
+  if (item === 'voice-note') return <div className={visualClass} aria-hidden="true"><span className="catalog-voice-note-icon"><i /><i /><i /></span><span className="catalog-voice-note-track"><i /><i /><i /><i /><i /></span></div>;
+  if (item === 'mirrored-spectrum') return <div className={visualClass} aria-hidden="true"><span className="catalog-mirror-axis" />{[18, 34, 46, 28, 52, 36, 22].map((height, index) => <span key={index} className="catalog-mirror-bar" style={{ height, '--mirror-delay': `${index * 70}ms` } as React.CSSProperties} />)}</div>;
   if (item === 'caption-highlight') return <div className={visualClass} aria-hidden="true"><span className="catalog-critical-label">重要資訊</span><span className="catalog-critical-value">SNR +12 dB</span></div>;
+  if (item === 'kinetic-caption') return <div className={visualClass} aria-hidden="true"><span className="catalog-kinetic-word catalog-kinetic-a">關鍵</span><span className="catalog-kinetic-word catalog-kinetic-b">術語</span><span className="catalog-kinetic-word catalog-kinetic-c">同步</span></div>;
+  if (item === 'svg-trace-path') return <div className={visualClass} aria-hidden="true"><span className="catalog-trace-grid" /><span className="catalog-trace-path"><i /></span><span className="catalog-trace-dot" /></div>;
+  if (item === 'pop-badge') return <div className={visualClass} aria-hidden="true"><span className="catalog-pop-badge"><i />PIN 16</span></div>;
+  if (item === 'state-card') return <div className={visualClass} aria-hidden="true"><span className="catalog-state-card catalog-state-a">RX</span><span className="catalog-state-card catalog-state-b">TX</span><span className="catalog-state-card catalog-state-c">PHY</span></div>;
+  if (item === 'animated-counter') return <div className={visualClass} aria-hidden="true"><span className="catalog-animated-counter">2400</span><span className="catalog-counter-unit">MHz</span></div>;
+  if (item === 'camera-pan-zoom') return <div className={visualClass} aria-hidden="true"><span className="catalog-camera-board"><i /><i /><i /></span><span className="catalog-camera-focus" /></div>;
   if (item === 'srt-caption-track') return <div className={visualClass} aria-hidden="true"><span className="catalog-bottom-caption">The PHY link is stable</span><span className="catalog-caption-track" /></div>;
   if (item === 'karaoke-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-bottom-caption catalog-karaoke-line">PHY link is <strong>stable</strong></span><span className="catalog-caption-track" /></div>;
   if (item === 'blur-reveal') return <div className={visualClass} aria-hidden="true"><span className="catalog-blur-panel" /><span className="catalog-blur-orb" /></div>;
@@ -216,21 +245,68 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
   if (item === 'spatial-push') return <div className={visualClass} aria-hidden="true"><span className="catalog-push-a" /><span className="catalog-push-b" /></div>;
   if (item === 'transition-blinds') return <div className={visualClass} aria-hidden="true">{[0, 1, 2, 3, 4].map((n) => <span key={n} className="catalog-blind" />)}</div>;
 
+  if (item === 'notebook-paper') return <div className={visualClass} aria-hidden="true"><span className="catalog-notebook-grid"><i /><i /><i /></span></div>;
+  if (item === 'paper-texture') return <div className={visualClass} aria-hidden="true"><span className="catalog-paper-sheet"><i /><i /><i /><i /></span></div>;
+  if (item === 'rotating-starburst') return <div className={visualClass} aria-hidden="true"><span className="catalog-starburst"><i /><i /><i /><i /><i /><i /></span></div>;
+  if (item === 'moving-waves') return <div className={visualClass} aria-hidden="true"><span className="catalog-waves"><i /><i /><i /></span></div>;
+  if (item === 'moving-zigzags') return <div className={visualClass} aria-hidden="true"><span className="catalog-zigzags"><i /><i /><i /></span></div>;
+  if (item === 'liquid-contours') return <div className={visualClass} aria-hidden="true"><span className="catalog-liquid"><i /><i /><i /></span></div>;
+
   if (item === 'crossed-off') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy">完成項目</span><span className="catalog-crossed-line" /></div>;
   if (item === 'cylinder-text') return <div className={visualClass} aria-hidden="true"><span className="catalog-cylinder-band catalog-cylinder-a">SNR</span><span className="catalog-cylinder-band catalog-cylinder-b">RF</span><span className="catalog-cylinder-band catalog-cylinder-c">PHY</span></div>;
   if (item === 'spinning-text-wheel') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-wheel catalog-text-wheel-a">A</span><span className="catalog-text-wheel catalog-text-wheel-b">B</span><span className="catalog-text-wheel catalog-text-wheel-c">C</span><span className="catalog-wheel-center" /></div>;
-  if (item === 'strike-through') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy">不適用方案</span><span className="catalog-strike-line" /></div>;
   if (item === 'text-marker') return <div className={visualClass} aria-hidden="true"><span className="catalog-text-copy catalog-marker-copy">關鍵結論</span><span className="catalog-marker-swipe" /></div>;
+  if (item === 'location-lower-third') return <div className={visualClass} aria-hidden="true"><span className="catalog-location-pin"><i /></span><span className="catalog-location-label"><i /><b /></span></div>;
+  if (item === 'name-lower-third') return <div className={visualClass} aria-hidden="true"><span className="catalog-name-avatar"><i /></span><span className="catalog-name-label"><i /><b /></span></div>;
+  if (item === 'map-flyover') return <div className={visualClass} aria-hidden="true"><span className="catalog-flyover-grid" /><span className="catalog-flyover-route"><i /><b /><em /></span></div>;
+  if (item === 'spinning-globe') return <div className={visualClass} aria-hidden="true"><span className="catalog-globe"><i /><i /><i /></span><span className="catalog-globe-node catalog-globe-node-a" /><span className="catalog-globe-node catalog-globe-node-b" /></div>;
+  if (item === 'watercolor-map') return <div className={visualClass} aria-hidden="true"><span className="catalog-watercolor-region catalog-watercolor-a" /><span className="catalog-watercolor-region catalog-watercolor-b" /><span className="catalog-watercolor-region catalog-watercolor-c" /></div>;
+  if (item === 'social-safe-zones') return <div className={visualClass} aria-hidden="true"><span className="catalog-safe-frame"><i /><i /><i /><i /></span><span className="catalog-safe-top" /><span className="catalog-safe-bottom" /></div>;
   if (item === 'youtube-comment') return <div className={visualClass} aria-hidden="true"><span className="catalog-social-avatar" /><span className="catalog-social-card"><span /><span /></span></div>;
   if (item === 'youtube-end-card') return <div className={visualClass} aria-hidden="true"><span className="catalog-end-card catalog-end-main" /><span className="catalog-end-card catalog-end-side" /><span className="catalog-end-cta">訂閱</span></div>;
   if (item === 'youtube-subscribe') return <div className={visualClass} aria-hidden="true"><span className="catalog-subscribe-ring" /><span className="catalog-subscribe-button">訂閱</span></div>;
+
+  if (item === 'basic-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-basic">基本字幕</span></div>;
+  if (item === 'rounded-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-rounded">圓角字幕</span></div>;
+  if (item === 'moving-pill-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-pill">Moving <b>文字膠囊</b></span></div>;
+  if (item === 'popping-word-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-pop">關鍵<b>字詞</b></span></div>;
+  if (item === 'word-highlight-captions') return <div className={visualClass} aria-hidden="true"><span className="catalog-caption-highlight">重點術語</span></div>;
+  if (item === 'circle-marker') return <div className={visualClass} aria-hidden="true"><span className="catalog-circle-marker"><i /></span></div>;
+
+  if (item === 'horizontal-bar-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-hbar"><i /><i /><i /></span></div>;
+  if (item === 'line-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-line-chart"><i /><i /><i /><i /></span></div>;
+  if (item === 'number-counter') return <div className={visualClass} aria-hidden="true"><span className="catalog-counter">128</span><span className="catalog-counter-track" /></div>;
+  if (item === 'pie-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-pie" /><span className="catalog-pie-copy">72%</span></div>;
+  if (item === 'vertical-bar-chart') return <div className={visualClass} aria-hidden="true"><span className="catalog-vbar"><i /><i /><i /><i /></span></div>;
+
+  if (item === 'picture-in-picture') return <div className={visualClass} aria-hidden="true"><span className="catalog-pip-main" /><span className="catalog-pip-inset" /></div>;
+  if (item === 'slide-to-split') return <div className={visualClass} aria-hidden="true"><span className="catalog-split-left" /><span className="catalog-split-right" /><span className="catalog-split-divider" /></div>;
+  if (item === 'peel') return <div className={visualClass} aria-hidden="true"><span className="catalog-peel-page"><i /></span><span className="catalog-peel-content" /></div>;
+
+  if (item === 'wiggling-callout') return <div className={visualClass} aria-hidden="true"><span className="catalog-callout-line" /><span className="catalog-callout-dot" /><span className="catalog-callout-box">異常</span></div>;
+  if (item === 'shine') return <div className={visualClass} aria-hidden="true"><span className="catalog-shine-card"><i /></span><span className="catalog-shine-sweep" /></div>;
+  if (item === 'tear-apart') return <div className={visualClass} aria-hidden="true"><span className="catalog-tear-left" /><span className="catalog-tear-right" /><span className="catalog-tear-gap" /></div>;
+  if (item === 'rotating-cards') return <div className={visualClass} aria-hidden="true"><span className="catalog-rot-card catalog-rot-a" /><span className="catalog-rot-card catalog-rot-b" /><span className="catalog-rot-card catalog-rot-c" /></div>;
+  if (item === 'news-article-highlight') return <div className={visualClass} aria-hidden="true"><span className="catalog-news-head" /><span className="catalog-news-line catalog-news-a" /><span className="catalog-news-line catalog-news-b" /><span className="catalog-news-highlight" /></div>;
+  if (item === 'speed-lines') return <div className={visualClass} aria-hidden="true">{[0, 1, 2, 3, 4].map((n) => <span key={n} className="catalog-speed-line" />)}</div>;
+  if (item === 'on-screen-messages') return <div className={visualClass} aria-hidden="true"><span className="catalog-message-avatar" /><span className="catalog-message-bubble"><i /><b /></span></div>;
+  if (item === 'polaroid-pictures') return <div className={visualClass} aria-hidden="true"><span className="catalog-polaroid catalog-polaroid-a"><i /></span><span className="catalog-polaroid catalog-polaroid-b"><i /></span></div>;
+
+  if (Object.prototype.hasOwnProperty.call(TEMPLATE_LABELS, item)) {
+    return (
+      <div className={`${visualClass} catalog-template-preview catalog-template-${item}`} aria-hidden="true">
+        <span className="catalog-template-grid" />
+        <span className="catalog-template-art"><i /><i /><i /><i /></span>
+      </div>
+    );
+  }
 
   const catalogEntry = CATEGORIES.flatMap((entryCategory) => CATALOG[entryCategory.key]).find((entry) => entry.id === item);
   const catalogCategory = CATEGORIES.find((entryCategory) => CATALOG[entryCategory.key].some((entry) => entry.id === item));
   if (catalogEntry && catalogCategory) {
     const label = catalogEntry.label.split(/\s+/).slice(0, 3).join(' ');
     return (
-      <div className={`${visualClass} catalog-category-${catalogCategory.key}`} aria-hidden="true">
+      <div className={`${visualClass} catalog-category-${catalogCategory.key} catalog-generic-seeded`} style={getCatalogSeedStyle(item)} aria-hidden="true">
         {catalogCategory.key === 'audio' && <span className="catalog-equalizer">{[24, 48, 32, 62, 42, 72, 36].map((height, index) => <i key={index} style={{ height }} />)}</span>}
         {catalogCategory.key === 'backgrounds' && <span className="catalog-background-flow"><i /><i /><i /></span>}
         {catalogCategory.key === 'overlays' && <span className="catalog-lower-third"><i /><b /></span>}
@@ -245,7 +321,14 @@ const ItemVisual: React.FC<{ item: PlaygroundItem; large?: boolean }> = ({ item,
       </div>
     );
   }
-  return <div className={visualClass} aria-hidden="true"><span className="catalog-template-bar" /><span className="catalog-template-node catalog-template-node-a" /><span className="catalog-template-node catalog-template-node-b" /><span className="catalog-template-node catalog-template-node-c" /></div>;
+  return (
+    <div className={`${visualClass} catalog-generic-seeded`} style={getCatalogSeedStyle(item)} aria-hidden="true">
+      <span className="catalog-template-bar" />
+      <span className="catalog-template-node catalog-template-node-a" />
+      <span className="catalog-template-node catalog-template-node-b" />
+      <span className="catalog-template-node catalog-template-node-c" />
+    </div>
+  );
 };
 
 interface TemplatePreset {
@@ -266,17 +349,17 @@ export const RemotionPlayground: React.FC = () => {
   const [paletteError, setPaletteError] = useState<string | null>(null);
   const [paletteSource, setPaletteSource] = useState<string | null>(null);
   const [presetSelections, setPresetSelections] = useState<Record<PlaygroundCategory, PlaygroundItem[]>>({
-    motion: ['signal-pulse'],
+    motion: ['signal-pulse', 'svg-trace-path'],
     'bottom-captions': ['karaoke-captions'],
-    'critical-captions': ['caption-highlight'],
-    charts: ['comparison-bars'],
+    'critical-captions': ['caption-highlight', 'kinetic-caption'],
+    charts: ['animated-counter', 'comparison-bars'],
     transitions: ['directional-wipe'],
-    templates: ['architecture-flow'],
+    templates: ['state-card', 'architecture-flow'],
     audio: ['oscilloscope'],
     backgrounds: ['notebook-paper'],
-    overlays: ['name-lower-third'],
+    overlays: ['pop-badge', 'name-lower-third'],
     maps: ['map-flyover'],
-    storytelling: ['wiggling-callout'],
+    storytelling: ['camera-pan-zoom', 'wiggling-callout'],
     'text-effects': ['text-marker'],
   });
   const [presets, setPresets] = useState<TemplatePreset[]>([]);
@@ -358,9 +441,20 @@ export const RemotionPlayground: React.FC = () => {
 
   const resolvedCategory = CATALOG[category]?.length ? category : 'motion';
   const visibleItems = CATALOG[resolvedCategory] || CATALOG.motion || [];
-  const activeItem = visibleItems.find((item) => item.id === selected) ?? visibleItems[0];
-  const CategoryIcon = ITEM_ICONS[resolvedCategory];
   const totalItems = CATEGORIES.reduce((sum, entry) => sum + (CATALOG[entry.key]?.length || 0), 0);
+  const previewColors = paletteDraft
+    .filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color))
+    .slice(0, 5);
+  while (previewColors.length < 5) {
+    previewColors.push(['#B56876', '#7DD0BC', '#EEEBB6', '#FCAEB2', '#F3667D'][previewColors.length]);
+  }
+  const previewPaletteStyle = {
+    '--preview-primary': previewColors[0],
+    '--preview-secondary': previewColors[1],
+    '--preview-tertiary': previewColors[2],
+    '--preview-warning': previewColors[3],
+    '--preview-alert': previewColors[4],
+  } as React.CSSProperties;
 
   return (
     <section aria-labelledby="remotion-playground-heading" className="space-y-5">
@@ -398,10 +492,10 @@ export const RemotionPlayground: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,.45fr)]">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {visibleItems.map((item) => {
-            const active = activeItem.id === item.id;
+            const active = selected === item.id;
             const checked = (presetSelections[resolvedCategory] || []).includes(item.id);
             const Icon = ITEM_ICONS[resolvedCategory];
             return (
@@ -417,7 +511,9 @@ export const RemotionPlayground: React.FC = () => {
                   onClick={() => setSelected(item.id)}
                   className="w-full text-left"
                 >
-                  <ItemVisual item={item.id} />
+                  <div style={previewPaletteStyle}>
+                    <ItemVisual item={item.id} large />
+                  </div>
                 </button>
                 <div className="mt-3 flex items-center gap-2 pr-8">
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-cyan-300' : 'text-slate-500'}`} />
@@ -439,51 +535,37 @@ export const RemotionPlayground: React.FC = () => {
           })}
         </div>
 
-        <aside className="rounded-xl border border-slate-800 bg-[#131110] p-4 min-h-[260px]">
-          <ItemVisual item={activeItem.id} large />
-          <div className="mt-4 flex items-center gap-2">
-            <CategoryIcon className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-bold text-white">{activeItem.label}</h3>
-          </div>
-          <p className="mt-3 text-xs leading-6 text-slate-300">{activeItem.description}</p>
-          <div className="mt-4 pt-3 border-t border-slate-800">
-            <div className="text-[10px] font-bold uppercase text-slate-500">AI 選用情境</div>
-            <div className="mt-1.5 text-xs text-cyan-200">{activeItem.aiUse}</div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2">
-            <span className="text-[10px] font-bold uppercase text-slate-500">已加入模板</span>
-            <span className="text-xs font-bold text-cyan-300">
-              {CATEGORIES.reduce((count, itemCategory) => count + (presetSelections[itemCategory.key]?.length || 0), 0)} 個效果
-            </span>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-800">
-            <label htmlFor="template-preset-name" className="text-[10px] font-bold uppercase text-slate-500">新模板名稱</label>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="template-preset-name"
-                value={presetName}
-                onChange={(event) => setPresetName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') savePreset();
-                }}
-                placeholder="例如：EC POST 排查版"
-                aria-label="自訂模板名稱"
-                className="h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={savePreset}
-                disabled={!presetName.trim()}
-                className="h-9 shrink-0 px-3 rounded-lg border border-cyan-500/50 bg-cyan-500/10 text-cyan-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Save className="w-3.5 h-3.5" />
-                儲存
-              </button>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase text-slate-500">自訂模板</div>
+            <div className="mt-1 text-xs text-slate-400">
+              已加入 {CATEGORIES.reduce((count, itemCategory) => count + (presetSelections[itemCategory.key]?.length || 0), 0)} 個效果
             </div>
           </div>
-        </aside>
+          <div className="flex min-w-[280px] flex-1 items-end justify-end gap-2">
+            <label htmlFor="template-preset-name" className="sr-only">新模板名稱</label>
+            <input
+              id="template-preset-name"
+              value={presetName}
+              onChange={(event) => setPresetName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') savePreset();
+              }}
+              placeholder="例如：EC POST 排查版"
+              aria-label="自訂模板名稱"
+              className="h-9 min-w-0 max-w-sm flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100 placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={savePreset}
+              disabled={!presetName.trim()}
+              className="h-9 shrink-0 rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-3 text-cyan-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Save className="w-3.5 h-3.5" />
+              儲存
+            </button>
+          </div>
+        </div>
       </div>
 
       <section aria-label="自訂模板配色與已儲存組合" className="border-t border-slate-800 pt-5">
@@ -559,8 +641,15 @@ export const RemotionPlayground: React.FC = () => {
               return (
                 <React.Fragment key={itemCategory.key}>
                   {index > 0 && <span className="text-slate-600" aria-hidden="true">/</span>}
-                  {presetItems.length > 0 ? presetItems.map((presetItem) => (
-                    <span key={presetItem.id} className="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11px] text-slate-200">
+                  {presetItems.length > 0 ? presetItems.map((presetItem, presetIndex) => (
+                    <span
+                      key={presetItem.id}
+                      className="rounded-md border px-2.5 py-1.5 text-[11px] text-slate-200"
+                      style={{
+                        borderColor: previewColors[presetIndex % previewColors.length],
+                        background: `${previewColors[presetIndex % previewColors.length]}18`,
+                      }}
+                    >
                       {presetItem.label}
                     </span>
                   )) : (
