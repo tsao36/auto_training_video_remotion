@@ -128,7 +128,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <div className="w-full mx-auto px-6 py-8 space-y-8">
           <div role="tablist" aria-label="總覽分頁" className="flex items-center gap-1 border-b border-slate-800">
             {([
               { key: 'projects', label: '專案', icon: <FolderOpen className="w-3.5 h-3.5" /> },
