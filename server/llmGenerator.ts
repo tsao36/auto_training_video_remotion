@@ -7,6 +7,7 @@ import {
   LlmConfig,
   PptxSlideData,
   RemotionEffect,
+  RemotionPrimitive,
   SceneDiagramData,
   SceneSpec,
   TechDomain,
@@ -39,6 +40,7 @@ type ResolvedGeneratePlanParams = Omit<GeneratePlanParams, 'domain'> & { domain:
 
 export interface RegenerateSceneParams {
   topic: string;
+  rawText?: string;
   scene: SceneSpec;
   action: 'sync-visual-to-script' | 'rewrite-script-no-read' | 'regenerate-both';
   language?: ContentLanguage;
@@ -53,6 +55,7 @@ interface LlmScenePayload {
   template: VisualTemplate;
   effect: RemotionEffect;
   visualDescription: string;
+  remotionPrimitives?: RemotionPrimitive[];
   keyPoints: string[];
   script: string;
   diagramData?: SceneDiagramData;
@@ -179,6 +182,92 @@ function clampEffect(effect: unknown, template: VisualTemplate, script: string):
     return effect as RemotionEffect;
   }
   return inferEffectFromScriptAndTemplate(script, template);
+}
+
+function inferPrimitivesFromScript(script: string, visualDescription?: string): RemotionPrimitive[] {
+  const context = `${script} ${visualDescription || ''}`.toLowerCase();
+  const selected = new Set<RemotionPrimitive>();
+
+  if (/標題|關鍵字|caption|headline|narrat|台詞|逐字|口語|karaoke/.test(context)) selected.add('kinetic-caption');
+  if (/trace|tracepath|路徑|走線|pcb|頻率|rf|訊號|封包|波形|trace/.test(context)) selected.add('svg-trace-path');
+  if (/警告|badge|重點|名詞|提示|gotcha|狀態|完成|成功|失敗/.test(context)) selected.add('pop-badge');
+  if (/架構|比較|matrix|區塊|card|分層|stack|active|highlight|state/.test(context)) selected.add('state-card');
+  if (/計數|秒|count|counter|timer|倍率|速度|hops|百分比|進度/.test(context)) selected.add('animated-counter');
+  if (/zoom|pan|聚焦|放大|近觀|區域|quadrant|細節|camera/.test(context)) selected.add('camera-pan-zoom');
+  if (/比較.*(長條|數值)|長條圖|bar chart|comparison bars/.test(context)) selected.add('comparison-bars');
+  if (/圓餅|環形|donut|比例環/.test(context)) selected.add('donut-chart');
+  if (/儀表|gauge|量表|分數/.test(context)) selected.add('gauge-dial');
+
+  if (selected.size === 0) {
+    selected.add('kinetic-caption');
+    selected.add('pop-badge');
+  }
+  return [...selected];
+}
+
+function extractOutlinePrimitiveSuggestions(
+  outlineText: string,
+  sceneTitle: string,
+  sceneIndex: number
+): RemotionPrimitive[] {
+  const outline = outlineText.trim();
+  if (!outline) return [];
+
+  const sceneChunks = outline
+    .split(/(?=\n?Scene\s*\d+\s*:|\n?場景\s*\d+\s*[：:]?|^Scene\s*\d+\s*:)/im)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  let matchedChunk = sceneChunks.find((chunk, chunkIndex) => {
+    const titleMatch = sceneTitle && chunk.toLowerCase().includes(sceneTitle.toLowerCase());
+    const sceneNumberMatch = new RegExp(`(?:Scene\\s*${sceneIndex + 1}|場景\\s*${sceneIndex + 1})(?:\\s*[：:]|\\s|$)`, 'i').test(chunk);
+    return titleMatch || sceneNumberMatch || (!titleMatch && chunkIndex === 0 && sceneIndex === 0);
+  });
+
+  if (!matchedChunk && sceneChunks.length > 0) {
+    matchedChunk = sceneChunks[sceneIndex] || sceneChunks[sceneChunks.length - 1];
+  }
+
+  const chunk = matchedChunk || outline;
+  const comboMatch = chunk.match(/(?:Element\s*Combo|元素\s*組合|Remotion\s*(?:Element|Primitive)s?|元素建議|Remotion\s*element\s*suggestions)[^\n:：]*[:：]\s*([^\n]+)/i);
+  if (!comboMatch?.[1]) return [];
+  const source = comboMatch[1];
+
+  const candidates = new Set<RemotionPrimitive>();
+  const identifierPattern = /[A-Z][A-Za-z0-9]*(?:-[A-Z_a-z][A-Za-z0-9_-]*)?|[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)+/g;
+  for (const match of source.match(identifierPattern) || []) {
+    const name = match.trim();
+    if (!name) continue;
+    if (/^(Scene|Element|Combo|Primitive|Remotion|Every|Frame|Second|Loop|Use|Show|The|With|For|and|or)$/i.test(name)) continue;
+    if (/^\d+(?:\.\d+)?(?:s|fps|frames?)?$/i.test(name)) continue;
+    candidates.add(name);
+  }
+
+  return [...candidates].slice(0, 12);
+}
+
+function resolveScenePrimitives(
+  outlineText: string,
+  sceneTitle: string,
+  sceneIndex: number,
+  llmValue: unknown,
+  script: string,
+  visualDescription?: string
+): RemotionPrimitive[] {
+  const outlineSuggestions = extractOutlinePrimitiveSuggestions(outlineText, sceneTitle, sceneIndex);
+  if (outlineSuggestions.length > 0) return outlineSuggestions;
+  return clampPrimitives(llmValue, script, visualDescription);
+}
+
+function clampPrimitives(value: unknown, script: string, visualDescription?: string): RemotionPrimitive[] {
+  if (Array.isArray(value)) {
+    const selected = [...new Set(value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0))];
+    if (selected.length > 0) return selected;
+  }
+  return inferPrimitivesFromScript(script, visualDescription);
 }
 
 export function inferEffectFromScriptAndTemplate(script: string, template: VisualTemplate): RemotionEffect {
@@ -798,25 +887,16 @@ const DIVERSE_EFFECT_ROTATION: RemotionEffect[] = [
 function chooseDiverseTemplate(
   desired: VisualTemplate,
   idx: number,
-  previousTemplates: VisualTemplate[],
-  domain: TechDomain
+  previousTemplates: VisualTemplate[]
 ): VisualTemplate {
   if (idx === 0) return desired === 'pptx-slide' ? 'title-hero' : desired;
 
   const recent = previousTemplates.slice(-3);
   if (!recent.includes(desired)) return desired;
 
-  const domainPreferred: Record<TechDomain, VisualTemplate[]> = {
-    'debug-logic': ['debug-checklist', 'fault-tree', 'code-log', 'protocol-timeline', 'architecture-flow'],
-    wifi: ['packet-simulator', 'ofdm-spectrum', 'mlo-multilink', 'packet-frame', 'beamforming-array'],
-    bluetooth: ['packet-frame', 'protocol-timeline', 'comparison-matrix', 'state-machine', 'architecture-flow'],
-    rf: ['rf-link-budget', 'beamforming-array', 'ofdm-spectrum', 'qam-constellation', 'signal-waveform'],
-  };
-
-  const candidates = [
-    ...domainPreferred[domain],
-    ...DIVERSE_TEMPLATE_ROTATION,
-  ];
+  // Auto and manual domain labels do not control scene animation choices.
+  // Rotate through the full template palette based on variety instead.
+  const candidates = DIVERSE_TEMPLATE_ROTATION;
   const start = idx % candidates.length;
   for (let offset = 0; offset < candidates.length; offset++) {
     const candidate = candidates[(start + offset) % candidates.length];
@@ -846,7 +926,8 @@ function toSceneSpecs(
   domain: TechDomain,
   defaultTtsProvider: TtsProvider,
   topic: string,
-  colorPalette?: string[]
+  colorPalette?: string[],
+  outlineText?: string
 ): SceneSpec[] {
   const meta = DOMAIN_META[domain];
   const voiceId = defaultTtsProvider === 'ming-3.0' ? 'ming-tech-zh-en' : 'formosa-pro-tw';
@@ -858,7 +939,7 @@ function toSceneSpecs(
 
   return payload.scenes.map((raw, idx) => {
     const clampedTemplate = clampTemplate(raw.template, idx, total);
-    const template = chooseDiverseTemplate(clampedTemplate, idx, previousTemplates, domain);
+    const template = chooseDiverseTemplate(clampedTemplate, idx, previousTemplates);
     const script = (raw.script || raw.title || '').trim();
     const clampedEffect = clampEffect(raw.effect, template, script);
     const effect = chooseDiverseEffect(clampedEffect, idx, previousEffects);
@@ -883,6 +964,14 @@ function toSceneSpecs(
       script,
       captions: generateCaptionsFromScript(script, Math.max(3, Math.round(raw.durationSeconds || 8))),
       visualDescription: raw.visualDescription || `Remotion ${template} 搭配 ${effect} 特效`,
+      remotionPrimitives: resolveScenePrimitives(
+        outlineText || '',
+        raw.title || `Scene ${idx + 1}`,
+        idx,
+        raw.remotionPrimitives,
+        script,
+        raw.visualDescription
+      ),
       diagramData,
       tts: {
         provider: defaultTtsProvider,
@@ -1365,7 +1454,15 @@ export async function resolveTrainingDomain(params: {
     };
   }
 
-  const brief = [params.topic, params.rawText || ''].filter(Boolean).join('\n').slice(0, 2500);
+  if (params.domain === 'auto') {
+    return {
+      domain: 'debug-logic',
+      domainSource: 'keywords',
+      domainReason: 'AI 自動判斷：不套用領域預設視覺風格，逐場景依主題與腳本選擇 Remotion 元素',
+    };
+  }
+
+  const brief = [params.topic, params.rawText || ''].filter(Boolean).join('\n');
   const cfg = resolveLlmConfig(params.llmConfig);
   const canCallLlm = Boolean(cfg.apiKey || isLocalLlmEndpoint(cfg.baseUrl));
   if (canCallLlm && brief.trim().length >= 2) {
@@ -1459,6 +1556,7 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
    - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
    - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
+   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. If the outline has no explicit Remotion element suggestion for this scene, independently choose as many reusable Remotion elements as the scene needs from its script and visualDescription. Do not limit choices to a fixed domain palette or component count. Existing reusable components include ["kinetic-caption", "svg-trace-path", "pop-badge", "state-card", "animated-counter", "camera-pan-zoom", "caption-highlight", "karaoke-captions", "comparison-bars", "donut-chart", "gauge-dial", "srt-caption-track"], but another precise component name or custom element identifier is allowed.
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
      * signal-waveform: { waveformChannels: [{label, color, type: "clock"|"data"|"rf-sine"|"ofdma"}], faultChannelIndex, visualCaption }
@@ -1489,6 +1587,7 @@ Return JSON schema:
       "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|packet-simulator|ofdm-spectrum|beamforming-array|qam-constellation|mlo-multilink|rf-link-budget|summary-takeaways",
       "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan|packet-traffic",
       "visualDescription": "string describing what the Remotion graphic + effect shows and why it matches the script",
+      "remotionPrimitives": ["free-form Remotion component or element names; use every element needed by this scene"],
       "keyPoints": ["short visual anchor 1", "short visual anchor 2", "short visual anchor 3"],
       "script": "Natural spoken Traditional Chinese narration that explains the concept without reading the graphic verbatim",
       "diagramData": { ... }
@@ -1499,8 +1598,8 @@ Return JSON schema:
       const userPrompt = `Output language: ${language.promptName}
     Topic: ${params.topic}
 Target Duration: ${targetDuration} seconds
-Domain: ${DOMAIN_META[params.domain].label}
-${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
+Domain: ${input.domain === 'auto' ? 'AI Auto: Do not use a prepackaged technical-domain visual style. Choose every scene and Remotion primitive from the outline and per-scene script context.' : DOMAIN_META[params.domain].label}
+${params.rawText ? `Reference Notes:\n${params.rawText}` : ''}`;
 
       const rawResult = (await callChatCompletionJson(cfg, systemPrompt, userPrompt)) as LlmPlanPayload;
       if (rawResult && Array.isArray(rawResult.scenes) && rawResult.scenes.length > 0) {
@@ -1508,7 +1607,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
         rawResult.scenes.forEach((s, i) => {
           s.durationSeconds = balanced[i];
         });
-        const initialScenes = toSceneSpecs(rawResult, params.domain, provider, params.topic, params.colorPalette);
+        const initialScenes = toSceneSpecs(rawResult, params.domain, provider, params.topic, params.colorPalette, params.rawText);
         const checked = await runRegionalTerminologyCheckStage({
           title: rawResult.title || params.topic,
           subtitle: rawResult.subtitle || DOMAIN_META[params.domain].description,
@@ -1537,7 +1636,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText.slice(0, 3000)}` : ''}`;
   }
 
   const fallback = generateFallbackPlan({ ...params, durationSeconds: targetDuration });
-  const fallbackScenes = toSceneSpecs(fallback, params.domain, provider, params.topic, params.colorPalette);
+  const fallbackScenes = toSceneSpecs(fallback, params.domain, provider, params.topic, params.colorPalette, params.rawText);
   const checkedFallback = await runRegionalTerminologyCheckStage({
     title: fallback.title,
     subtitle: fallback.subtitle,
@@ -1630,12 +1729,14 @@ ${params.odmMode ? `ODM BEGINNER-MODE:
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
 Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","summary-takeaways"]
 Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan","packet-traffic"]
+Choose any number of Remotion elements that match the scene; do not limit the list to one preset palette or a fixed element count.
 
 Return JSON:
 {
   "template": "...",
   "effect": "...",
   "visualDescription": "...",
+  "remotionPrimitives": ["..."],
   "keyPoints": ["..."],
   "script": "...",
   "diagramData": { ... }
@@ -1678,12 +1779,24 @@ ${
               res.diagramData || buildSmartFallbackDiagram(topic, scene.domain, nextTemplate, nextEffect, nextScript),
               language.value
             ).value;
+      const remotionPrimitives =
+        action === 'rewrite-script-no-read'
+          ? scene.remotionPrimitives
+          : resolveScenePrimitives(
+              params.rawText || '',
+              scene.title,
+              scene.index,
+              res.remotionPrimitives,
+              nextScript,
+              res.visualDescription
+            );
 
       return {
         scenePatch: {
           template: action === 'rewrite-script-no-read' ? scene.template : nextTemplate,
           script: nextScript,
           visualDescription: res.visualDescription || scene.visualDescription,
+          remotionPrimitives,
           keyPoints: rawKeyPoints,
           diagramData: rawDiagram,
           animation: {
@@ -1717,6 +1830,14 @@ ${
       scenePatch: {
         template: nextTemplate,
         visualDescription: `依台詞自動匹配：${nextTemplate} + ${nextEffect} 特效`,
+        remotionPrimitives: resolveScenePrimitives(
+          params.rawText || '',
+          scene.title,
+          scene.index,
+          undefined,
+          scene.script,
+          `依台詞自動匹配：${nextTemplate} + ${nextEffect} 特效`
+        ),
         diagramData: nextDiagram,
         animation: {
           ...scene.animation,

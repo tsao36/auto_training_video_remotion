@@ -80,6 +80,8 @@ export type RemotionEffect =
   | 'sweep-scan'
   | 'packet-traffic';
 
+export type RemotionPrimitive = string;
+
 export interface LlmConfig {
   baseUrl: string;
   apiKey: string;
@@ -352,6 +354,7 @@ export interface SceneSpec {
   keyPoints: string[];
   script: string;
   visualDescription?: string;
+  remotionPrimitives?: RemotionPrimitive[];
   diagramData?: SceneDiagramData;
   pptxSlide?: PptxSlideData;
   pptxNotes?: string;
@@ -404,6 +407,14 @@ export interface VoiceProfile {
   referenceText?: string;
 }
 
+export interface VideoCaptionStyle {
+  fontSize: number;
+  fontWeight: 400 | 500 | 600 | 700 | 800;
+  bottomOffset: number;
+  maxWidth: number;
+  backgroundOpacity: number;
+}
+
 export interface TrainingProject {
   id: string;
   title: string;
@@ -419,6 +430,7 @@ export interface TrainingProject {
   sourceType: 'topic-llm' | 'pptx' | 'pdf' | 'research-text';
   sourceFileName?: string;
   rawSourceText: string;
+  captionStyle?: Partial<VideoCaptionStyle>;
   llmConfig?: LlmConfig;
   ttsConfig: TtsEngineConfig;
   // When true, TTS is not auto-generated on open; the user starts it after reviewing the script.

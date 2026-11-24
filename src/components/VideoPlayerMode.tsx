@@ -499,6 +499,7 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
                       projectTitle: loadedProject.title,
                       scenes: loadedProject.scenes,
                       audioBaseUrl: '',
+                      captionStyle: loadedProject.captionStyle,
                     }}
                     durationInFrames={totalFrames}
                     fps={VIDEO_FPS}

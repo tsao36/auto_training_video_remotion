@@ -1,6 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, Audio, Series, useCurrentFrame, useVideoConfig } from 'remotion';
-import { SceneSpec } from '../types/training';
+import { SceneSpec, VideoCaptionStyle } from '../types/training';
 import { HudOverlay } from './components/HudOverlay';
 import { SceneRenderer } from './scenes/SceneRenderer';
 
@@ -8,12 +8,14 @@ export interface TechTrainingVideoProps {
   projectTitle: string;
   scenes: SceneSpec[];
   audioBaseUrl?: string;
+  captionStyle?: Partial<VideoCaptionStyle>;
 }
 
 export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
   projectTitle,
   scenes,
   audioBaseUrl = '',
+  captionStyle,
 }) => {
   const { fps, durationInFrames } = useVideoConfig();
   const globalFrame = useCurrentFrame();
@@ -42,6 +44,7 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
                   totalScenes={scenes.length}
                   globalFrame={globalFrame}
                   totalFrames={durationInFrames}
+                  captionStyle={captionStyle}
                 />
                 <SceneRenderer scene={scene} assetBaseUrl={audioBaseUrl} />
                 {resolvedAudio && <Audio src={resolvedAudio} />}

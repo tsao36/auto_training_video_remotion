@@ -52,6 +52,7 @@ import {
   TrainingProject,
   TtsProvider,
   VIDEO_FPS,
+  VideoCaptionStyle,
   VisualTemplate,
   VoiceProfile,
   VoiceProfileProvider,
@@ -343,6 +344,13 @@ export function App() {
     playerRef.current?.seekTo(frame);
   };
 
+  const updateCaptionStyle = (patch: Partial<VideoCaptionStyle>) => {
+    setProject((prev) => ({
+      ...prev,
+      captionStyle: { ...prev.captionStyle, ...patch },
+    }));
+  };
+
   const updateScene = (idx: number, patch: Partial<SceneSpec>) => {
     setProject((prev) => ({
       ...prev,
@@ -383,6 +391,7 @@ export function App() {
           topic: project.topic || project.title,
           scene,
           action,
+          rawText: project.rawSourceText,
           language: project.language || DEFAULT_CONTENT_LANGUAGE,
           odmMode: Boolean(project.odmMode),
           llmConfig: project.llmConfig,
@@ -910,6 +919,7 @@ export function App() {
         body: JSON.stringify({
           projectTitle: project.title,
           scenes: project.scenes,
+          captionStyle: project.captionStyle,
         }),
       });
       const { jobId, error } = await resp.json();
@@ -1615,6 +1625,7 @@ export function App() {
                   projectTitle: project.title,
                   scenes: project.scenes,
                   audioBaseUrl: '',
+                  captionStyle: project.captionStyle,
                 }}
                 durationInFrames={totalFrames}
                 fps={VIDEO_FPS}
@@ -2079,6 +2090,105 @@ export function App() {
 
             {inspectorTab === 'motion-visual' && selectedScene && (
               <>
+                <section className="rounded-lg border border-cyan-500/25 bg-cyan-500/[0.04] p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-200">
+                        <Sliders className="w-3.5 h-3.5" /> 全片字幕樣式
+                      </div>
+                      <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
+                        變更會套用到所有場景並立即更新預覽。
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProject((prev) => ({ ...prev, captionStyle: undefined }))}
+                      className="text-[10px] font-semibold text-slate-400 hover:text-white transition"
+                    >
+                      重設
+                    </button>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-slate-300">
+                      字幕大小
+                      <output className="font-mono text-cyan-300">{project.captionStyle?.fontSize ?? 24}px</output>
+                    </span>
+                    <input
+                      type="range"
+                      min={18}
+                      max={52}
+                      step={1}
+                      value={project.captionStyle?.fontSize ?? 24}
+                      onChange={(e) => updateCaptionStyle({ fontSize: Number(e.target.value) })}
+                      className="w-full accent-cyan-400"
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <label>
+                      <span className="block text-[10px] font-semibold text-slate-400 mb-1">字重</span>
+                      <select
+                        value={project.captionStyle?.fontWeight ?? 500}
+                        onChange={(e) => updateCaptionStyle({ fontWeight: Number(e.target.value) as VideoCaptionStyle['fontWeight'] })}
+                        className="w-full px-2.5 py-2 rounded-md bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                      >
+                        <option value={400}>Regular</option>
+                        <option value={500}>Medium</option>
+                        <option value={600}>Semibold</option>
+                        <option value={700}>Bold</option>
+                        <option value={800}>Extra bold</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span className="block text-[10px] font-semibold text-slate-400 mb-1">底部距離</span>
+                      <div className="flex items-center gap-2 rounded-md bg-slate-900 border border-slate-700 px-2.5">
+                        <input
+                          type="number"
+                          min={20}
+                          max={180}
+                          value={project.captionStyle?.bottomOffset ?? 36}
+                          onChange={(e) => updateCaptionStyle({ bottomOffset: Number(e.target.value) })}
+                          className="min-w-0 w-full py-2 bg-transparent text-xs font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-500">px</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-slate-300">
+                      字幕寬度
+                      <output className="font-mono text-cyan-300">{project.captionStyle?.maxWidth ?? 1480}px</output>
+                    </span>
+                    <input
+                      type="range"
+                      min={720}
+                      max={1800}
+                      step={20}
+                      value={project.captionStyle?.maxWidth ?? 1480}
+                      onChange={(e) => updateCaptionStyle({ maxWidth: Number(e.target.value) })}
+                      className="w-full accent-cyan-400"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-slate-300">
+                      背景不透明度
+                      <output className="font-mono text-cyan-300">{Math.round((project.captionStyle?.backgroundOpacity ?? 0.9) * 100)}%</output>
+                    </span>
+                    <input
+                      type="range"
+                      min={45}
+                      max={100}
+                      step={1}
+                      value={Math.round((project.captionStyle?.backgroundOpacity ?? 0.9) * 100)}
+                      onChange={(e) => updateCaptionStyle({ backgroundOpacity: Number(e.target.value) / 100 })}
+                      className="w-full accent-cyan-400"
+                    />
+                  </label>
+                </section>
+
                 <div>
                   <label htmlFor="scene-template" className="block text-[11px] font-semibold text-slate-400 mb-1">
                     Remotion 動態視覺模板

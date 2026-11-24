@@ -1,6 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import { DOMAIN_META, SceneSpec } from '../../types/training';
+import { DOMAIN_META, SceneSpec, VideoCaptionStyle } from '../../types/training';
 import { getActiveSentenceCue } from '../../utils/sentenceEffects';
 
 interface HudOverlayProps {
@@ -9,6 +9,7 @@ interface HudOverlayProps {
   totalScenes: number;
   globalFrame: number;
   totalFrames: number;
+  captionStyle?: Partial<VideoCaptionStyle>;
 }
 
 export const HudOverlay: React.FC<HudOverlayProps> = ({
@@ -17,11 +18,17 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
   totalScenes,
   globalFrame,
   totalFrames,
+  captionStyle,
 }) => {
   const { fps } = useVideoConfig();
   const localFrame = useCurrentFrame();
   const meta = DOMAIN_META[scene.domain];
   const accent = scene.animation.accentColor || meta.accentColor;
+  const captionFontSize = Math.min(52, Math.max(18, captionStyle?.fontSize ?? 24));
+  const captionFontWeight = captionStyle?.fontWeight ?? 500;
+  const captionBottomOffset = Math.min(180, Math.max(20, captionStyle?.bottomOffset ?? 36));
+  const captionMaxWidth = Math.min(1800, Math.max(720, captionStyle?.maxWidth ?? 1480));
+  const captionBackgroundOpacity = Math.min(1, Math.max(0.45, captionStyle?.backgroundOpacity ?? 0.9));
 
   const currentSec = Math.floor(globalFrame / fps);
   const totalSec = Math.floor(totalFrames / fps);
@@ -253,7 +260,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
         <div
           style={{
             position: 'absolute',
-            bottom: 36,
+            bottom: captionBottomOffset,
             left: 110,
             right: 110,
             display: 'flex',
@@ -267,16 +274,16 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
             style={{
               position: 'relative',
               overflow: 'hidden',
-              backgroundColor: 'rgba(7, 11, 20, 0.90)',
+              backgroundColor: `rgba(7, 11, 20, ${captionBackgroundOpacity})`,
               border: `1px solid ${accent}44`,
               borderRadius: 14,
               padding: '14px 30px 18px',
               color: '#F1F5F9',
-              fontSize: 24,
-              fontWeight: 500,
+              fontSize: captionFontSize,
+              fontWeight: captionFontWeight,
               lineHeight: 1.45,
               textAlign: 'center',
-              maxWidth: 1480,
+              maxWidth: captionMaxWidth,
               boxShadow: `0 10px 32px rgba(0, 0, 0, 0.55), 0 0 20px ${accent}18`,
               fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
             }}

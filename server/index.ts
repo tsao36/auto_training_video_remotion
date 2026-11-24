@@ -402,7 +402,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
 // LLM Edit Logic: sync Remotion graphics/effects to edited script, or rewrite script without reading graphic
 app.post('/api/llm/regenerate-scene', async (req, res) => {
   try {
-    const { topic, scene, action, language, odmMode, llmConfig } = req.body;
+    const { topic, scene, action, language, odmMode, llmConfig, rawText } = req.body;
     if (!scene) {
       res.status(400).json({ error: 'Missing scene payload' });
       return;
@@ -411,6 +411,7 @@ app.post('/api/llm/regenerate-scene', async (req, res) => {
       topic: topic || scene.title || 'Technical Training',
       scene,
       action: action || 'sync-visual-to-script',
+      rawText,
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       odmMode: Boolean(odmMode),
       llmConfig,
@@ -1199,9 +1200,10 @@ app.post('/api/preview-stills', async (req, res) => {
       res.status(429).json({ error: `Render queue limit reached (${MAX_CONCURRENT_RENDERS} active)` });
       return;
     }
-    const { projectTitle, scenes } = req.body as {
+    const { projectTitle, scenes, captionStyle } = req.body as {
       projectTitle: string;
       scenes: SceneSpec[];
+      captionStyle?: TrainingProject['captionStyle'];
     };
     if (!Array.isArray(scenes) || scenes.length === 0) {
       res.status(400).json({ error: '沒有可預覽的場景' });
@@ -1229,6 +1231,7 @@ app.post('/api/preview-stills', async (req, res) => {
           projectTitle: projectTitle || 'Technical Training',
           scenes,
           audioBaseUrl: 'http://localhost:3001',
+          captionStyle,
         };
 
         const composition = await selectComposition({
@@ -1373,6 +1376,7 @@ app.post('/api/render', async (req, res) => {
           projectTitle,
           scenes: selectedScenes,
           audioBaseUrl: 'http://localhost:3001',
+          captionStyle: project?.captionStyle,
         };
 
         const composition = await selectComposition({

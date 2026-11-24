@@ -437,6 +437,7 @@ async function main() {
       projectTitle: project.title,
       scenes: project.scenes,
       audioBaseUrl: baseUrl,
+      captionStyle: project.captionStyle,
     };
     const composition = await selectComposition({
       serveUrl: bundleLocation,
