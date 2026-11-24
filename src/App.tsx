@@ -2128,14 +2128,14 @@ export function App() {
                   <label className="block">
                     <span className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-slate-300">
                       字幕大小
-                      <output className="font-mono text-cyan-300">{project.captionStyle?.fontSize ?? 24}px</output>
+                      <output className="font-mono text-cyan-300">{project.captionStyle?.fontSize ?? 36}px</output>
                     </span>
                     <input
                       type="range"
-                      min={18}
-                      max={52}
+                      min={24}
+                      max={64}
                       step={1}
-                      value={project.captionStyle?.fontSize ?? 24}
+                      value={project.captionStyle?.fontSize ?? 36}
                       onChange={(e) => updateCaptionStyle({ fontSize: Number(e.target.value) })}
                       className="w-full accent-cyan-400"
                     />
@@ -2145,7 +2145,7 @@ export function App() {
                     <label>
                       <span className="block text-[10px] font-semibold text-slate-400 mb-1">字重</span>
                       <select
-                        value={project.captionStyle?.fontWeight ?? 500}
+                        value={project.captionStyle?.fontWeight ?? 600}
                         onChange={(e) => updateCaptionStyle({ fontWeight: Number(e.target.value) as VideoCaptionStyle['fontWeight'] })}
                         className="w-full px-2.5 py-2 rounded-md bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
                       >

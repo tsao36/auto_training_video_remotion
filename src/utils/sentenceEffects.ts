@@ -230,6 +230,25 @@ export function buildSentenceEffectCues(
   });
 }
 
+export function getElementRevealFrame(
+  cues: SentenceEffectCue[],
+  itemIndex: number,
+  itemCount: number,
+  sceneTotalFrames: number,
+  minimumFrame = 6
+): number {
+  if (itemCount <= 0 || cues.length === 0) return minimumFrame;
+
+  const normalizedIndex = itemIndex % itemCount;
+  const matchingCue = cues.find(
+    (cue) => (cue.targetIndex ?? cue.beatIndex) % itemCount === normalizedIndex
+  );
+  const fallbackCue = cues[Math.min(normalizedIndex, cues.length - 1)] || cues[0];
+  const cue = matchingCue || fallbackCue;
+
+  return Math.max(minimumFrame, Math.round(cue.startRatio * sceneTotalFrames));
+}
+
 export function getActiveSentenceCue(
   cues: SentenceEffectCue[] | undefined,
   sceneProgress: number,

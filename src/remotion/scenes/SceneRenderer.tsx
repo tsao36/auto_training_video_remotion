@@ -29,7 +29,7 @@ function computeFittedFontSize(
   }
   return maxPx;
 }
-import { getActiveSentenceCue } from '../../utils/sentenceEffects';
+import { getActiveSentenceCue, getElementRevealFrame } from '../../utils/sentenceEffects';
 import {
   AnimatedComparisonBar,
   AnimatedMetricText,
@@ -47,10 +47,6 @@ interface SceneRendererProps {
 }
 
 export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUrl = '' }) => {
-  if (scene.template === 'pptx-slide' && scene.pptxSlide) {
-    return <PptxSlideRenderer slide={scene.pptxSlide} assetBaseUrl={assetBaseUrl} />;
-  }
-
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const meta = DOMAIN_META[scene.domain];
@@ -68,6 +64,22 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
   const effect = activeCue.effect;
   const targetIndex = activeCue.targetIndex ?? activeCue.beatIndex;
   const effectShortName = EFFECT_LABELS[effect].split(' (')[0];
+  const isProgressiveScene = scene.index % 2 === 1;
+  const getItemRevealFrame = (itemIndex: number, itemCount: number, defaultFrame: number) =>
+    isProgressiveScene
+      ? getElementRevealFrame(allCues, itemIndex, itemCount, sceneTotalFrames)
+      : defaultFrame;
+
+  if (scene.template === 'pptx-slide' && scene.pptxSlide) {
+    return (
+      <PptxSlideRenderer
+        slide={scene.pptxSlide}
+        assetBaseUrl={assetBaseUrl}
+        progressiveReveal={isProgressiveScene}
+        getItemRevealFrame={getItemRevealFrame}
+      />
+    );
+  }
 
   const springConfig =
     scene.animation.motionStyle === 'spring-snappy'
@@ -181,6 +193,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         beatSpring={beatSpring}
         cameraBreath={cameraBreath}
         sceneTotalFrames={sceneTotalFrames}
+        getItemRevealFrame={getItemRevealFrame}
       />
     );
   }
@@ -250,7 +263,10 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
             >
               {scene.keyPoints.slice(0, 3).map((pt, i) => {
                 const cardSpring = spring({
-                  frame: Math.max(0, frame - (4 + i * 4)),
+                  frame: Math.max(
+                    0,
+                    frame - getItemRevealFrame(i, scene.keyPoints.slice(0, 3).length, 4 + i * 4)
+                  ),
                   fps,
                   config: springConfig,
                 });
@@ -452,7 +468,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
           {/* Animated Key Points */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, justifyContent: 'center' }}>
             {scene.keyPoints.map((pt, i) => {
-              const p = spring({ frame: Math.max(0, frame - i * 4), fps, config: springConfig });
+              const p = spring({
+                frame: Math.max(0, frame - getItemRevealFrame(i, scene.keyPoints.length, i * 4)),
+                fps,
+                config: springConfig,
+              });
               const isFocusedPt = i === targetIndex % Math.max(1, scene.keyPoints.length);
               const ptAccent = isFocusedPt && effect === 'glitch-alert' ? '#F59E0B' : accent;
               const focusScale = isFocusedPt
@@ -567,7 +587,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
               />
 
               {nodes.map((node, i) => {
-                const p = spring({ frame: Math.max(0, frame - i * 3), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(i, nodes.length, i * 3)),
+                  fps,
+                  config: springConfig,
+                });
                 const highlightIdx =
                   allCues.length > 1
                     ? targetIndex % nodes.length
@@ -654,7 +678,14 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 22 }}>
               {scene.keyPoints.slice(0, 4).map((pt, i) => {
-                const p = spring({ frame: Math.max(0, frame - (6 + i * 4)), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(
+                    0,
+                    frame - getItemRevealFrame(i, scene.keyPoints.slice(0, 4).length, 6 + i * 4)
+                  ),
+                  fps,
+                  config: springConfig,
+                });
                 const isFocusedPt = i === targetIndex % Math.max(1, Math.min(4, scene.keyPoints.length));
                 const ptScale = isFocusedPt ? interpolate(beatSpring, [0, 1], [0.98, 1.025]) : 0.98;
                 return (
@@ -727,7 +758,8 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1, justifyContent: 'center' }}>
             {steps.map((st, i) => {
               const delay = effect === 'cascade-reveal' ? Math.round((i / Math.max(1, steps.length)) * sceneTotalFrames * 0.25) : i * 4;
-              const p = spring({ frame: Math.max(0, frame - delay), fps, config: springConfig });
+              const scheduledDelay = getItemRevealFrame(i, steps.length, delay);
+              const p = spring({ frame: Math.max(0, frame - scheduledDelay), fps, config: springConfig });
               const currentActiveIdx =
                 allCues.length > 1
                   ? targetIndex % steps.length
@@ -854,7 +886,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
             </div>
 
             {rows.map((r, i) => {
-              const p = spring({ frame: Math.max(0, frame - (4 + i * 4)), fps, config: springConfig });
+              const p = spring({
+                frame: Math.max(0, frame - getItemRevealFrame(i, rows.length, 4 + i * 4)),
+                fps,
+                config: springConfig,
+              });
               const isRowFocused = i === targetIndex % Math.max(1, rows.length);
               const rowAccent = effect === 'glitch-alert' && isRowFocused ? '#F59E0B' : accent;
               const rowScale = isRowFocused
@@ -972,7 +1008,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                 }}
               >
                 {fields.map((f, i) => {
-                  const p = spring({ frame: Math.max(0, frame - i * 4), fps, config: springConfig });
+                  const p = spring({
+                    frame: Math.max(0, frame - getItemRevealFrame(i, fields.length, i * 4)),
+                    fps,
+                    config: springConfig,
+                  });
                   const isFocused = i === activeFieldIdx;
                   const fieldColor = f.color || accent;
                   const flexWeight = /payload|body|addr/i.test(f.name) ? 1.8 : 1;
@@ -1140,7 +1180,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
             {/* Horizontal State Chain */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 12 }}>
               {states.map((st, i) => {
-                const p = spring({ frame: Math.max(0, frame - i * 5), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(i, states.length, i * 5)),
+                  fps,
+                  config: springConfig,
+                });
                 const isFocused = i === activeStateIdx;
                 const statusColor =
                   st.status === 'error'
@@ -1339,7 +1383,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
 
               <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1, justifyContent: 'center' }}>
                 {lines.map((line, i) => {
-                  const p = spring({ frame: Math.max(0, frame - i * 4), fps, config: springConfig });
+                  const p = spring({
+                    frame: Math.max(0, frame - getItemRevealFrame(i, lines.length, i * 4)),
+                    fps,
+                    config: springConfig,
+                  });
                   const isFocused = i === activeLineIdx;
                   const lineColor = levelColorMap[line.level || 'normal'] || '#94A3B8';
                   return (
@@ -1466,7 +1514,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
               }}
             >
               {metrics.slice(0, 4).map((m, i) => {
-                const p = spring({ frame: Math.max(0, frame - i * 4), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(i, metrics.length, i * 4)),
+                  fps,
+                  config: springConfig,
+                });
                 const isFocused = i === activeMetricIdx;
                 const badgeColor = statusColorMap[m.status || 'neutral'] || accent;
                 return (
@@ -1590,7 +1642,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
               }}
             >
               {branches.slice(0, 3).map((b, i) => {
-                const p = spring({ frame: Math.max(0, frame - (5 + i * 5)), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(i, branches.length, 5 + i * 5)),
+                  fps,
+                  config: springConfig,
+                });
                 const isFocused = i === activeBranchIdx;
                 const sevColor = b.severity === 'high' ? '#F59E0B' : b.severity === 'low' ? '#38BDF8' : accent;
                 return (
@@ -1779,7 +1835,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
           >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 26, flex: 1 }}>
               {scene.keyPoints.map((pt, i) => {
-                const p = spring({ frame: Math.max(0, frame - i * 4), fps, config: springConfig });
+                const p = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(i, scene.keyPoints.length, i * 4)),
+                  fps,
+                  config: springConfig,
+                });
                 const isFocused = i === activeCardIdx;
                 const cardAccent = isFocused && effect === 'glitch-alert' ? '#F59E0B' : accent;
                 const cardScale = isFocused

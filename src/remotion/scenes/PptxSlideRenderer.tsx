@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Img, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import {
   PptxElement,
   PptxFill,
@@ -10,6 +10,8 @@ import {
 interface PptxSlideRendererProps {
   slide: PptxSlideData;
   assetBaseUrl?: string;
+  progressiveReveal?: boolean;
+  getItemRevealFrame: (itemIndex: number, itemCount: number, defaultFrame: number) => number;
 }
 
 function resolveAssetUrl(url: string | undefined, assetBaseUrl = ''): string {
@@ -352,9 +354,16 @@ const SlideElementView: React.FC<{ el: PptxElement; assetBaseUrl: string }> = ({
 export const PptxSlideRenderer: React.FC<PptxSlideRendererProps> = ({
   slide,
   assetBaseUrl = '',
+  progressiveReveal = false,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
-  const fadeOpacity = interpolate(frame, [0, 6], [0, 1], { extrapolateRight: 'clamp' });
+  const { fps } = useVideoConfig();
+  const leadInFrames = progressiveReveal ? 6 : 0;
+  const fadeOpacity = interpolate(frame, [leadInFrames, leadInFrames + 6], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   const slideLeft = Math.round((1920 - slide.slideWidthPx) / 2);
   const slideTop = Math.round((1080 - slide.slideHeightPx) / 2);
@@ -391,9 +400,30 @@ export const PptxSlideRenderer: React.FC<PptxSlideRendererProps> = ({
             }}
           />
         )}
-        {slide.elements.map((el) => (
-          <SlideElementView key={el.id} el={el} assetBaseUrl={assetBaseUrl} />
-        ))}
+        {slide.elements.map((el, elementIndex) => {
+          const reveal = spring({
+            frame: Math.max(
+              0,
+              frame - getItemRevealFrame(elementIndex, slide.elements.length, elementIndex * 3)
+            ),
+            fps,
+            config: { damping: 16, stiffness: 180 },
+          });
+          return (
+            <div
+              key={el.id}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                opacity: reveal,
+                transform: `translateY(${interpolate(reveal, [0, 1], [18, 0])}px)`,
+                pointerEvents: 'none',
+              }}
+            >
+              <SlideElementView el={el} assetBaseUrl={assetBaseUrl} />
+            </div>
+          );
+        })}
       </div>
     </AbsoluteFill>
   );

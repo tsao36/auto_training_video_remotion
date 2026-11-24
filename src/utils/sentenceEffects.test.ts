@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { RemotionEffect, SentenceEffectCue } from '../types/training';
+import { splitCaptionIntoChunks } from './captions';
 import {
   analyzeSentencePairEffect,
   buildSentenceEffectCues,
   getActiveSentenceCue,
+  getElementRevealFrame,
   groupSentencesForDynamicBeats,
   splitScriptIntoSentences,
 } from './sentenceEffects';
@@ -35,6 +37,20 @@ function expectValidCues(cues: SentenceEffectCue[]) {
 
   expect(new Set(cues.map((c) => c.id)).size).toBe(cues.length);
 }
+
+describe('splitCaptionIntoChunks', () => {
+  it('breaks long captions at punctuation without dropping text', () => {
+    const source = '藍牙與許多裝置共享 2.4 GHz ISM 頻段。理解頻段範圍與鄰頻干擾，是設計連線穩定性的第一步。';
+    const chunks = splitCaptionIntoChunks(source, 18);
+    expect(chunks.length).toBeGreaterThan(2);
+    expect(chunks.join('').replace(/\s/g, '')).toBe(source.replace(/\s/g, ''));
+    expect(chunks.every((chunk) => Array.from(chunk).length <= 32)).toBe(true);
+  });
+
+  it('returns blank input as no chunks', () => {
+    expect(splitCaptionIntoChunks('   ')).toEqual([]);
+  });
+});
 
 describe('splitScriptIntoSentences', () => {
   it('returns an empty list for blank input', () => {
@@ -162,6 +178,32 @@ describe('buildSentenceEffectCues', () => {
     expect(buildSentenceEffectCues(script, 'title-hero')).toEqual(
       buildSentenceEffectCues(script, 'title-hero')
     );
+  });
+});
+
+describe('getElementRevealFrame', () => {
+  const cues = [
+    { beatIndex: 0, targetIndex: 2, startRatio: 0, endRatio: 0.3 },
+    { beatIndex: 1, targetIndex: 0, startRatio: 0.3, endRatio: 0.65 },
+    { beatIndex: 2, targetIndex: 1, startRatio: 0.65, endRatio: 1 },
+  ] as SentenceEffectCue[];
+
+  it('reveals each item at the first cue that targets it', () => {
+    expect(getElementRevealFrame(cues, 0, 3, 300)).toBe(90);
+    expect(getElementRevealFrame(cues, 1, 3, 300)).toBe(195);
+    expect(getElementRevealFrame(cues, 2, 3, 300)).toBe(6);
+  });
+
+  it('keeps the scene blank for the lead-in before the first mention', () => {
+    expect(getElementRevealFrame(cues, 2, 3, 300, 12)).toBe(12);
+  });
+
+  it('uses the cue order when a cue never explicitly targets an item', () => {
+    const sparseCues = cues.map((cue, index) => ({
+      ...cue,
+      targetIndex: index === 2 ? 0 : 0,
+    }));
+    expect(getElementRevealFrame(sparseCues, 2, 4, 300)).toBe(195);
   });
 });
 

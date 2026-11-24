@@ -245,9 +245,11 @@ export const SceneTransitionWrapper: React.FC<{
 }> = ({ sceneIndex, sceneTotalFrames, accentColor, children }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const blankLeadInFrames = sceneIndex % 2 === 1 ? 6 : 0;
+  const entranceFrame = Math.max(0, frame - blankLeadInFrames);
 
   const enterSpring = spring({
-    frame,
+    frame: entranceFrame,
     fps,
     config: { damping: 18, stiffness: 210, mass: 0.7 },
   });
@@ -270,11 +272,11 @@ export const SceneTransitionWrapper: React.FC<{
   });
 
   // Laser wipe bar across screen during first 14 frames
-  const wipeX = interpolate(frame, [0, 14], [-10, 110], {
+  const wipeX = interpolate(entranceFrame, [0, 14], [-10, 110], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
-  const wipeOpacity = interpolate(frame, [0, 4, 14], [0, 0.85, 0], {
+  const wipeOpacity = interpolate(entranceFrame, [0, 4, 14], [0, 0.85, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -285,11 +287,17 @@ export const SceneTransitionWrapper: React.FC<{
         position: 'absolute',
         inset: 0,
         transform: `translate(${enterX}px, ${enterY}px) scale(${enterScale * exitScale})`,
-        opacity: Math.min(interpolate(frame, [0, 6], [0, 1], { extrapolateRight: 'clamp' }), exitOpacity),
+        opacity: Math.min(
+          interpolate(entranceFrame, [0, 6], [0, 1], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          }),
+          exitOpacity
+        ),
       }}
     >
       {children}
-      {frame < 16 && (
+      {entranceFrame < 16 && (
         <div
           style={{
             position: 'absolute',

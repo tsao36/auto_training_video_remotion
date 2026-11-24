@@ -1,6 +1,7 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { DOMAIN_META, SceneSpec, VideoCaptionStyle } from '../../types/training';
+import { splitCaptionIntoChunks } from '../../utils/captions';
 import { getActiveSentenceCue } from '../../utils/sentenceEffects';
 
 interface HudOverlayProps {
@@ -24,8 +25,8 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
   const localFrame = useCurrentFrame();
   const meta = DOMAIN_META[scene.domain];
   const accent = scene.animation.accentColor || meta.accentColor;
-  const captionFontSize = Math.min(52, Math.max(18, captionStyle?.fontSize ?? 24));
-  const captionFontWeight = captionStyle?.fontWeight ?? 500;
+  const captionFontSize = Math.min(64, Math.max(24, captionStyle?.fontSize ?? 36));
+  const captionFontWeight = captionStyle?.fontWeight ?? 600;
   const captionBottomOffset = Math.min(180, Math.max(20, captionStyle?.bottomOffset ?? 36));
   const captionMaxWidth = Math.min(1800, Math.max(720, captionStyle?.maxWidth ?? 1480));
   const captionBackgroundOpacity = Math.min(1, Math.max(0.45, captionStyle?.backgroundOpacity ?? 0.9));
@@ -51,15 +52,27 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
     scene.animation.effect || 'signal-pulse'
   );
   const cueStartFrame = Math.round(activeCue.startRatio * sceneTotalFrames);
-  const cueLocalFrame = Math.max(0, localFrame - cueStartFrame);
+  const cueEndFrame = Math.round(activeCue.endRatio * sceneTotalFrames);
+  const activeSubtitleText = activeCue.sentences.join(' ').trim() || scene.script;
+  const captionWidthUnits = Math.max(18, (captionMaxWidth - 60) / captionFontSize);
+  const subtitleChunks = splitCaptionIntoChunks(activeSubtitleText, captionWidthUnits);
+  const activeChunkIndex = Math.min(
+    Math.max(0, subtitleChunks.length - 1),
+    Math.floor(cueProgress * subtitleChunks.length)
+  );
+  const visibleSubtitleText = subtitleChunks[activeChunkIndex] || activeSubtitleText;
+  const chunkFrameSpan = Math.max(1, cueEndFrame - cueStartFrame) / Math.max(1, subtitleChunks.length);
+  const chunkLocalFrame = Math.max(0, localFrame - (cueStartFrame + activeChunkIndex * chunkFrameSpan));
   const subSpring = spring({
-    frame: cueLocalFrame,
+    frame: chunkLocalFrame,
     fps,
     config: { damping: 18, stiffness: 220, mass: 0.6 },
   });
   const subY = interpolate(subSpring, [0, 1], [14, 0]);
-  const subOpacity = interpolate(cueLocalFrame, [0, 6], [0, 1], { extrapolateRight: 'clamp' });
-  const activeSubtitleText = activeCue.sentences.join(' ').trim() || scene.script;
+  const subOpacity = interpolate(chunkLocalFrame, [0, 6], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   const renderHighlightedSubtitle = (text: string) => {
     const parts = text.split(/(\b\d+(?:\.\d+)?(?:%|x|ms|ns|GHz|MHz|V|dB|dBm)?\b|\b(?:PCIe|BIOS|EC|SPI|I2C|OFDMA|MU-MIMO|SNR|RF|BLE|PHY|MAC)\b)/g);
@@ -288,13 +301,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
             }}
           >
-            <div>
-              {renderHighlightedSubtitle(
-                activeSubtitleText.length > 130
-                  ? `${activeSubtitleText.slice(0, 128)}...`
-                  : activeSubtitleText
-              )}
-            </div>
+            <div>{renderHighlightedSubtitle(visibleSubtitleText)}</div>
             <div
               style={{
                 position: 'absolute',

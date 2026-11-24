@@ -46,6 +46,7 @@ export interface WirelessTemplateProps {
   beatSpring: number;
   cameraBreath: number;
   sceneTotalFrames: number;
+  getItemRevealFrame: (itemIndex: number, itemCount: number, defaultFrame: number) => number;
 }
 
 const FONT_FAMILY = 'Inter, "Noto Sans TC", system-ui, sans-serif';
@@ -89,6 +90,7 @@ const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -138,7 +140,7 @@ const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
   let totalBytesDelivered = 0;
 
   const activePackets = packets.map((pkt, idx) => {
-    const startFrame = 10 + idx * stagger;
+    const startFrame = getItemRevealFrame(idx, packets.length, 10 + idx * stagger);
     const rawProgress = (frame - startFrame) / flightFrames;
     const isLaunched = rawProgress >= 0;
     const isInFlight = rawProgress >= 0 && rawProgress <= 1;
@@ -379,7 +381,17 @@ const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
                   }
 
                   return (
-                    <g key={ch.id}>
+                    <g
+                      key={ch.id}
+                      opacity={spring({
+                        frame: Math.max(
+                          0,
+                          frame - getItemRevealFrame(cIdx, channels.length, cIdx * 4)
+                        ),
+                        fps,
+                        config: { damping: 16, stiffness: 180 },
+                      })}
+                    >
                       {/* Lane band backdrop */}
                       <rect
                         x={16}
@@ -765,6 +777,7 @@ const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -857,8 +870,13 @@ const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
                 const x1 = 70 + start * barAreaW;
                 const x2 = 70 + end * barAreaW;
                 const isFocused = idx === targetIndex % cumulative.length;
+                const reveal = spring({
+                  frame: Math.max(0, frame - getItemRevealFrame(idx, cumulative.length, idx * 4)),
+                  fps,
+                  config: { damping: 16, stiffness: 180 },
+                });
                 return (
-                  <g key={ru.label}>
+                  <g key={ru.label} opacity={reveal}>
                     <rect
                       x={x1 + 4}
                       y={42}
@@ -904,7 +922,10 @@ const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
                 const isPilot = i % 9 === 4 && !seg.ru.punctured && !isDcNull;
 
                 const reveal = spring({
-                  frame: Math.max(0, frame - Math.floor(i * 0.35)),
+                  frame: Math.max(
+                    0,
+                    frame - getItemRevealFrame(seg.idx, cumulative.length, Math.floor(i * 0.35))
+                  ),
                   fps,
                   config: { damping: 16, stiffness: 180 },
                 });
@@ -1006,6 +1027,7 @@ const BeamformingArrayScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -1127,7 +1149,14 @@ const BeamformingArrayScene: React.FC<WirelessTemplateProps> = ({
                 const ey = arrayStartY + idx * elementGap;
                 const phaseDeg = Math.round(((idx * 180 * Math.sin(steerRad)) % 360 + 360) % 360);
                 return (
-                  <g key={idx}>
+                  <g
+                    key={idx}
+                    opacity={spring({
+                      frame: Math.max(0, frame - getItemRevealFrame(idx, numElements, idx * 4)),
+                      fps,
+                      config: { damping: 16, stiffness: 180 },
+                    })}
+                  >
                     {/* Phase shifter box */}
                     <rect x={80} y={ey - 13} width={96} height={26} rx={6} fill="#1E293B" stroke={`${accent}44`} />
                     <text x={128} y={ey + 4} textAnchor="middle" fill="#E2E8F0" fontSize={12} fontWeight={700} fontFamily={MONO_FONT}>
@@ -1229,6 +1258,7 @@ const QamConstellationScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -1380,6 +1410,11 @@ const QamConstellationScene: React.FC<WirelessTemplateProps> = ({
                     backgroundColor: 'rgba(15, 23, 42, 0.9)',
                     border: `1.5px solid ${i === targetIndex % 4 ? card.color : 'rgba(148,163,184,0.22)'}`,
                     padding: '20px 22px',
+                    opacity: spring({
+                      frame: Math.max(0, frame - getItemRevealFrame(i, 4, i * 4)),
+                      fps,
+                      config: { damping: 16, stiffness: 180 },
+                    }),
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#94A3B8', fontFamily: MONO_FONT }}>
@@ -1434,6 +1469,7 @@ const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -1546,6 +1582,11 @@ const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
                     gridTemplateColumns: '250px 1fr',
                     gap: 18,
                     alignItems: 'center',
+                    opacity: spring({
+                      frame: Math.max(0, frame - getItemRevealFrame(lIdx, links.length, lIdx * 5)),
+                      fps,
+                      config: { damping: 16, stiffness: 180 },
+                    }),
                   }}
                 >
                   {/* Link Info Column */}
@@ -1594,7 +1635,10 @@ const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
                       const widthPct = blk.width * 100;
                       const activeNow = playheadRatio >= leftPct / 100 && playheadRatio <= (leftPct + widthPct) / 100;
                       const reveal = spring({
-                        frame: Math.max(0, frame - (lIdx * 5 + bIdx * 4)),
+                        frame: Math.max(
+                          0,
+                          frame - getItemRevealFrame(lIdx, links.length, lIdx * 5 + bIdx * 4)
+                        ),
                         fps,
                         config: { damping: 16, stiffness: 160 },
                       });
@@ -1654,6 +1698,7 @@ const RfLinkBudgetScene: React.FC<WirelessTemplateProps> = ({
   targetIndex,
   cameraBreath,
   sceneTotalFrames,
+  getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -1773,7 +1818,7 @@ const RfLinkBudgetScene: React.FC<WirelessTemplateProps> = ({
               {/* Waterfall Columns */}
               {computed.map((item, i) => {
                 const reveal = spring({
-                  frame: Math.max(0, frame - i * 6),
+                  frame: Math.max(0, frame - getItemRevealFrame(i, computed.length, i * 6)),
                   fps,
                   config: { damping: 16, stiffness: 140 },
                 });
