@@ -36,8 +36,57 @@ interface SourceWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialLlmConfig?: LlmConfig;
-  onProjectCreated: (project: TrainingProject, notice?: string) => void;
+  onProjectCreated: (project: TrainingProject, notice?: string) => void | Promise<void>;
 }
+
+const WIZARD_RECOVERY_KEY = 'remotion-training:wizard-draft:v1';
+
+type WizardPlanDraft = {
+  title: string;
+  subtitle: string;
+  domain: TechDomain;
+  domainReason?: string;
+  domainSource?: string;
+  note?: string;
+  scenes: any[];
+};
+
+type PersistedWizardDraft = {
+  savedAt: string;
+  domainChoice: DomainChoice;
+  ttsProvider: TtsProvider;
+  selectedVoiceFileName: string;
+  createTtsOnFirstRun: boolean;
+  language: ContentLanguage;
+  inputMode: 'topic-llm' | 'upload';
+  topic: string;
+  odmMode: boolean;
+  durationSeconds: number;
+  videoTheme: VideoThemeId;
+  researchText: string;
+  pipelineStage: 0 | 1 | 2 | 3;
+  preparedSource: {
+    topic: string;
+    rawText: string;
+    sourceType: TrainingProject['sourceType'];
+    sourceFileName?: string;
+    pptxSlides?: unknown[];
+  };
+  planDraft: WizardPlanDraft | null;
+  jsonDraft: string;
+};
+
+const readWizardRecovery = (): PersistedWizardDraft | null => {
+  try {
+    const raw = window.localStorage.getItem(WIZARD_RECOVERY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PersistedWizardDraft>;
+    if (!parsed.savedAt || typeof parsed.pipelineStage !== 'number') return null;
+    return parsed as PersistedWizardDraft;
+  } catch {
+    return null;
+  }
+};
 
 const DOMAIN_ICONS: Record<TechDomain, React.ReactNode> = {
   'debug-logic': <Cpu className="w-5 h-5" />,
@@ -99,16 +148,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     sourceFileName: '' as string | undefined,
     pptxSlides: undefined as unknown[] | undefined,
   });
-  const [planDraft, setPlanDraft] = useState<{
-    title: string;
-    subtitle: string;
-    domain: TechDomain;
-    domainReason?: string;
-    domainSource?: string;
-    note?: string;
-    scenes: any[];
-  } | null>(null);
+  const [planDraft, setPlanDraft] = useState<WizardPlanDraft | null>(null);
   const [jsonDraft, setJsonDraft] = useState('');
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [recoveredDraftAt, setRecoveredDraftAt] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const themePreviewRef = useRef<HTMLDivElement>(null);
   const progressTimerRef = useRef<number | null>(null);
@@ -130,16 +173,43 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    setPipelineStage(0);
-    setPlanDraft(null);
-    setJsonDraft('');
+    setDraftHydrated(false);
+    const recovery = readWizardRecovery();
+    if (recovery) {
+      setDomainChoice(recovery.domainChoice);
+      setTtsProvider(recovery.ttsProvider);
+      setSelectedVoiceFileName(recovery.selectedVoiceFileName || '');
+      setCreateTtsOnFirstRun(Boolean(recovery.createTtsOnFirstRun));
+      setLanguage(recovery.language || DEFAULT_CONTENT_LANGUAGE);
+      setInputMode(recovery.inputMode || 'topic-llm');
+      setTopic(recovery.topic || '');
+      setOdmMode(Boolean(recovery.odmMode));
+      setDurationSeconds(recovery.durationSeconds || 60);
+      setVideoTheme(recovery.videoTheme || 'signal-grid');
+      setResearchText(recovery.researchText || '');
+      setPipelineStage(recovery.pipelineStage);
+      setPreparedSource({
+        ...recovery.preparedSource,
+        sourceFileName: recovery.preparedSource.sourceFileName,
+        pptxSlides: recovery.preparedSource.pptxSlides,
+      });
+      setPlanDraft(recovery.planDraft || null);
+      setJsonDraft(recovery.jsonDraft || '');
+      setRecoveredDraftAt(recovery.savedAt);
+    } else {
+      setPipelineStage(0);
+      setPlanDraft(null);
+      setJsonDraft('');
+      setRecoveredDraftAt(null);
+      const ttsSettings = loadTtsSettings();
+      setTtsProvider(ttsSettings.defaultProvider);
+      setSelectedVoiceFileName(ttsSettings.defaultVoice?.fileName ?? '');
+    }
+    setDraftHydrated(true);
+
     const stored = loadStoredLlmConfig();
     const merged = initialLlmConfig?.apiKey ? initialLlmConfig : stored;
     setLlmConfig(merged);
-
-    const ttsSettings = loadTtsSettings();
-    setTtsProvider(ttsSettings.defaultProvider);
-    setSelectedVoiceFileName(ttsSettings.defaultVoice?.fileName ?? '');
 
     let cancelled = false;
     fetch('/api/llm/status')
@@ -180,6 +250,54 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       cancelled = true;
     };
   }, [isOpen, initialLlmConfig]);
+
+  useEffect(() => {
+    if (!isOpen || !draftHydrated) return;
+    const draft: PersistedWizardDraft = {
+      savedAt: new Date().toISOString(),
+      domainChoice,
+      ttsProvider,
+      selectedVoiceFileName,
+      createTtsOnFirstRun,
+      language,
+      inputMode,
+      topic,
+      odmMode,
+      durationSeconds,
+      videoTheme,
+      researchText,
+      pipelineStage,
+      preparedSource,
+      planDraft,
+      jsonDraft,
+    };
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(WIZARD_RECOVERY_KEY, JSON.stringify(draft));
+      } catch {
+        setError('瀏覽器無法儲存建立進度；請保持此分頁開啟直到專案建立完成。');
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [
+    isOpen,
+    draftHydrated,
+    domainChoice,
+    ttsProvider,
+    selectedVoiceFileName,
+    createTtsOnFirstRun,
+    language,
+    inputMode,
+    topic,
+    odmMode,
+    durationSeconds,
+    videoTheme,
+    researchText,
+    pipelineStage,
+    preparedSource,
+    planDraft,
+    jsonDraft,
+  ]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -323,8 +441,8 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     }
   };
 
-  const handleFinalizeProject = () => {
-    if (!planDraft) return;
+  const handleFinalizeProject = async () => {
+    if (!planDraft || isProcessing) return;
     let finalPlan = planDraft;
     if (jsonDraft.trim()) {
       try {
@@ -422,8 +540,19 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       ? undefined
       : '尚未生成 TTS 配音：請先按「檢視腳本」審閱內容，確認後再按「全部配音」';
 
-    onProjectCreated(proj, [domainNote, finalPlan.note, ttsNote].filter(Boolean).join(' • '));
-    onClose();
+    setError(null);
+    setIsProcessing(true);
+    setCreateStage('正在將專案安全寫入專案庫...');
+    try {
+      await onProjectCreated(proj, [domainNote, finalPlan.note, ttsNote].filter(Boolean).join(' • '));
+      window.localStorage.removeItem(WIZARD_RECOVERY_KEY);
+      onClose();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : '專案建立後儲存失敗，草稿已保留');
+    } finally {
+      setIsProcessing(false);
+      setCreateStage('');
+    }
   };
 
   const updateDraftScene = (idx: number, patch: Record<string, unknown>) => {
@@ -469,14 +598,27 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            disabled={isProcessing}
             aria-label="關閉"
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition disabled:cursor-not-allowed disabled:opacity-40"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+          {recoveredDraftAt && (
+            <div className="flex items-center justify-between gap-3 border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+              <span>已從 {new Date(recoveredDraftAt).toLocaleString('zh-TW')} 復原未完成的建立流程。</span>
+              <button
+                type="button"
+                onClick={() => setRecoveredDraftAt(null)}
+                className="text-emerald-300 hover:text-white"
+              >
+                關閉提示
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-4 gap-2">
             {PIPELINE_STAGES.map((stage, idx) => {
               const active = pipelineStage === idx;

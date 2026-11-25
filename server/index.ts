@@ -236,7 +236,15 @@ function writeSavedProject(project: TrainingProject, newRender?: RenderedVideoRe
     },
   };
 
-  fs.writeFileSync(getProjectFilePath(safeId), JSON.stringify(record, null, 2), 'utf-8');
+  const projectPath = getProjectFilePath(safeId);
+  const tempPath = `${projectPath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    fs.writeFileSync(tempPath, JSON.stringify(record, null, 2), 'utf-8');
+    fs.renameSync(tempPath, projectPath);
+  } catch (error) {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    throw error;
+  }
   return record;
 }
 

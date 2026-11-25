@@ -168,7 +168,11 @@ export function App() {
     }
   };
 
-  const saveProjectToDisk = (targetProject: TrainingProject, showNotice = false) => {
+  const saveProjectToDisk = (
+    targetProject: TrainingProject,
+    showNotice = false,
+    throwOnError = false
+  ) => {
     const run = async () => {
       if (deletedProjectIdsRef.current.has(targetProject.id)) return;
       setSavingProject(true);
@@ -191,6 +195,7 @@ export function App() {
         if (showNotice) {
           setAiNotice(err instanceof Error ? err.message : '儲存專案失敗');
         }
+        if (throwOnError) throw err;
       } finally {
         setSavingProject(false);
       }
@@ -1083,13 +1088,13 @@ export function App() {
       isOpen={isWizardOpen}
       onClose={() => setIsWizardOpen(false)}
       initialLlmConfig={project.llmConfig}
-      onProjectCreated={(created, notice) => {
+      onProjectCreated={async (created, notice) => {
         const newProj = applyTtsSettings(created, loadTtsSettings(), { preserveCustomVoice: true });
+        await saveProjectToDisk(newProj, false, true);
         setProject(newProj);
         setSelectedSceneIdx(0);
         if (notice) setAiNotice(notice);
         playerRef.current?.seekTo(0);
-        void saveProjectToDisk(newProj, false);
         setView('editor');
       }}
     />
