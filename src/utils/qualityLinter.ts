@@ -41,6 +41,28 @@ function isMostlyLatinAllCaps(text: string): boolean {
   return text === text.toUpperCase();
 }
 
+function getSceneDiagramItemCount(scene: SceneSpec): number {
+  const diagram = scene.diagramData;
+  if (!diagram) return 0;
+  return Math.max(
+    diagram.nodes?.length || 0,
+    diagram.waveformChannels?.length || 0,
+    diagram.protocolSteps?.length || 0,
+    diagram.comparisonRows?.length || 0,
+    diagram.packetFields?.length || 0,
+    diagram.stateNodes?.length || 0,
+    diagram.stateTransitions?.length || 0,
+    diagram.codeLines?.length || 0,
+    diagram.kpiMetrics?.length || 0,
+    diagram.faultBranches?.length || 0,
+    diagram.simChannels?.length || 0,
+    diagram.simPackets?.length || 0,
+    diagram.ofdmRuBlocks?.length || 0,
+    diagram.mloLinks?.length || 0,
+    diagram.rfLinkStages?.length || 0
+  );
+}
+
 export function evaluateProjectQuality(
   project: Pick<TrainingProject, 'scenes' | 'language' | 'title'>,
   options: QualityLintOptions = {}
@@ -140,6 +162,28 @@ export function evaluateProjectQuality(
           });
           break;
         }
+      }
+
+      const primitiveCount = scene.remotionPrimitives?.length || 0;
+      const diagramItemCount = getSceneDiagramItemCount(scene);
+      const visualUnitCount = points.length + primitiveCount + diagramItemCount;
+      if (primitiveCount > 4) {
+        issues.push({
+          level: 'warning',
+          code: 'too-many-primitives',
+          message: `場景 ${sceneNo} 同時使用 ${primitiveCount} 個 Remotion 元素，建議保留 4 個以內，避免視覺焦點競爭。`,
+          sceneIndex: index,
+          sceneId: scene.id,
+        });
+      }
+      if (visualUnitCount > 10) {
+        issues.push({
+          level: 'warning',
+          code: 'scene-too-dense',
+          message: `場景 ${sceneNo} 同時呈現約 ${visualUnitCount} 個視覺單位，建議拆分場景或移除次要資訊，保留單一清楚焦點。`,
+          sceneIndex: index,
+          sceneId: scene.id,
+        });
       }
     }
 

@@ -7,6 +7,13 @@ import {
   Sequence,
   useVideoConfig,
 } from "remotion";
+import {
+  BasicCaptions,
+  MovingPillCaptions,
+  PoppingWordCaptions,
+  RoundedCaptions,
+  WordHighlightCaptions,
+} from "@/remotion/primitives/caption-elements";
 import { CaptionHighlight } from "@/remotion/primitives/caption-highlight";
 import {
   DEFAULT_CAPTION_PAGE_MS,
@@ -15,6 +22,14 @@ import {
   parseSubtitlesToCaptions,
   type WordTiming,
 } from "@/remotion/lib/caption-utils";
+
+export type SrtCaptionVariant =
+  | "basic-captions"
+  | "rounded-captions"
+  | "moving-pill-captions"
+  | "popping-word-captions"
+  | "word-highlight-captions"
+  | "caption-highlight";
 
 /**
  * Renders a caption track straight from an SRT or WebVTT file.
@@ -57,9 +72,11 @@ export type SrtCaptionTrackProps = {
    * to let a page clear when its own tokens run out.
    */
   holdPages?: boolean;
-  /** Draws one page. Defaults to `<CaptionHighlight />`. */
+  /** Selects one of the built-in caption looks. */
+  variant?: SrtCaptionVariant;
+  /** Draws one page. Overrides `variant`. */
   renderPage?: (page: TikTokPage, index: number) => ReactNode;
-  /** Passed to the default renderer. Ignored when `renderPage` is given. */
+  /** Passed to the selected renderer. Ignored when `renderPage` is given. */
   activeColor?: string;
   inactiveColor?: string;
   fontSize?: number;
@@ -78,6 +95,7 @@ export const SrtCaptionTrack: React.FC<SrtCaptionTrackProps> = ({
   combineTokensWithinMilliseconds = DEFAULT_CAPTION_PAGE_MS,
   offsetInFrames = 0,
   holdPages = true,
+  variant = "caption-highlight",
   renderPage,
   activeColor = "#ff6b00",
   inactiveColor = "#ffffff",
@@ -169,6 +187,35 @@ export const SrtCaptionTrack: React.FC<SrtCaptionTrackProps> = ({
           >
             {renderPage ? (
               renderPage(page, index)
+            ) : variant === "basic-captions" ? (
+              <BasicCaptions
+                page={page}
+                fontSize={fontSize}
+                textColor={inactiveColor}
+              />
+            ) : variant === "rounded-captions" ? (
+              <RoundedCaptions page={page} fontSize={fontSize} />
+            ) : variant === "moving-pill-captions" ? (
+              <MovingPillCaptions
+                page={page}
+                fontSize={fontSize}
+                textColor={inactiveColor}
+                highlightColor={activeColor}
+              />
+            ) : variant === "popping-word-captions" ? (
+              <PoppingWordCaptions
+                page={page}
+                fontSize={fontSize}
+                textColor={inactiveColor}
+                highlightColor={activeColor}
+              />
+            ) : variant === "word-highlight-captions" ? (
+              <WordHighlightCaptions
+                page={page}
+                fontSize={fontSize}
+                textColor={inactiveColor}
+                highlightColor={activeColor}
+              />
             ) : (
               <CaptionHighlight
                 page={page}

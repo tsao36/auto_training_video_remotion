@@ -500,6 +500,7 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
                       scenes: loadedProject.scenes,
                       audioBaseUrl: '',
                       captionStyle: loadedProject.captionStyle,
+                      videoTheme: loadedProject.videoTheme,
                     }}
                     durationInFrames={totalFrames}
                     fps={VIDEO_FPS}

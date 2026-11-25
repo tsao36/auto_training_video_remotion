@@ -1,6 +1,7 @@
 import React from 'react';
 import { AbsoluteFill, Audio, Series, useCurrentFrame, useVideoConfig } from 'remotion';
-import { SceneSpec, VideoCaptionStyle } from '../types/training';
+import { SceneSpec, VideoCaptionStyle, VideoThemeId } from '../types/training';
+import { getVideoTheme } from '../utils/videoThemes';
 import { HudOverlay } from './components/HudOverlay';
 import { SceneRenderer } from './scenes/SceneRenderer';
 
@@ -9,6 +10,7 @@ export interface TechTrainingVideoProps {
   scenes: SceneSpec[];
   audioBaseUrl?: string;
   captionStyle?: Partial<VideoCaptionStyle>;
+  videoTheme?: VideoThemeId;
 }
 
 export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
@@ -16,12 +18,13 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
   scenes,
   audioBaseUrl = '',
   captionStyle,
+  videoTheme,
 }) => {
   const { fps, durationInFrames } = useVideoConfig();
   const globalFrame = useCurrentFrame();
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#070B14' }}>
+    <AbsoluteFill style={{ backgroundColor: getVideoTheme(videoTheme).backgroundColor }}>
       <Series>
         {scenes.map((scene) => {
           const effectiveDuration = scene.tts.actualDurationSec && scene.tts.actualDurationSec > 0
@@ -45,8 +48,9 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
                   globalFrame={globalFrame}
                   totalFrames={durationInFrames}
                   captionStyle={captionStyle}
+                  videoTheme={videoTheme}
                 />
-                <SceneRenderer scene={scene} assetBaseUrl={audioBaseUrl} />
+                <SceneRenderer scene={scene} assetBaseUrl={audioBaseUrl} videoTheme={videoTheme} />
                 {resolvedAudio && <Audio src={resolvedAudio} />}
               </AbsoluteFill>
             </Series.Sequence>

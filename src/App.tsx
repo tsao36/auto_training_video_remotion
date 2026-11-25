@@ -71,6 +71,7 @@ import {
   saveStoredLlmConfig,
 } from './utils/llmConfigStorage';
 import { getSceneIndexAtFrame } from './utils/playerPlaylist';
+import { splitScriptIntoSentences } from './utils/sentenceEffects';
 import {
   balanceScenesToDuration,
   computeRichnessDuration,
@@ -912,10 +913,13 @@ export function App() {
   const previewBrowserSpeech = (text: string) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = getContentLanguage(project.language).value;
-    utter.rate = selectedScene?.tts.speed || 1.0;
-    window.speechSynthesis.speak(utter);
+    const sentences = splitScriptIntoSentences(text);
+    for (const sentence of sentences) {
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.lang = getContentLanguage(project.language).value;
+      utterance.rate = selectedScene?.tts.speed || 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const startPreviewStills = async () => {
@@ -936,6 +940,7 @@ export function App() {
           projectTitle: project.title,
           scenes: project.scenes,
           captionStyle: project.captionStyle,
+          videoTheme: project.videoTheme,
         }),
       });
       const { jobId, error } = await resp.json();
@@ -1642,6 +1647,7 @@ export function App() {
                   scenes: project.scenes,
                   audioBaseUrl: '',
                   captionStyle: project.captionStyle,
+                  videoTheme: project.videoTheme,
                 }}
                 durationInFrames={totalFrames}
                 fps={VIDEO_FPS}

@@ -46,6 +46,7 @@ export interface WirelessTemplateProps {
   beatSpring: number;
   cameraBreath: number;
   sceneTotalFrames: number;
+  scenePadding: string;
   getItemRevealFrame: (itemIndex: number, itemCount: number, defaultFrame: number) => number;
 }
 
@@ -83,6 +84,7 @@ export const WirelessTemplateRenderer: React.FC<WirelessTemplateProps> = (props)
  * ========================================================================== */
 const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   cueProgress,
@@ -178,7 +180,7 @@ const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,
@@ -771,6 +773,7 @@ const PacketSimulatorScene: React.FC<WirelessTemplateProps> = ({
  * ========================================================================== */
 const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   effect,
@@ -815,7 +818,7 @@ const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,
@@ -1021,6 +1024,7 @@ const OfdmSpectrumScene: React.FC<WirelessTemplateProps> = ({
  * ========================================================================== */
 const BeamformingArrayScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   effect,
@@ -1074,7 +1078,7 @@ const BeamformingArrayScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,
@@ -1252,6 +1256,7 @@ const BeamformingArrayScene: React.FC<WirelessTemplateProps> = ({
  * ========================================================================== */
 const QamConstellationScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   effect,
@@ -1280,7 +1285,7 @@ const QamConstellationScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,
@@ -1463,6 +1468,7 @@ const QamConstellationScene: React.FC<WirelessTemplateProps> = ({
  * ========================================================================== */
 const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   effect,
@@ -1498,7 +1504,7 @@ const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,
@@ -1692,6 +1698,7 @@ const MloMultilinkScene: React.FC<WirelessTemplateProps> = ({
  * ========================================================================== */
 const RfLinkBudgetScene: React.FC<WirelessTemplateProps> = ({
   scene,
+  scenePadding,
   renderHeader,
   accent,
   effect,
@@ -1749,7 +1756,7 @@ const RfLinkBudgetScene: React.FC<WirelessTemplateProps> = ({
     <SceneTransitionWrapper sceneIndex={scene.index} sceneTotalFrames={sceneTotalFrames} accentColor={accent}>
       <AbsoluteFill
         style={{
-          padding: '108px 72px 124px',
+          padding: scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: FONT_FAMILY,

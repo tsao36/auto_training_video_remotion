@@ -1,5 +1,6 @@
 import { parseSrt } from '@remotion/captions';
 import type { Caption } from '@remotion/captions';
+import { splitScriptIntoSentences } from './sentenceEffects';
 
 export function parseSrtCaptions(input: string): Caption[] {
   return parseSrt({ input }).captions;
@@ -41,10 +42,7 @@ export function splitCaptionIntoChunks(text: string, maxWidthUnits = 36): string
 }
 
 export function generateCaptionsFromScript(script: string, durationSeconds: number): Caption[] {
-  const sentences = script
-    .split(/[。.!?\n]+/)
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 0);
+  const sentences = splitScriptIntoSentences(script);
 
   if (sentences.length === 0 || durationSeconds <= 0) return [];
 

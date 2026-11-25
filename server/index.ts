@@ -19,6 +19,7 @@ import { inspectRenderedMedia } from './mediaQa';
 import { parsePptxBuffer } from './pptxParser';
 import { resolveRevealTarget, revealInFileExplorer } from './revealFile';
 import { evaluateProjectQuality } from '../src/utils/qualityLinter';
+import { splitScriptIntoSentences } from '../src/utils/sentenceEffects';
 import {
   DEFAULT_CONTENT_LANGUAGE,
   getContentLanguage,
@@ -874,7 +875,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
   try {
     const {
       sceneId,
-      text,
+      text: rawText,
       provider,
       voiceId,
       language = DEFAULT_CONTENT_LANGUAGE,
@@ -903,6 +904,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
       skipCache?: boolean;
     };
 
+    const text = splitScriptIntoSentences(rawText || '').join('\n\n') || rawText || '';
     const storedProfile = customVoice?.profileId
       ? readVoiceProfiles().find((p) => p.id === customVoice.profileId)
       : undefined;
@@ -928,7 +930,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
     const ttsLanguage = getContentLanguage(language).value;
     const safeId = (sceneId || `scene-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
     const isVoicePreview = safeId.startsWith('voice-preview-');
-    const ttsCacheVersion = provider === 'openformosa' ? 'v3-sentence-pauses|' : '';
+    const ttsCacheVersion = 'v4-one-sentence-at-a-time|';
     const cacheHash = crypto
       .createHash('sha1')
       .update(
@@ -1200,10 +1202,11 @@ app.post('/api/preview-stills', async (req, res) => {
       res.status(429).json({ error: `Render queue limit reached (${MAX_CONCURRENT_RENDERS} active)` });
       return;
     }
-    const { projectTitle, scenes, captionStyle } = req.body as {
+    const { projectTitle, scenes, captionStyle, videoTheme } = req.body as {
       projectTitle: string;
       scenes: SceneSpec[];
       captionStyle?: TrainingProject['captionStyle'];
+      videoTheme?: TrainingProject['videoTheme'];
     };
     if (!Array.isArray(scenes) || scenes.length === 0) {
       res.status(400).json({ error: '沒有可預覽的場景' });
@@ -1232,6 +1235,7 @@ app.post('/api/preview-stills', async (req, res) => {
           scenes,
           audioBaseUrl: 'http://localhost:3001',
           captionStyle,
+          videoTheme,
         };
 
         const composition = await selectComposition({
@@ -1377,6 +1381,7 @@ app.post('/api/render', async (req, res) => {
           scenes: selectedScenes,
           audioBaseUrl: 'http://localhost:3001',
           captionStyle: project?.captionStyle,
+          videoTheme: project?.videoTheme,
         };
 
         const composition = await selectComposition({

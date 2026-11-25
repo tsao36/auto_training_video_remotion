@@ -91,6 +91,26 @@ describe('evaluateProjectQuality', () => {
     expect(codes).toContain('weak-scene-differentiation');
   });
 
+  it('warns when a scene combines too many visual units', () => {
+    const report = evaluateProjectQuality({
+      title: 'Readable Scenes',
+      language: 'en-US',
+      scenes: [
+        makeScene({
+          keyPoints: ['Power', 'Clock', 'Reset', 'Link'],
+          remotionPrimitives: ['line-chart', 'number-counter', 'pop-badge', 'camera-pan-zoom', 'svg-trace-path'],
+          diagramData: {
+            nodes: [1, 2, 3, 4, 5].map((index) => ({ id: `${index}`, label: `Node ${index}` })),
+          },
+        }),
+      ],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(['too-many-primitives', 'scene-too-dense'])
+    );
+  });
+
   it('blocks missing TTS audio when requireAudio is true', () => {
     const report = evaluateProjectQuality(
       {

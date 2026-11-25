@@ -1,7 +1,8 @@
 import React from 'react';
 import { fitText } from '@remotion/layout-utils';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import { DOMAIN_META, EFFECT_LABELS, SceneSpec } from '../../types/training';
+import { DOMAIN_META, EFFECT_LABELS, SceneSpec, VideoThemeId } from '../../types/training';
+import { getVideoTheme } from '../../utils/videoThemes';
 
 const HEADLINE_FONT_FAMILY = 'Inter, "Noto Sans TC", system-ui, sans-serif';
 
@@ -10,7 +11,8 @@ function computeFittedFontSize(
   withinWidth: number,
   fontWeight: number,
   minPx: number,
-  maxPx: number
+  maxPx: number,
+  fontFamily = HEADLINE_FONT_FAMILY
 ): number {
   const cleaned = (text || '').trim();
   if (!cleaned) return maxPx;
@@ -18,7 +20,7 @@ function computeFittedFontSize(
     const fitted = fitText({
       text: cleaned,
       withinWidth,
-      fontFamily: HEADLINE_FONT_FAMILY,
+      fontFamily,
       fontWeight,
     });
     if (Number.isFinite(fitted.fontSize) && fitted.fontSize > 0) {
@@ -44,12 +46,14 @@ import { WIRELESS_TEMPLATES, WirelessTemplateRenderer } from './WirelessTemplate
 interface SceneRendererProps {
   scene: SceneSpec;
   assetBaseUrl?: string;
+  videoTheme?: VideoThemeId;
 }
 
-export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUrl = '' }) => {
+export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUrl = '', videoTheme }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const meta = DOMAIN_META[scene.domain];
+  const presentationTheme = getVideoTheme(videoTheme);
   const accent = scene.animation.accentColor || meta.accentColor;
   const sceneTotalFrames = Math.max(30, Math.round(scene.durationSeconds * fps));
   const sceneProgress = Math.min(1, frame / sceneTotalFrames);
@@ -102,55 +106,84 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
   const headerY = interpolate(headerProgress, [0, 1], [18, 0]);
   const headerOpacity = interpolate(frame, [0, 7], [0, 1], { extrapolateRight: 'clamp' });
 
-  const headerTitleFontSize = computeFittedFontSize(scene.title, 1180, 800, 32, 52);
-  const heroTitleFontSize = computeFittedFontSize(scene.title, 1450, 900, 44, 74);
+  const headerTitleFontSize = computeFittedFontSize(scene.title, 1180, presentationTheme.titleWeight, 32, 52, presentationTheme.titleFontFamily);
+  const heroTitleFontSize = computeFittedFontSize(scene.title, 1450, presentationTheme.titleWeight, 44, 74, presentationTheme.titleFontFamily);
 
+  const headerLayout = presentationTheme.layout;
+  const headerCentered = headerLayout === 'flow-canvas';
+  const headerReversed = headerLayout === 'split-console';
+  const headerStacked = headerLayout === 'drafting-sheet' || headerCentered;
   const renderHeader = () => (
     <div
       style={{
         transform: `translateY(${headerY}px)`,
         opacity: headerOpacity,
-        marginBottom: 34,
+        marginBottom: headerLayout === 'flow-canvas' ? 30 : 38,
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        gap: 24,
+        flexDirection: headerStacked ? 'column' : headerReversed ? 'row-reverse' : 'row',
+        justifyContent: headerCentered ? 'center' : 'space-between',
+        alignItems: headerCentered ? 'center' : headerReversed ? 'flex-start' : 'flex-end',
+        gap: headerCentered ? 14 : 24,
+        padding: headerLayout === 'drafting-sheet'
+          ? '12px 0 18px 28px'
+          : headerLayout === 'lab-notebook'
+            ? '0 0 20px'
+            : headerLayout === 'flow-canvas'
+              ? '0 12% 8px'
+              : undefined,
+        borderLeft: headerLayout === 'drafting-sheet' ? `3px solid ${presentationTheme.accentColor}` : undefined,
+        borderBottom: headerLayout === 'lab-notebook'
+          ? `1px solid ${presentationTheme.panelBorder}`
+          : headerLayout === 'instrument-dock'
+            ? `1px solid ${presentationTheme.panelBorder}`
+            : undefined,
+        textAlign: headerCentered || headerReversed ? 'center' : 'left',
       }}
     >
-      <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ minWidth: 0, flex: headerCentered ? undefined : 1, maxWidth: headerCentered ? 1160 : undefined }}>
         <div
           style={{
             color: accent,
-            fontSize: 18,
+            fontFamily: presentationTheme.labelFontFamily,
+            fontSize: headerLayout === 'split-console' ? 16 : 18,
             fontWeight: 700,
-            letterSpacing: '0.12em',
+            letterSpacing: headerLayout === 'lab-notebook' ? '0.2em' : '0.12em',
             textTransform: 'uppercase',
             marginBottom: 10,
           }}
         >
-          {scene.subtitle}
+          {headerLayout === 'drafting-sheet' ? `${presentationTheme.patternLabel} / ` : ''}{scene.subtitle}
         </div>
         <div
           style={{
             color: '#F8FAFC',
+            fontFamily: presentationTheme.titleFontFamily,
             fontSize: headerTitleFontSize,
-            fontWeight: 800,
-            lineHeight: 1.15,
-            letterSpacing: '-0.02em',
+            fontWeight: presentationTheme.titleWeight,
+            lineHeight: headerLayout === 'split-console' ? 1.05 : 1.15,
+            letterSpacing: presentationTheme.titleLetterSpacing,
+            maxWidth: headerCentered ? 1160 : headerLayout === 'split-console' ? 900 : undefined,
           }}
         >
           {scene.title}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: headerLayout === 'drafting-sheet' || headerLayout === 'split-console' ? 'column' : 'row',
+          alignItems: headerCentered ? 'center' : headerReversed ? 'flex-start' : 'center',
+          gap: headerLayout === 'flow-canvas' ? 18 : 10,
+        }}
+      >
         <div
           style={{
-            padding: '10px 16px',
-            borderRadius: 10,
-            backgroundColor:
-              effect === 'glitch-alert' ? 'rgba(245, 158, 11, 0.16)' : 'rgba(15, 23, 42, 0.85)',
-            border: `1px solid ${effect === 'glitch-alert' ? '#F59E0B88' : `${accent}55`}`,
+            padding: headerLayout === 'flow-canvas' ? '8px 18px' : '10px 16px',
+            borderRadius: headerLayout === 'flow-canvas' ? 999 : presentationTheme.panelRadius,
+            backgroundColor: effect === 'glitch-alert' ? 'rgba(245, 158, 11, 0.16)' : presentationTheme.hudSurface,
+            border: `1px solid ${effect === 'glitch-alert' ? '#F59E0B88' : presentationTheme.panelBorder}`,
             color: effect === 'glitch-alert' ? '#FCD34D' : '#E2E8F0',
+            fontFamily: presentationTheme.labelFontFamily,
             fontSize: 15,
             fontWeight: 700,
             whiteSpace: 'nowrap',
@@ -161,12 +194,15 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         {scene.diagramData?.visualCaption && (
           <div
             style={{
-              padding: '10px 18px',
-              borderRadius: 10,
-              backgroundColor: effect === 'glitch-alert' ? 'rgba(245, 158, 11, 0.16)' : `${accent}18`,
-              border: `1px solid ${effect === 'glitch-alert' ? '#F59E0B88' : `${accent}66`}`,
+              padding: headerLayout === 'drafting-sheet' ? '8px 0' : '10px 18px',
+              borderRadius: headerLayout === 'drafting-sheet' ? 0 : presentationTheme.panelRadius,
+              backgroundColor: headerLayout === 'drafting-sheet' ? 'transparent' : effect === 'glitch-alert' ? 'rgba(245, 158, 11, 0.16)' : `${accent}18`,
+              border: headerLayout === 'drafting-sheet' ? `2px solid ${accent}` : `1px solid ${effect === 'glitch-alert' ? '#F59E0B88' : presentationTheme.panelBorder}`,
+              borderWidth: headerLayout === 'drafting-sheet' ? '0 0 0 2px' : 1,
+              paddingLeft: headerLayout === 'drafting-sheet' ? 14 : undefined,
               color: effect === 'glitch-alert' ? '#FCD34D' : accent,
-              fontSize: 18,
+              fontFamily: presentationTheme.labelFontFamily,
+              fontSize: headerLayout === 'flow-canvas' ? 16 : 18,
               fontWeight: 700,
               whiteSpace: 'nowrap',
             }}
@@ -193,6 +229,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         beatSpring={beatSpring}
         cameraBreath={cameraBreath}
         sceneTotalFrames={sceneTotalFrames}
+        scenePadding={presentationTheme.scenePadding}
         getItemRevealFrame={getItemRevealFrame}
       />
     );
@@ -209,7 +246,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '130px 110px 150px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -243,8 +280,10 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
             <h1
               style={{
                 fontSize: heroTitleFontSize,
-                fontWeight: 900,
+                fontFamily: presentationTheme.titleFontFamily,
+                fontWeight: presentationTheme.titleWeight,
                 color: '#FFFFFF',
+                letterSpacing: presentationTheme.titleLetterSpacing,
                 lineHeight: 1.12,
                 margin: 0,
                 marginBottom: 28,
@@ -341,7 +380,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -532,7 +571,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -747,7 +786,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -853,7 +892,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -968,7 +1007,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -1156,7 +1195,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -1338,7 +1377,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -1496,7 +1535,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -1604,7 +1643,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
       >
         <AbsoluteFill
           style={{
-            padding: '105px 80px 140px',
+            padding: presentationTheme.scenePadding,
             display: 'flex',
             flexDirection: 'column',
             fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
@@ -1749,7 +1788,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
     >
       <AbsoluteFill
         style={{
-          padding: '105px 80px 140px',
+          padding: presentationTheme.scenePadding,
           display: 'flex',
           flexDirection: 'column',
           fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',

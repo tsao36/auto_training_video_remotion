@@ -23,12 +23,14 @@ import {
   TechDomain,
   TrainingProject,
   TtsProvider,
+  VideoThemeId,
   VoiceProfile,
 } from '../types/training';
 import { DomainChoice, isTechDomain } from '../utils/domainInference';
 import { DEFAULT_GNAI_CONFIG, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
+import { getVideoTheme, VIDEO_THEMES } from '../utils/videoThemes';
 
 interface SourceWizardModalProps {
   isOpen: boolean;
@@ -73,6 +75,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [topic, setTopic] = useState('');
   const [odmMode, setOdmMode] = useState(false);
   const [durationSeconds, setDurationSeconds] = useState<number>(60);
+  const [videoTheme, setVideoTheme] = useState<VideoThemeId>('signal-grid');
   const [researchText, setResearchText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [llmConfig, setLlmConfig] = useState<LlmConfig>(() =>
@@ -107,10 +110,12 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   } | null>(null);
   const [jsonDraft, setJsonDraft] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const themePreviewRef = useRef<HTMLDivElement>(null);
   const progressTimerRef = useRef<number | null>(null);
 
   const usingEnvLlm = envLlmStatus.configured && !useBrowserLlmOverride;
   const selectedVoiceProfile = voiceProfiles.find((p) => p.fileName === selectedVoiceFileName);
+  const selectedVideoTheme = getVideoTheme(videoTheme);
 
   const stopProgressTimer = () => {
     if (progressTimerRef.current !== null) {
@@ -363,6 +368,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       sourceType: preparedSource.sourceType,
       sourceFileName: preparedSource.sourceFileName,
       rawSourceText: preparedSource.rawText,
+      videoTheme,
       llmConfig: projectLlmConfig,
       ttsConfig: {
         defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
@@ -674,10 +680,217 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Domain */}
+          <fieldset>
+            <legend className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              3. 影片背景主題
+            </legend>
+            <p className="mb-3 text-[11px] text-slate-500">選擇貫穿所有場景的背景與 HUD 基礎風格；內容圖表仍會依技術領域配色。</p>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              {VIDEO_THEMES.map((theme) => {
+                const selected = videoTheme === theme.id;
+                return (
+                  <label
+                    key={theme.id}
+                    className={`group cursor-pointer border p-2 transition focus-within:ring-2 focus-within:ring-cyan-400/70 ${
+                      selected
+                        ? 'border-cyan-400 bg-cyan-500/[0.08]'
+                        : 'border-slate-800 bg-slate-950/40 hover:border-slate-600'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="video-theme"
+                      value={theme.id}
+                      checked={selected}
+                      onChange={() => {
+                        setVideoTheme(theme.id);
+                        window.requestAnimationFrame(() =>
+                          themePreviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        );
+                      }}
+                      className="sr-only"
+                    />
+                    <span
+                      className="relative block aspect-video overflow-hidden border"
+                      style={{
+                        backgroundColor: theme.backgroundColor,
+                        backgroundImage: theme.backgroundImage,
+                        backgroundSize: theme.backgroundSize,
+                        borderColor: theme.panelBorder,
+                      }}
+                      aria-hidden="true"
+                    >
+                      <span className="absolute inset-x-2.5 top-2.5 flex items-center justify-between">
+                        <span className="px-1 py-0.5 text-[5px] font-bold tracking-wider text-white" style={{ backgroundColor: theme.panelSurface, fontFamily: theme.labelFontFamily }}>
+                          {theme.patternLabel}
+                        </span>
+                        <span className="h-1.5 w-8" style={{ backgroundColor: theme.secondaryAccent }} />
+                      </span>
+                      <span
+                        className="absolute top-[37%]"
+                        style={{
+                          left: theme.layout === 'split-console' ? '48%' : theme.layout === 'drafting-sheet' ? '12%' : theme.layout === 'lab-notebook' ? '10%' : '14%',
+                          right: theme.layout === 'split-console' ? '7%' : theme.layout === 'flow-canvas' ? '14%' : '12%',
+                          textAlign: theme.layout === 'flow-canvas' ? 'center' : theme.layout === 'split-console' ? 'right' : 'left',
+                          borderLeft: theme.layout === 'drafting-sheet' ? `1px solid ${theme.accentColor}` : undefined,
+                          paddingLeft: theme.layout === 'drafting-sheet' ? 4 : 0,
+                        }}
+                      >
+                        <span className="block h-1.5 w-full bg-white/80" />
+                        <span className="mt-1.5 block h-1 w-2/3" style={{ backgroundColor: theme.accentColor, marginLeft: theme.layout === 'flow-canvas' ? 'auto' : theme.layout === 'split-console' ? 'auto' : undefined, marginRight: theme.layout === 'flow-canvas' ? 'auto' : undefined }} />
+                      </span>
+                      <span
+                        className="absolute bottom-2.5 grid items-end gap-1.5"
+                        style={{
+                          left: theme.layout === 'split-console' ? '13%' : theme.layout === 'drafting-sheet' ? '14%' : '12%',
+                          right: theme.layout === 'split-console' ? '42%' : theme.layout === 'flow-canvas' ? '12%' : '10%',
+                          gridTemplateColumns: theme.layout === 'split-console' ? '1fr' : theme.layout === 'drafting-sheet' ? '1fr auto 1.25fr' : '1fr auto 1fr',
+                          rotate: theme.layout === 'lab-notebook' ? '-1.5deg' : undefined,
+                        }}
+                      >
+                        <span className="border" style={{ height: theme.layout === 'split-console' ? 15 : 28, backgroundColor: theme.panelSurface, borderColor: theme.panelBorder, borderRadius: theme.panelRadius / 3 }} />
+                        <span className={theme.layout === 'split-console' ? 'mx-auto h-3 w-px' : 'mb-3 h-px w-3'} style={{ backgroundColor: theme.secondaryAccent }} />
+                        <span className="border" style={{ height: theme.layout === 'split-console' ? 15 : 28, backgroundColor: theme.panelSurface, borderColor: theme.panelBorder, borderRadius: theme.panelRadius / 3 }} />
+                      </span>
+                    </span>
+                    <span className="mt-2 flex items-start gap-2">
+                      <span
+                        className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+                          selected ? 'border-cyan-300 bg-cyan-400' : 'border-slate-600'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {selected && <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[11px] font-bold text-slate-100">{theme.name}</span>
+                        <span className="mt-0.5 block text-[10px] leading-4 text-slate-500">{theme.description}</span>
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div ref={themePreviewRef} className="mt-4 scroll-mb-24 border-t border-slate-800 pt-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">主題預覽</div>
+                  <div className="mt-0.5 text-xs font-bold text-slate-100">{selectedVideoTheme.name}</div>
+                </div>
+                <div className="text-right text-[10px] leading-4 text-slate-500">點選上方任一主題<br />立即更新下方畫面</div>
+              </div>
+              <div
+                className="relative aspect-video overflow-hidden border shadow-[0_16px_40px_rgba(0,0,0,.28)]"
+                style={{
+                  backgroundColor: selectedVideoTheme.backgroundColor,
+                  backgroundImage: selectedVideoTheme.backgroundImage,
+                  backgroundSize: selectedVideoTheme.backgroundSize,
+                  borderColor: selectedVideoTheme.panelBorder,
+                }}
+                aria-label={`${selectedVideoTheme.name} 影片背景預覽`}
+              >
+                {selectedVideoTheme.layout === 'drafting-sheet' && (
+                  <div className="pointer-events-none absolute inset-y-4 left-8 border-l opacity-60" style={{ borderColor: selectedVideoTheme.panelBorder }}>
+                    <span className="absolute -left-4 top-1 text-[6px]" style={{ color: selectedVideoTheme.accentColor }}>00</span>
+                    <span className="absolute -left-4 top-1/2 text-[6px]" style={{ color: selectedVideoTheme.accentColor }}>50</span>
+                    <span className="absolute -left-4 bottom-1 text-[6px]" style={{ color: selectedVideoTheme.accentColor }}>80</span>
+                  </div>
+                )}
+                {selectedVideoTheme.layout === 'split-console' && (
+                  <div className="pointer-events-none absolute inset-y-5 left-7 w-14 border-r opacity-55" style={{ borderColor: selectedVideoTheme.panelBorder }}>
+                    <span className="absolute left-2 top-8 h-1 w-9" style={{ backgroundColor: selectedVideoTheme.secondaryAccent }} />
+                    <span className="absolute left-2 top-14 h-px w-7 bg-white/30" />
+                    <span className="absolute left-2 top-20 h-px w-10 bg-white/20" />
+                  </div>
+                )}
+                {selectedVideoTheme.layout === 'flow-canvas' && (
+                  <>
+                    <div className="pointer-events-none absolute -left-[8%] bottom-[8%] h-[32%] w-[58%] rotate-[-10deg] rounded-[50%] border opacity-30" style={{ borderColor: selectedVideoTheme.accentColor }} />
+                    <div className="pointer-events-none absolute -right-[8%] top-[16%] h-[28%] w-[54%] rotate-[12deg] rounded-[50%] border opacity-30" style={{ borderColor: selectedVideoTheme.secondaryAccent }} />
+                  </>
+                )}
+                {selectedVideoTheme.layout === 'lab-notebook' && (
+                  <div className="pointer-events-none absolute inset-y-8 left-8 w-px opacity-60" style={{ backgroundColor: selectedVideoTheme.secondaryAccent }} />
+                )}
+                <div className="absolute inset-x-5 top-4 flex items-center justify-between sm:inset-x-7 sm:top-5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="px-2 py-1 text-[8px] font-bold tracking-wider sm:text-[10px]"
+                      style={{ color: selectedVideoTheme.accentColor, backgroundColor: `${selectedVideoTheme.accentColor}18`, fontFamily: selectedVideoTheme.labelFontFamily }}
+                    >
+                      {selectedVideoTheme.patternLabel}
+                    </span>
+                    <span className="hidden text-[9px] text-white/45 sm:block" style={{ fontFamily: selectedVideoTheme.labelFontFamily }}>PCIe 訊號完整性分析</span>
+                  </div>
+                  <span
+                    className="px-2 py-1 text-[8px] font-bold text-white/80 sm:text-[10px]"
+                    style={{ backgroundColor: selectedVideoTheme.hudSurface }}
+                  >
+                    SCENE 03 / 08
+                  </span>
+                </div>
+
+                <div
+                  className="absolute top-[22%]"
+                  style={{
+                    left: selectedVideoTheme.layout === 'split-console' ? '48%' : selectedVideoTheme.layout === 'drafting-sheet' ? '12%' : selectedVideoTheme.layout === 'lab-notebook' ? '10%' : '8%',
+                    right: selectedVideoTheme.layout === 'split-console' ? '6%' : selectedVideoTheme.layout === 'flow-canvas' ? '8%' : '8%',
+                    textAlign: selectedVideoTheme.layout === 'flow-canvas' ? 'center' : selectedVideoTheme.layout === 'split-console' ? 'right' : 'left',
+                    paddingLeft: selectedVideoTheme.layout === 'drafting-sheet' ? 12 : 0,
+                    borderLeft: selectedVideoTheme.layout === 'drafting-sheet' ? `2px solid ${selectedVideoTheme.accentColor}` : undefined,
+                  }}
+                >
+                  <div className="mb-1 text-[9px] font-bold tracking-[.12em] sm:text-[10px]" style={{ color: selectedVideoTheme.accentColor, fontFamily: selectedVideoTheme.labelFontFamily }}>
+                    HIGH-SPEED SIGNAL PATH
+                  </div>
+                  <div
+                    className="text-lg leading-tight text-white sm:text-2xl"
+                    style={{ fontFamily: selectedVideoTheme.titleFontFamily, fontWeight: selectedVideoTheme.titleWeight, letterSpacing: selectedVideoTheme.titleLetterSpacing }}
+                  >
+                    PCIe Link Training 訊號鏈
+                  </div>
+                </div>
+
+                <div
+                  className="absolute bottom-[27%] top-[42%] grid items-center gap-2 sm:gap-5"
+                  style={{
+                    left: selectedVideoTheme.layout === 'split-console' ? '15%' : selectedVideoTheme.layout === 'drafting-sheet' ? '14%' : '7%',
+                    right: selectedVideoTheme.layout === 'split-console' ? '38%' : selectedVideoTheme.layout === 'flow-canvas' ? '15%' : '7%',
+                    gridTemplateColumns: selectedVideoTheme.layout === 'split-console' ? '1fr' : selectedVideoTheme.layout === 'drafting-sheet' ? '1fr auto 1.2fr' : '1fr auto 1fr',
+                    rotate: selectedVideoTheme.layout === 'lab-notebook' ? '-1deg' : undefined,
+                  }}
+                >
+                  <div className="border p-2 sm:p-3" style={{ backgroundColor: selectedVideoTheme.panelSurface, borderColor: selectedVideoTheme.panelBorder, borderRadius: selectedVideoTheme.panelRadius / 2 }}>
+                    <div className="mb-2 h-1 w-10" style={{ backgroundColor: selectedVideoTheme.accentColor }} />
+                    <div className="text-[8px] font-bold text-white sm:text-xs" style={{ fontFamily: selectedVideoTheme.labelFontFamily }}>Root Port</div>
+                    <div className="mt-1 h-1.5 w-full bg-white/10"><span className="block h-full w-2/3" style={{ backgroundColor: `${selectedVideoTheme.accentColor}99` }} /></div>
+                  </div>
+                  <div className={selectedVideoTheme.layout === 'split-console' ? 'relative ml-auto h-8 w-px sm:h-12' : 'relative h-px w-12 sm:w-24'} style={{ backgroundColor: selectedVideoTheme.secondaryAccent }}>
+                    <span className={`absolute h-3 w-3 rotate-45 border-r border-t ${selectedVideoTheme.layout === 'split-console' ? '-bottom-1 -right-1.5 rotate-[135deg]' : '-right-1 -top-1.5'}`} style={{ borderColor: selectedVideoTheme.secondaryAccent }} />
+                  </div>
+                  <div className="border p-2 sm:p-3" style={{ backgroundColor: selectedVideoTheme.panelSurface, borderColor: selectedVideoTheme.panelBorder, borderRadius: selectedVideoTheme.panelRadius / 2 }}>
+                    <div className="mb-2 h-1 w-10" style={{ backgroundColor: selectedVideoTheme.secondaryAccent }} />
+                    <div className="text-[8px] font-bold text-white sm:text-xs" style={{ fontFamily: selectedVideoTheme.labelFontFamily }}>Endpoint</div>
+                    <div className="mt-1 h-1.5 w-full bg-white/10"><span className="block h-full w-4/5" style={{ backgroundColor: `${selectedVideoTheme.secondaryAccent}99` }} /></div>
+                  </div>
+                </div>
+
+                <div
+                  className="absolute inset-x-5 bottom-4 border px-3 py-2 text-center text-[9px] font-semibold leading-4 text-white/90 sm:inset-x-14 sm:bottom-5 sm:px-5 sm:py-3 sm:text-xs"
+                  style={{ backgroundColor: selectedVideoTheme.captionSurface, borderColor: selectedVideoTheme.panelBorder, fontFamily: selectedVideoTheme.titleFontFamily, borderRadius: selectedVideoTheme.panelRadius / 2 }}
+                >
+                  先確認參考時脈與重置信號，再驗證鏈路訓練是否穩定完成。
+                  <span className="absolute inset-x-0 bottom-0 h-0.5" style={{ background: `linear-gradient(90deg, ${selectedVideoTheme.accentColor}, ${selectedVideoTheme.secondaryAccent})`, width: '42%' }} />
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Step 4: Domain */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              3. 技術領域視覺風格
+              4. 技術領域視覺風格
             </label>
             <p className="text-[11px] text-slate-500 mb-2">
               預設由 AI 依主題或文件內容判斷。只有想固定風格時才手動覆寫。
@@ -857,10 +1070,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </div>
           )}
 
-          {/* Step 4: Default TTS Model & Voice Profile */}
+          {/* Step 5: Default TTS Model & Voice Profile */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              4. 預設 TTS 語音合成引擎與聲線
+              5. 預設 TTS 語音合成引擎與聲線
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button

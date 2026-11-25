@@ -19,6 +19,7 @@ export const RemotionRoot: React.FC = () => {
         projectTitle: defaultProject.title,
         scenes: defaultProject.scenes,
         audioBaseUrl: '',
+        videoTheme: defaultProject.videoTheme,
       }}
       calculateMetadata={({ props }) => {
         const typed = props as unknown as TechTrainingVideoProps;

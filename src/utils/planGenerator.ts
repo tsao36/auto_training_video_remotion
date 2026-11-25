@@ -795,6 +795,7 @@ export function createEmptyProject(domain: TechDomain): TrainingProject {
     height: 1080,
     sourceType: 'topic-llm',
     rawSourceText: '',
+    videoTheme: 'signal-grid',
     ttsConfig: {
       defaultProvider: 'openformosa',
       openformosa: {

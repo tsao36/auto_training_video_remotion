@@ -182,9 +182,8 @@ export function analyzeSentencePairEffect(
 }
 
 /**
- * Build deterministic per-2-sentence Remotion effect cues from a script.
- * If existing/LLM cues are provided, preserves their custom effect/rationale/targetIndex
- * while recalculating exact character-weighted startRatio/endRatio.
+ * Builds exactly one cue per sentence. Narration, captions, and visual beats all
+ * advance on the same sentence boundary so only one sentence is emphasized at a time.
  */
 export function buildSentenceEffectCues(
   script: string,
@@ -193,10 +192,9 @@ export function buildSentenceEffectCues(
   existingCues?: Partial<SentenceEffectCue>[]
 ): SentenceEffectCue[] {
   const sentences = splitScriptIntoSentences(script);
-  const pairs =
-    sentences.length > 0
-      ? groupSentencesForDynamicBeats(sentences)
-      : [[(script || '').trim() || '']];
+  const pairs = sentences.length > 0
+    ? sentences.map((sentence) => [sentence])
+    : [[(script || '').trim() || '']];
 
   const weights = pairs.map((pair) => Math.max(8, pair.join(' ').length));
   const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
@@ -256,10 +254,12 @@ export function getActiveSentenceCue(
   template: VisualTemplate,
   fallbackEffect: RemotionEffect = 'signal-pulse'
 ): { cue: SentenceEffectCue; cues: SentenceEffectCue[]; cueProgress: number } {
-  const resolvedCues =
-    cues && cues.length > 0
-      ? cues
-      : buildSentenceEffectCues(script, template, fallbackEffect);
+  const resolvedCues = buildSentenceEffectCues(
+    script,
+    template,
+    fallbackEffect,
+    cues
+  );
 
   const clamped = Math.max(0, Math.min(1, sceneProgress));
   const found =

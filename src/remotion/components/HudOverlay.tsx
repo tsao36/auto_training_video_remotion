@@ -1,8 +1,8 @@
 import React from 'react';
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import { DOMAIN_META, SceneSpec, VideoCaptionStyle } from '../../types/training';
-import { splitCaptionIntoChunks } from '../../utils/captions';
+import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { DOMAIN_META, SceneSpec, VideoCaptionStyle, VideoThemeId } from '../../types/training';
 import { getActiveSentenceCue } from '../../utils/sentenceEffects';
+import { getVideoTheme, getVideoThemeStyle } from '../../utils/videoThemes';
 
 interface HudOverlayProps {
   projectTitle: string;
@@ -11,7 +11,197 @@ interface HudOverlayProps {
   globalFrame: number;
   totalFrames: number;
   captionStyle?: Partial<VideoCaptionStyle>;
+  videoTheme?: VideoThemeId;
 }
+
+const ThemeLayoutFrame: React.FC<{ themeId?: VideoThemeId }> = ({ themeId }) => {
+  const { width, height } = useVideoConfig();
+  const theme = getVideoTheme(themeId);
+
+  if (theme.layout === 'instrument-dock') {
+    return (
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ position: 'absolute', inset: 0, opacity: 0.42 }}>
+        <path d={`M70 150 V70 H160 M${width - 70} 150 V70 H${width - 160} M70 ${height - 150} V${height - 70} H160 M${width - 70} ${height - 150} V${height - 70} H${width - 160}`} fill="none" stroke={theme.accentColor} strokeWidth={2} />
+        <line x1={70} x2={width - 70} y1={112} y2={112} stroke={theme.panelBorder} />
+      </svg>
+    );
+  }
+
+  if (theme.layout === 'drafting-sheet') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.46 }}>
+        <div style={{ position: 'absolute', left: 78, top: 86, bottom: 110, width: 1, background: theme.accentColor }} />
+        <div style={{ position: 'absolute', left: 48, top: 118, bottom: 140, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: theme.accentColor, fontFamily: theme.labelFontFamily, fontSize: 13 }}>
+          {['00', '20', '40', '60', '80'].map((tick) => <span key={tick}>{tick}</span>)}
+        </div>
+        <div style={{ position: 'absolute', right: 52, bottom: 94, padding: '7px 12px', border: `1px solid ${theme.panelBorder}`, color: theme.accentColor, fontFamily: theme.labelFontFamily, fontSize: 12 }}>{theme.patternLabel}</div>
+      </div>
+    );
+  }
+
+  if (theme.layout === 'split-console') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.38 }}>
+        <div style={{ position: 'absolute', left: 58, top: 90, bottom: 116, width: 116, borderRight: `1px solid ${theme.panelBorder}` }}>
+          <div style={{ height: 92, borderBottom: `1px solid ${theme.panelBorder}` }} />
+          <div style={{ margin: '22px 14px', height: 6, background: theme.secondaryAccent }} />
+          <div style={{ margin: '12px 14px', height: 1, background: theme.panelBorder }} />
+          <div style={{ margin: '12px 14px', height: 1, width: '56%', background: theme.panelBorder }} />
+        </div>
+        <div style={{ position: 'absolute', right: 50, top: 102, width: 220, height: 2, background: theme.accentColor }} />
+      </div>
+    );
+  }
+
+  if (theme.layout === 'flow-canvas') {
+    return (
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ position: 'absolute', inset: 0, opacity: 0.16 }}>
+        <ellipse cx={width * 0.2} cy={height * 0.7} rx={width * 0.28} ry={height * 0.16} fill="none" stroke={theme.accentColor} strokeWidth={2} transform={`rotate(-12 ${width * 0.2} ${height * 0.7})`} />
+        <ellipse cx={width * 0.78} cy={height * 0.34} rx={width * 0.24} ry={height * 0.13} fill="none" stroke={theme.secondaryAccent} strokeWidth={2} transform={`rotate(14 ${width * 0.78} ${height * 0.34})`} />
+      </svg>
+    );
+  }
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, opacity: 0.38 }}>
+      <div style={{ position: 'absolute', left: 104, top: 78, bottom: 104, width: 2, background: theme.secondaryAccent }} />
+      {[0, 1, 2, 3, 4].map((index) => (
+        <div key={index} style={{ position: 'absolute', left: 88, top: 160 + index * 154, width: 34, height: 1, background: theme.accentColor }} />
+      ))}
+      <div style={{ position: 'absolute', left: 86, bottom: 98, color: theme.accentColor, fontFamily: theme.labelFontFamily, fontSize: 12, rotate: '-90deg', transformOrigin: 'left bottom' }}>{theme.patternLabel}</div>
+    </div>
+  );
+};
+
+const ThemeMotionLayer: React.FC<{ themeId?: VideoThemeId }> = ({ themeId }) => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+  const theme = getVideoTheme(themeId);
+  const scanFrame = frame % 240;
+  const scanX = interpolate(scanFrame, [0, 240], [-width * 0.12, width * 1.12], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.inOut(Easing.cubic),
+  });
+  const scanOpacity = interpolate(scanFrame, [0, 16, 180, 240], [0, 0.18, 0.18, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  if (theme.motion === 'grid-scan') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            position: 'absolute',
+            insetBlock: 0,
+            left: scanX,
+            width: 2,
+            background: theme.accentColor,
+            boxShadow: `0 0 34px ${theme.accentColor}`,
+            opacity: scanOpacity,
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (theme.motion === 'drafting-reticle') {
+    const reticleX = interpolate(frame % 300, [0, 150, 300], [width * 0.2, width * 0.76, width * 0.2], {
+      easing: Easing.inOut(Easing.sin),
+    });
+    const reticleY = interpolate(frame % 300, [0, 150, 300], [height * 0.66, height * 0.28, height * 0.66], {
+      easing: Easing.inOut(Easing.sin),
+    });
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: reticleX,
+          top: reticleY,
+          width: 120,
+          height: 120,
+          border: `1px solid ${theme.accentColor}`,
+          borderRadius: '50%',
+          opacity: 0.16,
+          translate: '-50% -50%',
+          rotate: `${frame % 360}deg`,
+        }}
+      >
+        <span style={{ position: 'absolute', left: '50%', top: -28, width: 1, height: 176, background: theme.accentColor }} />
+        <span style={{ position: 'absolute', top: '50%', left: -28, width: 176, height: 1, background: theme.accentColor }} />
+      </div>
+    );
+  }
+
+  if (theme.motion === 'carbon-sweep') {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: -height * 0.25,
+            bottom: -height * 0.25,
+            left: scanX - 420,
+            width: 420,
+            rotate: '18deg',
+            background: `linear-gradient(90deg, transparent, ${theme.accentColor}14 45%, ${theme.accentColor}28 50%, transparent)`,
+            opacity: scanOpacity * 0.9,
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (theme.motion === 'aurora-flow') {
+    const flowX = interpolate(frame % 360, [0, 360], [-width * 0.22, width * 0.22], {
+      easing: Easing.inOut(Easing.sin),
+    });
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.24 }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: height * 0.08,
+            left: flowX,
+            width: width * 0.9,
+            height: height * 0.38,
+            borderRadius: '50%',
+            filter: 'blur(70px)',
+            rotate: '-12deg',
+            background: `linear-gradient(90deg, transparent, ${theme.accentColor}55, ${theme.secondaryAccent}44, transparent)`,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: flowX * 0.7,
+            bottom: height * 0.06,
+            width: width * 0.72,
+            height: height * 0.28,
+            borderRadius: '50%',
+            filter: 'blur(64px)',
+            rotate: '8deg',
+            background: `linear-gradient(90deg, transparent, ${theme.secondaryAccent}44, ${theme.accentColor}33, transparent)`,
+          }}
+        />
+      </div>
+    );
+  }
+
+  const traceOffset = interpolate(frame % 180, [0, 180], [-80, 80], {
+    easing: Easing.inOut(Easing.sin),
+  });
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.15 }}>
+      <svg width={width + 160} height={160} viewBox="0 0 2080 160" style={{ position: 'absolute', left: -80 + traceOffset, bottom: height * 0.16 }}>
+        <path d="M0 100 L140 100 L190 54 L248 124 L330 100 L520 100 L585 34 L650 130 L728 100 L920 100 L970 74 L1030 116 L1100 100 L1310 100 L1370 44 L1442 126 L1510 100 L1700 100 L1762 68 L1830 114 L1900 100 L2080 100" fill="none" stroke={theme.accentColor} strokeWidth={3} />
+        <circle cx="585" cy="34" r="7" fill={theme.secondaryAccent} />
+        <circle cx="1370" cy="44" r="7" fill={theme.secondaryAccent} />
+      </svg>
+    </div>
+  );
+};
 
 export const HudOverlay: React.FC<HudOverlayProps> = ({
   projectTitle,
@@ -20,10 +210,12 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
   globalFrame,
   totalFrames,
   captionStyle,
+  videoTheme,
 }) => {
   const { fps } = useVideoConfig();
   const localFrame = useCurrentFrame();
   const meta = DOMAIN_META[scene.domain];
+  const theme = getVideoTheme(videoTheme);
   const accent = scene.animation.accentColor || meta.accentColor;
   const captionFontSize = Math.min(64, Math.max(24, captionStyle?.fontSize ?? 36));
   const captionFontWeight = captionStyle?.fontWeight ?? 600;
@@ -38,9 +230,6 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
 
   const progressPct = Math.min(100, Math.max(0, (globalFrame / Math.max(1, totalFrames)) * 100));
 
-  // Subtle animated grid drift
-  const gridOffset = (localFrame * 0.4) % 48;
-
   // Beat-synchronized subtitle computation
   const sceneTotalFrames = Math.max(30, Math.round(scene.durationSeconds * fps));
   const sceneProgress = Math.min(1, localFrame / sceneTotalFrames);
@@ -52,24 +241,16 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
     scene.animation.effect || 'signal-pulse'
   );
   const cueStartFrame = Math.round(activeCue.startRatio * sceneTotalFrames);
-  const cueEndFrame = Math.round(activeCue.endRatio * sceneTotalFrames);
-  const activeSubtitleText = activeCue.sentences.join(' ').trim() || scene.script;
-  const captionWidthUnits = Math.max(18, (captionMaxWidth - 60) / captionFontSize);
-  const subtitleChunks = splitCaptionIntoChunks(activeSubtitleText, captionWidthUnits);
-  const activeChunkIndex = Math.min(
-    Math.max(0, subtitleChunks.length - 1),
-    Math.floor(cueProgress * subtitleChunks.length)
-  );
-  const visibleSubtitleText = subtitleChunks[activeChunkIndex] || activeSubtitleText;
-  const chunkFrameSpan = Math.max(1, cueEndFrame - cueStartFrame) / Math.max(1, subtitleChunks.length);
-  const chunkLocalFrame = Math.max(0, localFrame - (cueStartFrame + activeChunkIndex * chunkFrameSpan));
+  const activeSubtitleText = activeCue.sentences[0]?.trim() || scene.script;
+  const visibleSubtitleText = activeSubtitleText;
+  const sentenceLocalFrame = Math.max(0, localFrame - cueStartFrame);
   const subSpring = spring({
-    frame: chunkLocalFrame,
+    frame: sentenceLocalFrame,
     fps,
     config: { damping: 18, stiffness: 220, mass: 0.6 },
   });
   const subY = interpolate(subSpring, [0, 1], [14, 0]);
-  const subOpacity = interpolate(chunkLocalFrame, [0, 6], [0, 1], {
+  const subOpacity = interpolate(sentenceLocalFrame, [0, 6], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -99,17 +280,14 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundColor: '#070B14',
-            backgroundImage: `
-              linear-gradient(to right, rgba(56, 189, 248, 0.045) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px)
-            `,
-            backgroundSize: '48px 48px',
-            backgroundPosition: `${gridOffset}px ${gridOffset}px`,
+            ...getVideoThemeStyle(videoTheme, localFrame),
             zIndex: 0,
           }}
         />
       )}
+
+      {!isPptxSlide && <ThemeLayoutFrame themeId={videoTheme} />}
+      {!isPptxSlide && <ThemeMotionLayer themeId={videoTheme} />}
 
       {/* Ambient Radial Glow (hidden on 1:1 PowerPoint slides) */}
       {!isPptxSlide && (
@@ -121,7 +299,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
             width: 720,
             height: 720,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${theme.accentColor}26 0%, transparent 70%)`,
             zIndex: 0,
           }}
         />
@@ -139,7 +317,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             zIndex: 20,
-            fontFamily: 'Inter, system-ui, sans-serif',
+            fontFamily: theme.labelFontFamily,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -167,7 +345,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               style={{
                 padding: '6px 14px',
                 borderRadius: 6,
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              backgroundColor: theme.hudSurface,
                 border: '1px solid rgba(148, 163, 184, 0.25)',
                 color: '#E2E8F0',
                 fontSize: 15,
@@ -181,7 +359,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               style={{
                 padding: '6px 16px',
                 borderRadius: 6,
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              backgroundColor: theme.hudSurface,
                 border: `1px solid ${accent}55`,
                 color: accent,
                 fontSize: 16,
@@ -221,7 +399,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               gap: 14,
               alignItems: 'center',
               boxShadow: `0 8px 28px rgba(0, 0, 0, 0.5), 0 0 18px ${accent}22`,
-              fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
+              fontFamily: theme.labelFontFamily,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -287,7 +465,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
             style={{
               position: 'relative',
               overflow: 'hidden',
-              backgroundColor: `rgba(7, 11, 20, ${captionBackgroundOpacity})`,
+              backgroundColor: theme.captionSurface.replace(/\.[0-9]+\)/, `.${Math.round(captionBackgroundOpacity * 100)})`),
               border: `1px solid ${accent}44`,
               borderRadius: 14,
               padding: '14px 30px 18px',
@@ -298,7 +476,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               textAlign: 'center',
               maxWidth: captionMaxWidth,
               boxShadow: `0 10px 32px rgba(0, 0, 0, 0.55), 0 0 20px ${accent}18`,
-              fontFamily: 'Inter, "Noto Sans TC", system-ui, sans-serif',
+              fontFamily: theme.titleFontFamily,
             }}
           >
             <div>{renderHighlightedSubtitle(visibleSubtitleText)}</div>

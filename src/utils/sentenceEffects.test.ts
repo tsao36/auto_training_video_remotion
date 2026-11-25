@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RemotionEffect, SentenceEffectCue } from '../types/training';
-import { splitCaptionIntoChunks } from './captions';
+import { generateCaptionsFromScript, splitCaptionIntoChunks } from './captions';
 import {
   analyzeSentencePairEffect,
   buildSentenceEffectCues,
@@ -82,7 +82,7 @@ describe('groupSentencesForDynamicBeats', () => {
     expect(beats).toEqual([['第一句。'], ['第二句。'], ['第三句。']]);
   });
 
-  it('splits a long sentence at commas into multiple beats', () => {
+  it('can still split a long sentence for standalone visual experimentation', () => {
     const long =
       '先確認電源軌 PG 訊號在開機後是否準時拉高並維持穩定，再用示波器量測 3.3V 電壓是否出現壓降與雜訊干擾。';
     expect(long.length).toBeGreaterThan(48);
@@ -148,6 +148,13 @@ describe('buildSentenceEffectCues', () => {
     expect(buildSentenceEffectCues(script, 'architecture-flow')).toHaveLength(5);
   });
 
+  it('does not split one long sentence at a comma', () => {
+    const sentence = '先確認電源，再量測時序，最後驗證鏈路是否穩定。';
+    const cues = buildSentenceEffectCues(sentence, 'title-hero');
+    expect(cues).toHaveLength(1);
+    expect(cues[0].sentences).toEqual([sentence]);
+  });
+
   it('weights cue length by character count', () => {
     const cues = buildSentenceEffectCues('短。這是一個明顯比較長的第二句話用來測試權重分配。', 'title-hero');
     const [a, b] = cues;
@@ -204,6 +211,16 @@ describe('getElementRevealFrame', () => {
       targetIndex: index === 2 ? 0 : 0,
     }));
     expect(getElementRevealFrame(sparseCues, 2, 4, 300)).toBe(195);
+  });
+});
+
+describe('generateCaptionsFromScript', () => {
+  it('creates one caption for each sentence without splitting commas', () => {
+    const script = '先確認 3.3V 電源，再檢查時序。接著量測鏈路品質。';
+    const captions = generateCaptionsFromScript(script, 12);
+    expect(captions).toHaveLength(2);
+    expect(captions[0].text.trim()).toBe('先確認 3.3V 電源，再檢查時序。');
+    expect(captions[1].text.trim()).toBe('接著量測鏈路品質。');
   });
 });
 

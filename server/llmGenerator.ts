@@ -197,6 +197,8 @@ function inferPrimitivesFromScript(script: string, visualDescription?: string): 
   if (/比較.*(長條|數值)|長條圖|bar chart|comparison bars/.test(context)) selected.add('comparison-bars');
   if (/圓餅|環形|donut|比例環/.test(context)) selected.add('donut-chart');
   if (/儀表|gauge|量表|分數/.test(context)) selected.add('gauge-dial');
+  if (/筆記|工程紀錄|格線|notebook|grid paper|handwritten/.test(context)) selected.add('notebook-paper');
+  if (/紙張|文件質感|白皮書|paper texture|document|report/.test(context)) selected.add('paper-texture');
 
   if (selected.size === 0) {
     selected.add('kinetic-caption');
@@ -243,7 +245,7 @@ function extractOutlinePrimitiveSuggestions(
     candidates.add(name);
   }
 
-  return [...candidates].slice(0, 12);
+  return [...candidates].slice(0, 4);
 }
 
 function resolveScenePrimitives(
@@ -264,10 +266,32 @@ function clampPrimitives(value: unknown, script: string, visualDescription?: str
     const selected = [...new Set(value
       .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
-      .filter((item) => item.length > 0))];
+      .filter((item) => item.length > 0))].slice(0, 4);
     if (selected.length > 0) return selected;
   }
-  return inferPrimitivesFromScript(script, visualDescription);
+  return inferPrimitivesFromScript(script, visualDescription).slice(0, 4);
+}
+
+function limitDiagramDensity(diagramData: SceneDiagramData): SceneDiagramData {
+  return {
+    ...diagramData,
+    nodes: diagramData.nodes?.slice(0, 5),
+    waveformChannels: diagramData.waveformChannels?.slice(0, 3),
+    protocolSteps: diagramData.protocolSteps?.slice(0, 4),
+    comparisonRows: diagramData.comparisonRows?.slice(0, 4),
+    packetFields: diagramData.packetFields?.slice(0, 6),
+    stateNodes: diagramData.stateNodes?.slice(0, 5),
+    stateTransitions: diagramData.stateTransitions?.slice(0, 5),
+    codeLines: diagramData.codeLines?.slice(0, 6),
+    kpiMetrics: diagramData.kpiMetrics?.slice(0, 4),
+    faultBranches: diagramData.faultBranches?.slice(0, 3),
+    simChannels: diagramData.simChannels?.slice(0, 3),
+    simPackets: diagramData.simPackets?.slice(0, 6),
+    ofdmRuBlocks: diagramData.ofdmRuBlocks?.slice(0, 6),
+    mloLinks: diagramData.mloLinks?.slice(0, 3),
+    rfLinkStages: diagramData.rfLinkStages?.slice(0, 6),
+    visualCaption: diagramData.visualCaption?.slice(0, 90),
+  };
 }
 
 export function inferEffectFromScriptAndTemplate(script: string, template: VisualTemplate): RemotionEffect {
@@ -945,10 +969,11 @@ function toSceneSpecs(
     const effect = chooseDiverseEffect(clampedEffect, idx, previousEffects);
     previousTemplates.push(template);
     previousEffects.push(effect);
-    const diagramData =
+    const diagramData = limitDiagramDensity(
       raw.diagramData && Object.keys(raw.diagramData).length > 0
         ? raw.diagramData
-        : buildSmartFallbackDiagram(topic, domain, template, effect, script);
+        : buildSmartFallbackDiagram(topic, domain, template, effect, script)
+    );
 
     return {
       id: `scene-${now}-${idx}`,
@@ -1550,13 +1575,15 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
   - ${getRegionalTerminologyPromptGuidance(language.value)}
 3. SCRIPT vs GRAPHIC SEPARATION (VERY IMPORTANT):
    - "keyPoints" and "diagramData" labels MUST be short, scannable visual anchors (keywords, component names, metrics, 2–8 words max).
+   - Keep one central idea per scene. Show 2–4 keyPoints, at most 1–4 Remotion primitives, and at most 6 primary diagram items. Put supporting detail, caveats, and explanation in the spoken script, not on screen.
+   - Never fill every available area. Preserve clear negative space and prioritize adequate, readable information over exhaustive lists. If content needs more than one focused visual, split it across scenes.
   - "script" (spoken narration) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
 3. EFFECT-TO-SCRIPT ALIGNMENT:
    - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", "rf-link-budget", "summary-takeaways"].
    - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
    - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
-   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. If the outline has no explicit Remotion element suggestion for this scene, independently choose as many reusable Remotion elements as the scene needs from its script and visualDescription. Do not limit choices to a fixed domain palette or component count. Existing reusable components include ["kinetic-caption", "svg-trace-path", "pop-badge", "state-card", "animated-counter", "camera-pan-zoom", "caption-highlight", "karaoke-captions", "comparison-bars", "donut-chart", "gauge-dial", "srt-caption-track"], but another precise component name or custom element identifier is allowed.
+   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. If the outline has no explicit Remotion element suggestion for that scene, independently choose the smallest effective set: 1–4 reusable Remotion elements total. Existing reusable components include ["kinetic-caption", "svg-trace-path", "pop-badge", "state-card", "animated-counter", "camera-pan-zoom", "caption-highlight", "karaoke-captions", "comparison-bars", "donut-chart", "gauge-dial", "srt-caption-track", "horizontal-bar-chart", "line-chart", "number-counter", "pie-chart", "vertical-bar-chart", "notebook-paper", "paper-texture"], but another precise component name or custom element identifier is allowed.
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
      * signal-waveform: { waveformChannels: [{label, color, type: "clock"|"data"|"rf-sine"|"ofdma"}], faultChannelIndex, visualCaption }
@@ -1727,9 +1754,10 @@ ${params.odmMode ? `ODM BEGINNER-MODE:
 - ${getRegionalTerminologyPromptGuidance(language.value)}
 - The spoken "script" (台詞) MUST NOT just read the "keyPoints" or diagram labels. Script explains WHY/HOW; graphics show concise visual anchors.
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
+- Keep one central idea per scene: 2–4 keyPoints, 1–4 Remotion primitives, and no more than 6 primary diagram items. Move detail into narration instead of crowding the screen.
 Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","summary-takeaways"]
 Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan","packet-traffic"]
-Choose any number of Remotion elements that match the scene; do not limit the list to one preset palette or a fixed element count.
+Choose the smallest set of Remotion elements that communicates the scene clearly; never add decorative elements merely to fill space.
 
 Return JSON:
 {
@@ -1775,10 +1803,12 @@ ${
       const rawDiagram =
         action === 'rewrite-script-no-read'
           ? scene.diagramData
-          : applyDeterministicFixesToDiagramData(
-              res.diagramData || buildSmartFallbackDiagram(topic, scene.domain, nextTemplate, nextEffect, nextScript),
-              language.value
-            ).value;
+          : limitDiagramDensity(
+              applyDeterministicFixesToDiagramData(
+                res.diagramData || buildSmartFallbackDiagram(topic, scene.domain, nextTemplate, nextEffect, nextScript),
+                language.value
+              ).value
+            );
       const remotionPrimitives =
         action === 'rewrite-script-no-read'
           ? scene.remotionPrimitives

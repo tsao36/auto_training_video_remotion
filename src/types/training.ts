@@ -415,6 +415,13 @@ export interface VideoCaptionStyle {
   backgroundOpacity: number;
 }
 
+export type VideoThemeId =
+  | 'signal-grid'
+  | 'blueprint'
+  | 'carbon-lines'
+  | 'aurora-flow'
+  | 'thermal-paper';
+
 export interface TrainingProject {
   id: string;
   title: string;
@@ -431,6 +438,7 @@ export interface TrainingProject {
   sourceFileName?: string;
   rawSourceText: string;
   captionStyle?: Partial<VideoCaptionStyle>;
+  videoTheme?: VideoThemeId;
   llmConfig?: LlmConfig;
   ttsConfig: TtsEngineConfig;
   // When true, TTS is not auto-generated on open; the user starts it after reviewing the script.
