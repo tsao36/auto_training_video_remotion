@@ -97,6 +97,15 @@ const VALID_EFFECTS: RemotionEffect[] = [
   'packet-traffic',
 ];
 
+const AI_AUTO_TEMPLATES = new Set<VisualTemplate>([
+  'packet-simulator',
+  'ofdm-spectrum',
+  'beamforming-array',
+  'qam-constellation',
+  'mlo-multilink',
+  'rf-link-budget',
+]);
+
 const DEFAULT_GNAI_URL = 'https://gnai.intel.com/api/providers/openai/v1';
 const DEFAULT_GNAI_MODEL = 'gpt-5-mini';
 
@@ -913,6 +922,7 @@ function chooseDiverseTemplate(
   idx: number,
   previousTemplates: VisualTemplate[]
 ): VisualTemplate {
+  if (AI_AUTO_TEMPLATES.has(desired)) return desired;
   if (idx === 0) return desired === 'pptx-slide' ? 'title-hero' : desired;
 
   const recent = previousTemplates.slice(-3);
@@ -963,8 +973,11 @@ function toSceneSpecs(
 
   return payload.scenes.map((raw, idx) => {
     const clampedTemplate = clampTemplate(raw.template, idx, total);
-    const template = chooseDiverseTemplate(clampedTemplate, idx, previousTemplates);
     const script = (raw.script || raw.title || '').trim();
+    const visualContext = [raw.title, raw.subtitle, script, raw.visualDescription].filter(Boolean).join(' ');
+    const inferredTemplate = inferTemplateFromScript(visualContext, clampedTemplate);
+    const desiredTemplate = AI_AUTO_TEMPLATES.has(inferredTemplate) ? inferredTemplate : clampedTemplate;
+    const template = chooseDiverseTemplate(desiredTemplate, idx, previousTemplates);
     const clampedEffect = clampEffect(raw.effect, template, script);
     const effect = chooseDiverseEffect(clampedEffect, idx, previousEffects);
     previousTemplates.push(template);

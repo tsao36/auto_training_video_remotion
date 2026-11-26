@@ -84,6 +84,15 @@ const TEMPLATE_AI_USE: Record<VisualTemplate, string> = {
   'pptx-slide': '匯入投影片',
 };
 
+const AI_ONLY_TEMPLATES = new Set<VisualTemplate>([
+  'packet-simulator',
+  'ofdm-spectrum',
+  'beamforming-array',
+  'qam-constellation',
+  'mlo-multilink',
+  'rf-link-budget',
+]);
+
 const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
   motion: [
     ...(Object.keys(EFFECT_LABELS) as RemotionEffect[]).map((id) => ({
@@ -174,12 +183,14 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
   ],
   templates: [
     { id: 'state-card', label: 'State Card 狀態卡片', description: '高亮作用中的區塊並同時淡化其他區塊。', aiUse: 'Active block、象限、狀態、流程焦點' },
-    ...(Object.keys(TEMPLATE_LABELS) as VisualTemplate[]).map((id) => ({
-      id,
-      label: TEMPLATE_LABELS[id],
-      description: TEMPLATE_DESCRIPTIONS[id],
-      aiUse: TEMPLATE_AI_USE[id],
-    })),
+    ...(Object.keys(TEMPLATE_LABELS) as VisualTemplate[])
+      .filter((id) => !AI_ONLY_TEMPLATES.has(id))
+      .map((id) => ({
+        id,
+        label: TEMPLATE_LABELS[id],
+        description: TEMPLATE_DESCRIPTIONS[id],
+        aiUse: TEMPLATE_AI_USE[id],
+      })),
   ],
 };
 
