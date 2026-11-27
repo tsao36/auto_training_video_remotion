@@ -205,7 +205,9 @@ export function generateProjectCaptions(scenes: SceneSpec[]): Array<Caption & { 
     const durationSeconds = scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
       ? scene.tts.actualDurationSec
       : scene.durationSeconds;
-    const captions = generateCaptionsFromScript(scene.script, durationSeconds);
+    const captions = scene.captions?.length
+      ? scene.captions
+      : generateCaptionsFromScript(scene.script, durationSeconds);
     const sceneCaptions = captions.map((caption) => ({
       ...caption,
       sceneId: scene.id,

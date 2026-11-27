@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { FileText, Pencil, X } from 'lucide-react';
 import { SceneSpec } from '../types/training';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface ScriptReviewModalProps {
   isOpen: boolean;
@@ -24,14 +25,7 @@ export const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({
   scenes,
   onEditScene,
 }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onClose]);
+  const dialogRef = useDialogFocus(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -44,7 +38,7 @@ export const ScriptReviewModal: React.FC<ScriptReviewModalProps> = ({
       aria-modal="true"
       aria-labelledby="script-review-title"
     >
-      <div className="w-full max-w-4xl max-h-[88vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
+      <div ref={dialogRef} tabIndex={-1} className="w-full max-w-4xl max-h-[88vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-4 bg-[#1B1814]">
           <div className="flex items-center gap-2.5 min-w-0">
             <FileText className="w-4 h-4 text-cyan-400 shrink-0" />

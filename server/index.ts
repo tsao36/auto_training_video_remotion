@@ -16,9 +16,13 @@ import { getAudioDurationSec } from './audioDuration';
 import { generateVideoPlanWithLlm, getEnvLlmStatus, regenerateSceneWithLlm } from './llmGenerator';
 import { loadLocalEnv } from './loadEnv';
 import { inspectRenderedMedia } from './mediaQa';
+import { generateAlignedCaptions } from './captionAlignment';
 import { parsePptxBuffer } from './pptxParser';
 import { resolveRevealTarget, revealInFileExplorer } from './revealFile';
 import { researchSource } from './sourceResearch';
+import { importProjectPackage } from './projectImport';
+import { resolveRemotionBrowserExecutable } from './remotionBrowser';
+import { applyRenderProgress } from './renderState';
 import { ensurePoppingTechnicalTermsPrimitive, generateCaptionsFromScript } from '../src/utils/captions';
 import { evaluateProjectQuality } from '../src/utils/qualityLinter';
 import { splitScriptIntoSentences } from '../src/utils/sentenceEffects';
@@ -47,6 +51,7 @@ if (loadedEnvFiles.length > 0) {
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
 const MUSIC_DIR = path.join(ROOT_DIR, 'public', 'music');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
+const IMPORTED_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'imported');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
 const PREVIEW_STILLS_DIR = path.join(OUTPUT_DIR, 'previews');
 const PROJECTS_DIR = path.join(ROOT_DIR, 'projects');
@@ -58,6 +63,7 @@ fs.mkdirSync(VOICE_SAMPLES_DIR, { recursive: true });
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
 fs.mkdirSync(MUSIC_DIR, { recursive: true });
 fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
+fs.mkdirSync(IMPORTED_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 fs.mkdirSync(PREVIEW_STILLS_DIR, { recursive: true });
 fs.mkdirSync(PROJECTS_DIR, { recursive: true });
@@ -68,9 +74,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use('/audio', express.static(AUDIO_DIR));
 app.use('/music', express.static(MUSIC_DIR));
 app.use('/pptx-media', express.static(PPTX_MEDIA_DIR));
+app.use('/imported', express.static(IMPORTED_MEDIA_DIR));
 app.use('/output', express.static(OUTPUT_DIR));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const packageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 250 * 1024 * 1024 } });
 
 interface RenderJob {
   id: string;
@@ -98,10 +106,9 @@ const previewStillsJobs = new Map<string, PreviewStillsJob>();
 const MAX_CONCURRENT_RENDERS = Math.max(1, Number(process.env.REMOTION_MAX_CONCURRENT_RENDERS) || 2);
 const REMOTION_RENDER_TOKEN = process.env.REMOTION_RENDER_TOKEN?.trim() || '';
 const REMOTION_ENTRY = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
-const REMOTION_BROWSER_EXECUTABLE = process.env.REMOTION_BROWSER_EXECUTABLE?.trim() || [
-  process.env['ProgramFiles(x86)'] && path.join(process.env['ProgramFiles(x86)']!, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
-  process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
-].find((candidate): candidate is string => Boolean(candidate && fs.existsSync(candidate)));
+const REMOTION_BROWSER_EXECUTABLE = resolveRemotionBrowserExecutable({
+  override: process.env.REMOTION_BROWSER_EXECUTABLE,
+});
 let remotionBundlePromise: Promise<string> | null = null;
 
 function getRemotionBundle(): Promise<string> {
@@ -378,6 +385,20 @@ app.get('/api/projects/:id', (req, res) => {
   }
 });
 
+app.post('/api/projects/import', packageUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: 'Choose a project ZIP package to import.' });
+      return;
+    }
+    const imported = await importProjectPackage({ buffer: req.file.buffer, importedMediaDir: IMPORTED_MEDIA_DIR });
+    const record = writeSavedProject(imported.project);
+    res.json({ record, summary: toProjectSummary(record), assetCount: imported.assetCount });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Project package import failed.' });
+  }
+});
+
 app.post('/api/projects', (req, res) => {
   try {
     const body = req.body as { project?: TrainingProject } | TrainingProject;
@@ -414,6 +435,10 @@ app.delete('/api/projects/:id', (req, res) => {
       }
     }
     if (lastError) throw lastError;
+    const importedMediaPath = path.join(IMPORTED_MEDIA_DIR, sanitizeProjectId(req.params.id) || '');
+    if (importedMediaPath.startsWith(IMPORTED_MEDIA_DIR + path.sep)) {
+      fs.rmSync(importedMediaPath, { recursive: true, force: true });
+    }
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : '刪除專案失敗' });
@@ -1013,6 +1038,7 @@ interface TtsSynthesizeResult {
   note: string;
   audioUrl: string;
   durationSec: number;
+  captions?: import('@remotion/captions').Caption[];
 }
 
 const inFlightTtsRequests = new Map<string, Promise<TtsSynthesizeResult>>();
@@ -1106,6 +1132,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
         note: '使用快取語音音軌',
         audioUrl: `/audio/${cachedMp3}`,
         durationSec: measuredDuration,
+        captions: generateAlignedCaptions(text, measuredDuration, cachedMp3Path),
       });
       return;
     }
@@ -1131,6 +1158,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
         note: '使用快取語音音軌',
         audioUrl: `/audio/${wavFileName}`,
         durationSec: measuredDuration,
+        captions: generateAlignedCaptions(text, measuredDuration, wavFilePath),
       });
       return;
     }
@@ -1297,6 +1325,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
         note,
         audioUrl: `/audio/${finalFileName}`,
         durationSec: measuredDuration,
+        captions: generateAlignedCaptions(text, measuredDuration, finalFilePath),
       };
     })();
 
@@ -1559,9 +1588,7 @@ app.post('/api/render', async (req, res) => {
           cancelSignal,
           onProgress: ({ progress }) => {
             const job = renderJobs.get(jobId);
-            if (job && !job.cancelled) {
-              job.progress = 20 + Math.round(progress * 75);
-            }
+            if (job) applyRenderProgress(job, progress);
           },
         });
 

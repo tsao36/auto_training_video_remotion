@@ -1,5 +1,33 @@
 $ErrorActionPreference = 'Stop'
 
+function Assert-CommandAvailable([string]$Name, [string]$InstallHint) {
+    if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+        throw "$Name was not found on PATH. $InstallHint"
+    }
+}
+
+Assert-CommandAvailable 'node' 'Install Node.js 20 or newer, then rerun this installer.'
+Assert-CommandAvailable 'npm' 'Repair the Node.js installation so npm is available, then rerun this installer.'
+Assert-CommandAvailable 'ffmpeg' 'Install FFmpeg and add it to PATH, then rerun this installer.'
+Assert-CommandAvailable 'ffprobe' 'Install FFmpeg with ffprobe and add it to PATH, then rerun this installer.'
+
+$nodeMajor = [int]((& node -p "Number(process.versions.node.split('.')[0])").Trim())
+if ($nodeMajor -lt 20) {
+    throw "Node.js 20 or newer is required; detected Node.js $(& node --version)."
+}
+
+$browserPaths = @(
+    "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+    "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+    "$env:LOCALAPPDATA\Microsoft\Edge\Application\msedge.exe",
+    "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+    "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+    "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+)
+if (-not ($browserPaths | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1)) {
+    throw 'Microsoft Edge or Google Chrome is required for local Remotion rendering.'
+}
+
 $launcherPath = (Get-Item -LiteralPath (Join-Path $PSScriptRoot 'start.bat')).FullName
 $desktopPath = [Environment]::GetFolderPath('DesktopDirectory')
 if (-not (Test-Path -LiteralPath $desktopPath -PathType Container)) {

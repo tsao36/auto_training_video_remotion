@@ -726,6 +726,7 @@ export function App() {
                 durationSeconds: actualDur
                   ? Math.max(3, Math.ceil(actualDur + 0.5))
                   : sc.durationSeconds,
+                captions: Array.isArray(data.captions) ? data.captions : sc.captions,
                 tts: {
                   ...sc.tts,
                   status: 'ready',
@@ -842,6 +843,7 @@ export function App() {
                         durationSeconds: actualDur
                           ? Math.max(3, Math.ceil(actualDur + 0.5))
                           : sc.durationSeconds,
+                        captions: Array.isArray(data.captions) ? data.captions : sc.captions,
                         tts: {
                           ...sc.tts,
                           status: 'ready',
@@ -1296,6 +1298,21 @@ export function App() {
     void fetchSavedProjects();
   };
 
+  const importProjectPackage = async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const response = await fetch('/api/projects/import', { method: 'POST', body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '專案包匯入失敗');
+      await fetchSavedProjects();
+      await handleSelectSavedProject(data.record.id);
+      setAiNotice(`已匯入專案「${data.record.project.title}」，包含 ${data.assetCount || 0} 個媒體資產。`);
+    } catch (error) {
+      setAiNotice(error instanceof Error ? error.message : '專案包匯入失敗');
+    }
+  };
+
   const openPlayerMode = async (projectId?: string) => {
     if (view === 'editor' && isCurrentProjectSaved) {
       await saveProjectToDisk(project, false);
@@ -1333,6 +1350,7 @@ export function App() {
           onOpenPlayer={(projectId) => void openPlayerMode(projectId)}
           onDeleteProject={handleDeleteSavedProject}
           onCreateWithAi={() => setIsWizardOpen(true)}
+          onImportPackage={importProjectPackage}
         />
         {aiNotice && (
           <div

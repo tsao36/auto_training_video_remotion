@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Copy, GitBranch, RefreshCw, Save, X } from 'lucide-react';
 import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import {
   CONTENT_LANGUAGES,
   DOMAIN_META,
@@ -68,6 +69,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
   const [paletteLoading, setPaletteLoading] = useState(false);
   const [paletteError, setPaletteError] = useState<string | null>(null);
   const [paletteSource, setPaletteSource] = useState<string | null>(null);
+  const dialogRef = useDialogFocus(isOpen, onClose);
   const [paletteDraft, setPaletteDraft] = useState<string[]>(
     project.colorScheme?.palette?.length
       ? project.colorScheme.palette.slice(0, 5)
@@ -468,7 +470,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="ai-pipeline-title">
-      <div className="w-full max-w-6xl h-[86vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
+      <div ref={dialogRef} tabIndex={-1} className="w-full max-w-6xl h-[86vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-[#1B1814]">
           <div className="flex items-center gap-2.5 min-w-0">
             <GitBranch className="w-4 h-4 text-cyan-400 shrink-0" />

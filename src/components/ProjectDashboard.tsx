@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Clock,
   Edit3,
@@ -13,6 +13,7 @@ import {
   Sparkles,
   Trash2,
   Tv,
+  Upload,
   Wand2,
 } from 'lucide-react';
 import { DOMAIN_META, SavedProjectSummary } from '../types/training';
@@ -28,6 +29,7 @@ interface ProjectDashboardProps {
   onOpenPlayer: (projectId?: string) => void;
   onDeleteProject: (projectId: string) => Promise<void>;
   onCreateWithAi: () => void;
+  onImportPackage: (file: File) => Promise<void>;
 }
 
 type FilterMode = 'all' | 'rendered' | 'draft';
@@ -58,10 +60,13 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   onOpenPlayer,
   onDeleteProject,
   onCreateWithAi,
+  onImportPackage,
 }) => {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<'projects' | 'playground' | 'settings'>('projects');
 
   const filtered = useMemo(() => {
@@ -115,6 +120,32 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           >
             <Tv className="w-3.5 h-3.5 text-cyan-400" />
             播放器模式 ({projects.length})
+          </button>
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".zip,application/zip"
+            className="hidden"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (!file) return;
+              setImporting(true);
+              try {
+                await onImportPackage(file);
+              } finally {
+                setImporting(false);
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => importFileRef.current?.click()}
+            disabled={importing}
+            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-40"
+          >
+            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-cyan-400" />}
+            匯入專案 ZIP
           </button>
           <button
             type="button"

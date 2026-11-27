@@ -44,7 +44,9 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
       : scene.durationSeconds;
     return {
       ...scene,
-      captions: generateCaptionsFromScript(scene.script, effectiveDuration),
+      captions: scene.captions?.length
+        ? scene.captions
+        : generateCaptionsFromScript(scene.script, effectiveDuration),
     };
   }), [fps, scenes]);
 

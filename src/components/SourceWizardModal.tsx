@@ -33,6 +33,7 @@ import { DEFAULT_GNAI_CONFIG, LLM_PROVIDER_PRESETS, loadStoredLlmConfig, saveSto
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
 import { getVideoTheme, VIDEO_THEMES } from '../utils/videoThemes';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface SourceWizardModalProps {
   isOpen: boolean;
@@ -121,6 +122,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     () => loadTtsSettings().defaultVoice?.fileName ?? ''
   );
   const [createTtsOnFirstRun, setCreateTtsOnFirstRun] = useState(false);
+  const dialogRef = useDialogFocus(isOpen, onClose);
   const [language, setLanguage] = useState<ContentLanguage>(DEFAULT_CONTENT_LANGUAGE);
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload'>('topic-llm');
   const [topic, setTopic] = useState('');
@@ -648,7 +650,9 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
       <div
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby="source-wizard-title"
         className="w-full max-w-3xl rounded-2xl border border-slate-700/80 bg-[#151310] shadow-2xl overflow-hidden"

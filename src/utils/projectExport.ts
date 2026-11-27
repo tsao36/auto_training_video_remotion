@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import type { RenderedVideoRecord, TrainingProject } from '../types/training';
 import { generateProjectCaptions, serializeCaptions } from './captions';
 
@@ -12,11 +11,26 @@ export interface ProjectExportManifest {
     durationSeconds: number;
   };
   files: string[];
+  assets: Array<{ originalUrl: string; archivePath: string; bytes: number }>;
   included: {
     editableProject: true;
     captions: true;
     renderedVideo: boolean;
+    assets: boolean;
   };
+}
+
+const LOCAL_ASSET_PREFIXES = ['/audio/', '/music/', '/pptx-media/'] as const;
+
+function collectLocalAssetUrls(value: unknown, found = new Set<string>()): Set<string> {
+  if (typeof value === 'string' && LOCAL_ASSET_PREFIXES.some((prefix) => value.startsWith(prefix))) {
+    found.add(value.split(/[?#]/)[0]);
+  } else if (Array.isArray(value)) {
+    value.forEach((item) => collectLocalAssetUrls(item, found));
+  } else if (value && typeof value === 'object') {
+    Object.values(value).forEach((item) => collectLocalAssetUrls(item, found));
+  }
+  return found;
 }
 
 export async function buildProjectExportZip(params: {
@@ -25,6 +39,7 @@ export async function buildProjectExportZip(params: {
   latestRender?: RenderedVideoRecord;
 }): Promise<Blob> {
   const { project, renderedVideo, latestRender } = params;
+  const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
   const captions = generateProjectCaptions(project.scenes);
   const exportProject: TrainingProject = {
@@ -45,6 +60,20 @@ export async function buildProjectExportZip(params: {
   zip.file('captions/project.srt', srt);
   zip.file('captions/project.vtt', vtt);
 
+  const assetRecords: ProjectExportManifest['assets'] = [];
+  for (const [index, assetUrl] of [...collectLocalAssetUrls(exportProject)].entries()) {
+    const response = await fetch(assetUrl);
+    if (!response.ok) throw new Error(`Unable to package referenced asset: ${assetUrl}`);
+    const blob = await response.blob();
+    const prefix = assetUrl.startsWith('/audio/') ? 'audio' : assetUrl.startsWith('/music/') ? 'music' : 'pptx-media';
+    const originalName = assetUrl.split('/').pop() || `asset-${index}`;
+    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const archivePath = `assets/${prefix}/${String(index + 1).padStart(3, '0')}-${safeName}`;
+    zip.file(archivePath, blob);
+    files.push(archivePath);
+    assetRecords.push({ originalUrl: assetUrl, archivePath, bytes: blob.size });
+  }
+
   if (renderedVideo) {
     zip.file('video/project.mp4', renderedVideo);
     files.push('video/project.mp4');
@@ -63,10 +92,12 @@ export async function buildProjectExportZip(params: {
           : scene.durationSeconds), 0),
     },
     files: [...files, 'manifest.json'],
+    assets: assetRecords,
     included: {
       editableProject: true,
       captions: true,
       renderedVideo: Boolean(renderedVideo),
+      assets: assetRecords.length > 0,
     },
   };
   if (latestRender) {

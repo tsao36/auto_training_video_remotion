@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, Mic, RefreshCw, Sparkles, Square, Upload, X } from 'lucide-react';
 import { ContentLanguage, VoiceProfileProvider } from '../types/training';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 const MAX_RECORD_SECONDS = 15;
 const MIN_RECORD_SECONDS = 3;
@@ -61,6 +62,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
   const recordingUrlRef = useRef<string | null>(null);
+  const dialogRef = useDialogFocus(true, onClose);
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -144,7 +146,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
       aria-modal="true"
       aria-labelledby="voice-recorder-title"
     >
-      <div className="w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+      <div ref={dialogRef} tabIndex={-1} className="w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
         <div className="flex items-center justify-between mb-3">
           <h2 id="voice-recorder-title" className="text-sm font-bold text-white flex items-center gap-2">
             <Mic className="w-4 h-4 text-cyan-400" /> 錄製自訂聲線

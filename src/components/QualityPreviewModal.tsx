@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { QualityReport, ScenePreviewStill } from '../types/training';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 export interface PreviewStillsState {
   active: boolean;
@@ -47,6 +48,7 @@ export const QualityPreviewModal: React.FC<QualityPreviewModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = React.useState<'quality' | 'stills'>(initialTab);
   const [warningsAcknowledged, setWarningsAcknowledged] = React.useState(false);
+  const dialogRef = useDialogFocus(isOpen, onClose);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -64,7 +66,7 @@ export const QualityPreviewModal: React.FC<QualityPreviewModalProps> = ({
       aria-modal="true"
       aria-label="品質檢查與場景預覽"
     >
-      <div className="w-full max-w-5xl max-h-[88vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
+      <div ref={dialogRef} tabIndex={-1} className="w-full max-w-5xl max-h-[88vh] flex flex-col rounded-2xl bg-[#161411] border border-slate-800 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-4 bg-[#1B1814]">
           <div className="flex items-center gap-2">
