@@ -30,6 +30,8 @@ interface QualityPreviewModalProps {
   stillsState: PreviewStillsState;
   onGenerateStills: () => void;
   onJumpToScene: (sceneIndex: number) => void;
+  renderReviewActive?: boolean;
+  onContinueRender?: () => void;
 }
 
 export const QualityPreviewModal: React.FC<QualityPreviewModalProps> = ({
@@ -40,12 +42,16 @@ export const QualityPreviewModal: React.FC<QualityPreviewModalProps> = ({
   stillsState,
   onGenerateStills,
   onJumpToScene,
+  renderReviewActive = false,
+  onContinueRender,
 }) => {
   const [activeTab, setActiveTab] = React.useState<'quality' | 'stills'>(initialTab);
+  const [warningsAcknowledged, setWarningsAcknowledged] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
+      setWarningsAcknowledged(false);
     }
   }, [isOpen, initialTab]);
 
@@ -267,6 +273,39 @@ export const QualityPreviewModal: React.FC<QualityPreviewModalProps> = ({
             </div>
           )}
         </div>
+        {renderReviewActive && (
+          <div className="border-t border-slate-800 bg-[#191612] px-5 py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white">MP4 輸出前品質確認</div>
+                <div className="mt-0.5 text-[11px] text-slate-400">
+                  阻塞錯誤必須修正；警告需要創作者明確確認後才可繼續。
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {qualityReport.warningCount > 0 && (
+                  <label className="flex items-center gap-2 text-xs text-amber-200">
+                    <input
+                      type="checkbox"
+                      checked={warningsAcknowledged}
+                      onChange={(event) => setWarningsAcknowledged(event.target.checked)}
+                      className="accent-amber-400"
+                    />
+                    我已檢視並接受警告
+                  </label>
+                )}
+                <button
+                  type="button"
+                  onClick={onContinueRender}
+                  disabled={!onContinueRender || (qualityReport.warningCount > 0 && !warningsAcknowledged)}
+                  className="rounded-lg bg-cyan-500 px-3.5 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {qualityReport.errorCount > 0 ? '請先修正錯誤' : '繼續輸出'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

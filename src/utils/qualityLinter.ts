@@ -64,7 +64,8 @@ function getSceneDiagramItemCount(scene: SceneSpec): number {
 }
 
 export function evaluateProjectQuality(
-  project: Pick<TrainingProject, 'scenes' | 'language' | 'title'>,
+  project: Pick<TrainingProject, 'scenes' | 'language' | 'title'> &
+    Partial<Pick<TrainingProject, 'brief' | 'researchSources' | 'backgroundMusic'>>,
   options: QualityLintOptions = {}
 ): QualityReport {
   const issues: QualityIssue[] = [];
@@ -77,6 +78,27 @@ export function evaluateProjectQuality(
       level: 'error',
       code: 'empty-scenes',
       message: '專案沒有任何場景，無法預覽或輸出影片。',
+    });
+  }
+
+  const declaredSourceUrls = project.brief?.sourceUrls || [];
+  const researchedUrls = new Set((project.researchSources || []).flatMap((source) =>
+    source.requestedUrl ? [source.url, source.requestedUrl] : [source.url]
+  ));
+  const missingSources = declaredSourceUrls.filter((url) => !researchedUrls.has(url));
+  if (missingSources.length > 0) {
+    issues.push({
+      level: 'warning',
+      code: 'research-provenance-missing',
+      message: `${missingSources.length} 個已宣告的參考網址沒有已保存的來源讀取紀錄，請在輸出前重新研究或移除未使用網址。`,
+    });
+  }
+
+  if (project.backgroundMusic?.url && !project.backgroundMusic.licenseNote?.trim()) {
+    issues.push({
+      level: 'warning',
+      code: 'music-license-note-missing',
+      message: '背景音樂缺少授權來源備註；請在輸出前確認並記錄使用權利。',
     });
   }
 

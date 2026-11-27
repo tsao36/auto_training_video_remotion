@@ -20,14 +20,16 @@ import {
   DEFAULT_CONTENT_LANGUAGE,
   ContentLanguage,
   LlmConfig,
+  ResearchSourceRecord,
   TechDomain,
+  TrainingBrief,
   TrainingProject,
   TtsProvider,
   VideoThemeId,
   VoiceProfile,
 } from '../types/training';
 import { DomainChoice, isTechDomain } from '../utils/domainInference';
-import { DEFAULT_GNAI_CONFIG, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
+import { DEFAULT_GNAI_CONFIG, LLM_PROVIDER_PRESETS, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
 import { getVideoTheme, VIDEO_THEMES } from '../utils/videoThemes';
@@ -64,6 +66,9 @@ type PersistedWizardDraft = {
   durationSeconds: number;
   videoTheme: VideoThemeId;
   researchText: string;
+  brief: TrainingBrief;
+  allowWebResearch: boolean;
+  researchSources: ResearchSourceRecord[];
   pipelineStage: 0 | 1 | 2 | 3;
   preparedSource: {
     topic: string;
@@ -96,13 +101,10 @@ const DOMAIN_ICONS: Record<TechDomain, React.ReactNode> = {
 };
 
 const DURATION_PRESETS = [
-  { label: '30 秒', seconds: 30 },
-  { label: '1 分鐘', seconds: 60 },
-  { label: '3 分鐘', seconds: 180 },
   { label: '5 分鐘', seconds: 300 },
   { label: '10 分鐘', seconds: 600 },
+  { label: '15 分鐘', seconds: 900 },
   { label: '20 分鐘', seconds: 1200 },
-  { label: '30 分鐘', seconds: 1800 },
 ];
 
 export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
@@ -123,9 +125,18 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [inputMode, setInputMode] = useState<'topic-llm' | 'upload'>('topic-llm');
   const [topic, setTopic] = useState('');
   const [odmMode, setOdmMode] = useState(false);
-  const [durationSeconds, setDurationSeconds] = useState<number>(60);
+  const [durationSeconds, setDurationSeconds] = useState<number>(300);
   const [videoTheme, setVideoTheme] = useState<VideoThemeId>('signal-grid');
   const [researchText, setResearchText] = useState('');
+  const [brief, setBrief] = useState<TrainingBrief>({
+    audience: 'Professionals',
+    objective: '',
+    tone: 'calm-instructional',
+    sourceUrls: [],
+  });
+  const [sourceUrlsText, setSourceUrlsText] = useState('');
+  const [allowWebResearch, setAllowWebResearch] = useState(false);
+  const [researchSources, setResearchSources] = useState<ResearchSourceRecord[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [llmConfig, setLlmConfig] = useState<LlmConfig>(() =>
     initialLlmConfig?.apiKey ? initialLlmConfig : loadStoredLlmConfig()
@@ -184,9 +195,18 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       setInputMode(recovery.inputMode || 'topic-llm');
       setTopic(recovery.topic || '');
       setOdmMode(Boolean(recovery.odmMode));
-      setDurationSeconds(recovery.durationSeconds || 60);
+      setDurationSeconds(Math.max(300, Math.min(1200, recovery.durationSeconds || 300)));
       setVideoTheme(recovery.videoTheme || 'signal-grid');
       setResearchText(recovery.researchText || '');
+      setBrief(recovery.brief || {
+        audience: 'Professionals',
+        objective: '',
+        tone: 'calm-instructional',
+        sourceUrls: [],
+      });
+      setSourceUrlsText((recovery.brief?.sourceUrls || []).join('\n'));
+      setAllowWebResearch(Boolean(recovery.allowWebResearch));
+      setResearchSources(recovery.researchSources || []);
       setPipelineStage(recovery.pipelineStage);
       setPreparedSource({
         ...recovery.preparedSource,
@@ -266,6 +286,12 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       durationSeconds,
       videoTheme,
       researchText,
+      brief: {
+        ...brief,
+        sourceUrls: sourceUrlsText.split(/\n|,/).map((url) => url.trim()).filter(Boolean),
+      },
+      allowWebResearch,
+      researchSources,
       pipelineStage,
       preparedSource,
       planDraft,
@@ -293,6 +319,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
     durationSeconds,
     videoTheme,
     researchText,
+    brief,
+    sourceUrlsText,
+    allowWebResearch,
+    researchSources,
     pipelineStage,
     preparedSource,
     planDraft,
@@ -365,6 +395,37 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         setCreateProgress(18);
       }
 
+      const sourceUrls = sourceUrlsText.split(/\n|,/).map((url) => url.trim()).filter(Boolean);
+      if (pipelineStage === 0 && sourceUrls.length === 0) {
+        setResearchSources([]);
+      }
+      if (pipelineStage === 0 && sourceUrls.length > 0) {
+        if (!allowWebResearch) {
+          throw new Error('已填入參考網址。請先勾選同意讀取公開網頁，或移除網址後重新產生。');
+        }
+        setCreateStage(`正在讀取 ${Math.min(sourceUrls.length, 6)} 個公開參考來源...`);
+        const researchResp = await fetch('/api/research-sources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ consent: true, urls: sourceUrls }),
+        });
+        const researchData = await researchResp.json();
+        if (!researchResp.ok) throw new Error(researchData.error || '參考來源讀取失敗');
+        if (Array.isArray(researchData.errors) && researchData.errors.length > 0) {
+          const details = researchData.errors.map((item: { url: string; error: string }) => `${item.url}: ${item.error}`).join('\n');
+          throw new Error(`部分參考來源無法讀取：\n${details}`);
+        }
+        const fetchedSources = Array.isArray(researchData.sources)
+          ? researchData.sources as Array<ResearchSourceRecord & { text: string }>
+          : [];
+        setResearchSources(fetchedSources.map(({ url, requestedUrl, title, chars }) => ({ url, requestedUrl, title, chars })));
+        const sourceText = fetchedSources
+          .map((source) => `\n\n## Web source: ${source.title}\nURL: ${source.url}\n${source.text}`)
+          .join('');
+        rawTextForLlm = `${rawTextForLlm}${sourceText}`.trim();
+        setCreateProgress(28);
+      }
+
       setCreateStage('AI 正在規劃場景與撰寫口語腳本...');
       progressTimerRef.current = window.setInterval(() => {
         setCreateProgress((prev) => {
@@ -382,7 +443,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         });
       }, 450);
 
-      const targetSec = Math.max(15, Math.min(1800, Number(durationSeconds) || 60));
+      const targetSec = Math.max(300, Math.min(1200, Number(durationSeconds) || 300));
       const resp = await fetch('/api/llm/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -395,6 +456,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           pptxSlides: pptxSlidesForLlm,
           defaultTtsProvider: ttsProvider,
           language,
+          brief: {
+            ...brief,
+            sourceUrls: sourceUrlsText.split(/\n|,/).map((url) => url.trim()).filter(Boolean),
+          },
           llmConfig: requestLlmConfig,
         }),
       });
@@ -461,6 +526,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
     const projectLlmConfig: LlmConfig = usingEnvLlm
       ? {
+          provider: 'intel-gnai',
           baseUrl: envLlmStatus.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
           apiKey: '',
           model: envLlmStatus.model || DEFAULT_GNAI_CONFIG.model,
@@ -478,14 +544,19 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       language,
       topic: preparedSource.topic,
       odmMode,
+      brief: {
+        ...brief,
+        sourceUrls: sourceUrlsText.split(/\n|,/).map((url) => url.trim()).filter(Boolean),
+      },
       domain: finalPlan.domain,
-      targetDurationSeconds: Math.max(15, Math.min(1800, durationSeconds)),
+      targetDurationSeconds: Math.max(300, Math.min(1200, durationSeconds)),
       fps: 30,
       width: 1920,
       height: 1080,
       sourceType: preparedSource.sourceType,
       sourceFileName: preparedSource.sourceFileName,
       rawSourceText: preparedSource.rawText,
+      researchSources,
       videoTheme,
       llmConfig: projectLlmConfig,
       ttsConfig: {
@@ -748,10 +819,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                     <Clock className="w-4 h-4 text-cyan-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="number"
-                      min={15}
-                      max={1800}
+                      min={300}
+                      max={1200}
+                      step={60}
                       value={durationSeconds}
-                      onChange={(e) => setDurationSeconds(Math.max(15, Math.min(1800, Number(e.target.value) || 60)))}
+                      onChange={(e) => setDurationSeconds(Math.max(300, Math.min(1200, Number(e.target.value) || 300)))}
                       className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white font-mono focus:outline-none focus:border-cyan-400"
                     />
                   </div>
@@ -791,6 +863,84 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               />
             </div>
           )}
+
+          <section aria-labelledby="lesson-brief-title" className="space-y-3 border-y border-slate-800 py-4">
+            <div>
+              <h3 id="lesson-brief-title" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                教學簡報
+              </h3>
+              <p className="mt-1 text-[11px] text-slate-500">
+                指定受眾、學習成果與語氣，讓場景順序與解說深度保持一致。
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <label htmlFor="lesson-audience" className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                  主要受眾
+                </label>
+                <input
+                  id="lesson-audience"
+                  type="text"
+                  value={brief.audience}
+                  onChange={(e) => setBrief((current) => ({ ...current, audience: e.target.value }))}
+                  placeholder="例如：5 年以上經驗的系統設計工程師"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="lesson-tone" className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                  敘事語氣
+                </label>
+                <select
+                  id="lesson-tone"
+                  value={brief.tone}
+                  onChange={(e) => setBrief((current) => ({ ...current, tone: e.target.value as TrainingBrief['tone'] }))}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white focus:border-cyan-400 focus:outline-none"
+                >
+                  <option value="calm-instructional">沉穩教學</option>
+                  <option value="editorial">編輯敘事</option>
+                  <option value="technical-documentary">技術紀錄片</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="lesson-objective" className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                  學習目標
+                </label>
+                <textarea
+                  id="lesson-objective"
+                  rows={2}
+                  value={brief.objective}
+                  onChange={(e) => setBrief((current) => ({ ...current, objective: e.target.value }))}
+                  placeholder="觀眾完成影片後，應該能做出什麼判斷、解決哪類問題，或解釋哪些因果關係？"
+                  className="w-full resize-y rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="lesson-source-urls" className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                  參考網址（每行一個，最多 6 個，選填）
+                </label>
+                <textarea
+                  id="lesson-source-urls"
+                  rows={3}
+                  value={sourceUrlsText}
+                  onChange={(e) => setSourceUrlsText(e.target.value)}
+                  placeholder="https://example.com/specification\nhttps://example.com/white-paper"
+                  className="w-full resize-y rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 font-mono text-xs text-white placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                />
+                <label className="mt-2 flex items-start gap-2 text-[11px] leading-5 text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={allowWebResearch}
+                    onChange={(e) => setAllowWebResearch(e.target.checked)}
+                    className="mt-1 h-4 w-4 accent-cyan-400"
+                  />
+                  <span>
+                    允許本機應用程式讀取以上公開 HTTP(S) 網頁內容。私人網址、登入頁與超過 1 MB 的內容不會讀取。
+                  </span>
+                </label>
+              </div>
+            </div>
+          </section>
 
           {inputMode === 'upload' && (
             <div
@@ -1101,7 +1251,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                 className="w-full flex items-center justify-between text-xs font-semibold text-slate-300 hover:text-white"
               >
                 <span>
-                  Intel GNAI LLM 設定（支援專案 .env 自動載入或瀏覽器覆寫）
+                  文字模型供應商設定（支援本機 .env 自動載入或瀏覽器覆寫）
                   {usingEnvLlm ? (
                     <span className="ml-2 text-emerald-400">
                       • 已由本機 .env 載入{envLlmStatus.model ? ` (${envLlmStatus.model})` : ''}
@@ -1174,34 +1324,53 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_URL</label>
+                        <label htmlFor="wizard-llm-provider" className="block text-[10px] text-slate-400 mb-1">文字模型供應商</label>
+                        <select
+                          id="wizard-llm-provider"
+                          value={llmConfig.provider || 'openai-compatible'}
+                          onChange={(event) => {
+                            const provider = event.target.value as keyof typeof LLM_PROVIDER_PRESETS;
+                            updateLlmConfig({ ...LLM_PROVIDER_PRESETS[provider], apiKey: llmConfig.apiKey });
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                        >
+                          <option value="intel-gnai">Intel GNAI</option>
+                          <option value="openai-compatible">OpenAI-compatible</option>
+                          <option value="local">Local OpenAI-compatible</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="wizard-llm-url" className="block text-[10px] text-slate-400 mb-1">Base URL</label>
                         <input
+                          id="wizard-llm-url"
                           type="text"
                           value={llmConfig.baseUrl}
                           onChange={(e) => updateLlmConfig({ baseUrl: e.target.value })}
-                          placeholder="https://gnai.intel.com/api/providers/openai/v1"
+                          placeholder="https://api.example.com/v1"
                           className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
+                        <label htmlFor="wizard-llm-token" className="block text-[10px] text-slate-400 mb-1">API Key (本機儲存)</label>
                         <input
+                          id="wizard-llm-token"
                           type="password"
                           value={llmConfig.apiKey}
                           onChange={(e) => updateLlmConfig({ apiKey: e.target.value })}
-                          placeholder="貼上您的 GNAI Token"
+                          placeholder="貼上供應商 API Key"
                           className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">GNAI_MODEL</label>
+                        <label htmlFor="wizard-llm-model" className="block text-[10px] text-slate-400 mb-1">Model</label>
                         <input
+                          id="wizard-llm-model"
                           type="text"
                           value={llmConfig.model}
                           onChange={(e) => updateLlmConfig({ model: e.target.value })}
-                          placeholder="gpt-5-mini"
+                          placeholder="模型識別碼"
                           className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
                         />
                       </div>

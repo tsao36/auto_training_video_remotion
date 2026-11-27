@@ -6,6 +6,7 @@ import {
   Clock,
   Cpu,
   Download,
+  FileAudio,
   FileText,
   GitBranch,
   Film,
@@ -21,8 +22,10 @@ import {
   ShieldCheck,
   Sliders,
   Sparkles,
+  Tag,
   Trash2,
   Tv,
+  Undo2,
   Volume2,
   Wand2,
 } from 'lucide-react';
@@ -33,6 +36,7 @@ import { AiPipelineReviewModal } from './components/AiPipelineReviewModal';
 import { PreviewStillsState, QualityPreviewModal } from './components/QualityPreviewModal';
 import { ScriptReviewModal } from './components/ScriptReviewModal';
 import { SourceWizardModal } from './components/SourceWizardModal';
+import { TechnicalTermsWhitelistModal } from './components/TechnicalTermsWhitelistModal';
 import { TtsProgressPanel } from './components/TtsProgressPanel';
 import { RecordedVoiceSubmission, VoiceRecorderModal } from './components/VoiceRecorderModal';
 import { TechTrainingVideo } from './remotion/TechTrainingVideo';
@@ -67,11 +71,19 @@ import {
 import { createVoiceProfile, listVoiceProfiles, toCustomVoice, trainVoiceProfile } from './utils/voiceProfiles';
 import {
   DEFAULT_GNAI_CONFIG,
+  LLM_PROVIDER_PRESETS,
   loadStoredLlmConfig,
   saveStoredLlmConfig,
 } from './utils/llmConfigStorage';
+import {
+  ensurePoppingTechnicalTermsPrimitive,
+  generateCaptionsFromScript,
+  generateProjectCaptions,
+  serializeCaptions,
+} from './utils/captions';
 import { getSceneIndexAtFrame } from './utils/playerPlaylist';
 import { splitScriptIntoSentences } from './utils/sentenceEffects';
+import { buildProjectExportZip } from './utils/projectExport';
 import {
   balanceScenesToDuration,
   computeRichnessDuration,
@@ -81,6 +93,9 @@ import {
 } from './utils/planGenerator';
 
 type InspectorTab = 'script-tts' | 'motion-visual' | 'engine-config';
+type PendingTechnicalTermsAction =
+  | { type: 'render'; previewOnlySceneIndex?: number }
+  | { type: 'stills' };
 
 export function App() {
   const [project, setProject] = useState<TrainingProject>(() => ({
@@ -95,6 +110,8 @@ export function App() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isScriptReviewOpen, setIsScriptReviewOpen] = useState(false);
   const [isAiPipelineOpen, setIsAiPipelineOpen] = useState(false);
+  const [isTechnicalTermsOpen, setIsTechnicalTermsOpen] = useState(false);
+  const [pendingTechnicalTermsAction, setPendingTechnicalTermsAction] = useState<PendingTechnicalTermsAction | null>(null);
   const [batchTtsRunning, setBatchTtsRunning] = useState(false);
   const [ttsDevice, setTtsDevice] = useState<string | null>(null);
   const [ttsElapsedSec, setTtsElapsedSec] = useState(0);
@@ -103,16 +120,21 @@ export function App() {
   const [ttsLiveStatus, setTtsLiveStatus] = useState<TtsLiveStatusResponse | null>(null);
   const [ttsServerAlive, setTtsServerAlive] = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
+  const [musicUploading, setMusicUploading] = useState(false);
+  const [musicError, setMusicError] = useState<string | null>(null);
   const [voiceProfiles, setVoiceProfiles] = useState<VoiceProfile[]>([]);
   const voiceFileInputRef = useRef<HTMLInputElement>(null);
+  const musicFileInputRef = useRef<HTMLInputElement>(null);
   const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [sceneAiLoading, setSceneAiLoading] = useState<string | null>(null);
+  const [projectHistory, setProjectHistory] = useState<TrainingProject[]>([]);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [renderState, setRenderState] = useState<{
     active: boolean;
     progress: number;
     status: string;
+    jobId?: string;
     outputUrl?: string;
     mediaQa?: MediaQaResult;
     error?: string;
@@ -120,6 +142,7 @@ export function App() {
   const [qualityModal, setQualityModal] = useState<{
     open: boolean;
     tab: 'quality' | 'stills';
+    renderReview?: number | null;
   }>({ open: false, tab: 'quality' });
   const [stillsState, setStillsState] = useState<PreviewStillsState>({
     active: false,
@@ -135,6 +158,10 @@ export function App() {
   const [envLlmConfigured, setEnvLlmConfigured] = useState(false);
 
   const qualityReport = useMemo(() => evaluateProjectQuality(project), [project]);
+
+  useEffect(() => {
+    setProjectHistory([]);
+  }, [project.id]);
 
   useEffect(() => {
     fetch('/api/llm/status')
@@ -218,6 +245,7 @@ export function App() {
     setProject({
       ...loaded,
       llmConfig: {
+        provider: loaded.llmConfig?.provider || storedLlm.provider,
         baseUrl: loaded.llmConfig?.baseUrl || storedLlm.baseUrl,
         apiKey: loaded.llmConfig?.apiKey || storedLlm.apiKey,
         model: loaded.llmConfig?.model || storedLlm.model,
@@ -373,10 +401,88 @@ export function App() {
     }));
   };
 
+  const [exportingPackage, setExportingPackage] = useState(false);
+
+  const downloadProjectPackage = async () => {
+    setExportingPackage(true);
+    try {
+      const latestRender = savedProjects.find((item) => item.id === project.id)?.renders
+        .slice()
+        .reverse()
+        .find((render) => !render.isPreview);
+      let renderedVideo: Blob | undefined;
+      if (latestRender?.outputUrl) {
+        const response = await fetch(latestRender.outputUrl);
+        if (response.ok) renderedVideo = await response.blob();
+      }
+      const blob = await buildProjectExportZip({ project, renderedVideo, latestRender });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeTitle = (project.title || 'training-project').replace(/[<>:"/\\|?*]+/g, '-').trim();
+      anchor.href = url;
+      anchor.download = `${safeTitle}.zip`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setAiNotice(`已匯出專案包${renderedVideo ? '（含 MP4）' : '（目前不含 MP4）'}。`);
+    } catch (err) {
+      setAiNotice(err instanceof Error ? err.message : '專案包匯出失敗');
+    } finally {
+      setExportingPackage(false);
+    }
+  };
+
+  const downloadCaptions = (format: 'srt' | 'vtt') => {
+    const captions = generateProjectCaptions(project.scenes);
+    const content = serializeCaptions(captions, format);
+    const blob = new Blob([content], { type: format === 'vtt' ? 'text/vtt;charset=utf-8' : 'application/x-subrip;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    const safeTitle = (project.title || 'training-video').replace(/[<>:"/\\|?*]+/g, '-').trim();
+    anchor.href = url;
+    anchor.download = `${safeTitle}.${format}`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setAiNotice(`已匯出 ${captions.length} 段 ${format.toUpperCase()} 字幕。`);
+  };
+
   const updateScene = (idx: number, patch: Partial<SceneSpec>) => {
+    const candidateSourcesChanged = [
+      'script',
+      'title',
+      'keyPoints',
+      'visualDescription',
+      'captions',
+      'pptxSlide',
+      'pptxNotes',
+    ].some((key) => Object.prototype.hasOwnProperty.call(patch, key));
     setProject((prev) => ({
       ...prev,
-      scenes: prev.scenes.map((s, i) => (i === idx ? { ...s, ...patch } : s)),
+      technicalTermsWhitelist: candidateSourcesChanged && prev.technicalTermsWhitelist
+        ? { ...prev.technicalTermsWhitelist, reviewedAt: undefined }
+        : prev.technicalTermsWhitelist,
+      scenes: prev.scenes.map((scene, index) => {
+        if (index !== idx) return scene;
+        const next = { ...scene, ...patch };
+        return {
+          ...next,
+          remotionPrimitives: ensurePoppingTechnicalTermsPrimitive(
+            next.script,
+            next.remotionPrimitives
+          ) as SceneSpec['remotionPrimitives'],
+          captions: patch.script !== undefined
+            ? generateCaptionsFromScript(
+                next.script,
+                next.tts?.actualDurationSec && next.tts.actualDurationSec > 0
+                  ? next.tts.actualDurationSec
+                  : next.durationSeconds
+              )
+            : next.captions,
+        };
+      }),
     }));
   };
 
@@ -421,6 +527,7 @@ export function App() {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'AI 更新失敗');
+      setProjectHistory((history) => [...history.slice(-7), structuredClone(project)]);
       updateScene(idx, data.scenePatch);
       if (data.note) setAiNotice(data.note);
     } catch (err) {
@@ -428,6 +535,15 @@ export function App() {
     } finally {
       setSceneAiLoading(null);
     }
+  };
+
+  const undoAiChange = () => {
+    const previous = projectHistory.at(-1);
+    if (!previous) return;
+    setProject(previous);
+    setProjectHistory((history) => history.slice(0, -1));
+    setSelectedSceneIdx((current) => Math.min(current, previous.scenes.length - 1));
+    setAiNotice('已還原最近一次 AI 場景更新。');
   };
 
   const handleAddScene = () => {
@@ -538,6 +654,33 @@ export function App() {
       return false;
     } finally {
       setVoiceUploading(false);
+    }
+  };
+
+  const uploadBackgroundMusic = async (file: File) => {
+    setMusicUploading(true);
+    setMusicError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/api/music/upload', { method: 'POST', body: form });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Background music import failed.');
+      setProject((current) => ({
+        ...current,
+        backgroundMusic: {
+          url: data.url,
+          fileName: data.fileName,
+          volume: 0.12,
+          loop: true,
+          licenseNote: current.backgroundMusic?.licenseNote || '',
+        },
+      }));
+      setAiNotice(`已匯入背景音樂「${data.fileName}」。`);
+    } catch (err) {
+      setMusicError(err instanceof Error ? err.message : 'Background music import failed.');
+    } finally {
+      setMusicUploading(false);
     }
   };
 
@@ -927,7 +1070,7 @@ export function App() {
     }
   };
 
-  const startPreviewStills = async () => {
+  const executePreviewStills = async (targetProject: TrainingProject) => {
     setQualityModal({ open: true, tab: 'stills' });
     setStillsState({
       active: true,
@@ -942,10 +1085,11 @@ export function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectTitle: project.title,
-          scenes: project.scenes,
-          captionStyle: project.captionStyle,
-          videoTheme: project.videoTheme,
+          projectTitle: targetProject.title,
+          scenes: targetProject.scenes,
+          captionStyle: targetProject.captionStyle,
+          videoTheme: targetProject.videoTheme,
+          technicalTermsWhitelist: targetProject.technicalTermsWhitelist?.terms,
         }),
       });
       const { jobId, error } = await resp.json();
@@ -1003,49 +1147,63 @@ export function App() {
     }
   };
 
-  const startRender = async (previewOnlySceneIndex?: number) => {
+  const executeRender = async (
+    previewOnlySceneIndex?: number,
+    targetProject: TrainingProject = project
+  ) => {
     setRenderState({ active: true, progress: 5, status: 'bundling' });
     try {
       const resp = await fetch('/api/render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectTitle: project.title,
-          scenes: project.scenes,
+          projectTitle: targetProject.title,
+          scenes: targetProject.scenes,
           previewOnlySceneIndex,
-          project,
+          project: targetProject,
         }),
       });
       const { jobId, error } = await resp.json();
       if (!resp.ok) throw new Error(error || '無法啟動 Remotion 輸出');
+      setRenderState({ active: true, progress: 5, status: 'bundling', jobId });
 
       const timer = setInterval(async () => {
         try {
           const poll = await fetch(`/api/render/${jobId}`);
           const job = await poll.json();
-          if (job.status === 'done') {
+          if (job.cancelled) {
+            clearInterval(timer);
+            setRenderState({ active: false, progress: 0, status: 'cancelled' });
+          } else if (job.status === 'done') {
             clearInterval(timer);
             setRenderState({
               active: false,
               progress: 100,
               status: 'done',
+              jobId,
               outputUrl: job.outputUrl,
               mediaQa: job.mediaQa,
             });
             void fetchSavedProjects();
           } else if (job.status === 'error') {
             clearInterval(timer);
-            setRenderState({
-              active: false,
-              progress: 0,
-              status: 'error',
-              error: job.error,
-            });
+            if (job.cancelled) {
+              setRenderState({ active: false, progress: 0, status: 'cancelled' });
+            } else {
+              setRenderState({
+                active: false,
+                progress: 0,
+                status: 'error',
+                jobId,
+                error: job.error,
+              });
+            }
           } else {
             setRenderState({
               active: true,
               progress: job.progress || 10,
               status: job.status,
+              jobId,
             });
           }
         } catch {
@@ -1060,6 +1218,70 @@ export function App() {
         status: 'error',
         error: err instanceof Error ? err.message : '輸出失敗',
       });
+    }
+  };
+
+  const requestRender = (previewOnlySceneIndex?: number) => {
+    setQualityModal({ open: true, tab: 'quality', renderReview: previewOnlySceneIndex ?? null });
+  };
+
+  const continueRenderAfterQuality = (
+    previewOnlySceneIndex: number | undefined,
+    targetProject: TrainingProject = project
+  ) => {
+    if (!targetProject.technicalTermsWhitelist?.reviewedAt) {
+      setPendingTechnicalTermsAction({ type: 'render', previewOnlySceneIndex });
+      setIsTechnicalTermsOpen(true);
+      return;
+    }
+    void executeRender(previewOnlySceneIndex, targetProject);
+  };
+
+  const cancelActiveRender = async () => {
+    const jobId = renderState.jobId;
+    if (!jobId) return;
+    setRenderState((current) => ({ ...current, status: 'cancelling' }));
+    try {
+      const response = await fetch(`/api/render/${encodeURIComponent(jobId)}/cancel`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '無法取消輸出');
+    } catch (err) {
+      setRenderState((current) => ({
+        ...current,
+        status: 'error',
+        active: false,
+        error: err instanceof Error ? err.message : '無法取消輸出',
+      }));
+    }
+  };
+
+  const requestPreviewStills = () => {
+    if (!project.technicalTermsWhitelist?.reviewedAt) {
+      setPendingTechnicalTermsAction({ type: 'stills' });
+      setIsTechnicalTermsOpen(true);
+      return;
+    }
+    void executePreviewStills(project);
+  };
+
+  const approveTechnicalTerms = (terms: string[], generatedAt: string) => {
+    const nextProject: TrainingProject = {
+      ...project,
+      technicalTermsWhitelist: {
+        terms,
+        generatedAt,
+        reviewedAt: new Date().toISOString(),
+      },
+    };
+    setProject(nextProject);
+    void saveProjectToDisk(nextProject, false);
+    setIsTechnicalTermsOpen(false);
+    const pending = pendingTechnicalTermsAction;
+    setPendingTechnicalTermsAction(null);
+    if (pending?.type === 'render') {
+      void executeRender(pending.previewOnlySceneIndex, nextProject);
+    } else if (pending?.type === 'stills') {
+      void executePreviewStills(nextProject);
     }
   };
 
@@ -1258,12 +1480,37 @@ export function App() {
 
           <button
             type="button"
+            onClick={undoAiChange}
+            disabled={projectHistory.length === 0 || sceneAiLoading !== null}
+            title="還原最近一次 AI 場景更新"
+            aria-label="還原最近一次 AI 場景更新"
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition disabled:opacity-40"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsAiPipelineOpen(true)}
             title="檢視由主題到 Remotion JSON 的完整 AI 製作階段"
             className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
           >
             <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
             製作流程
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPendingTechnicalTermsAction(null);
+              setIsTechnicalTermsOpen(true);
+            }}
+            title="產生、稽核並編輯輸出時允許強調的技術術語"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition"
+          >
+            <Tag className="w-3.5 h-3.5 text-cyan-400" />
+            術語白名單
+            <span className="text-[10px] text-slate-400">{project.technicalTermsWhitelist?.terms.length ?? 0}</span>
           </button>
 
           <button
@@ -1319,7 +1566,40 @@ export function App() {
           </button>
 
           <button
-            onClick={() => startRender(selectedSceneIdx)}
+            type="button"
+            onClick={() => void downloadProjectPackage()}
+            disabled={exportingPackage || project.scenes.length === 0}
+            title="匯出可編輯專案、字幕、來源中繼資料與可用的最新 MP4"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition disabled:opacity-50"
+          >
+            {exportingPackage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            專案包 ZIP
+          </button>
+
+          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-900/70">
+            <button
+              type="button"
+              onClick={() => downloadCaptions('srt')}
+              disabled={project.scenes.length === 0}
+              title="下載 SubRip 字幕"
+              className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:text-white disabled:opacity-50"
+            >
+              SRT
+            </button>
+            <span className="h-4 w-px bg-slate-700" />
+            <button
+              type="button"
+              onClick={() => downloadCaptions('vtt')}
+              disabled={project.scenes.length === 0}
+              title="下載 WebVTT 字幕"
+              className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:text-white disabled:opacity-50"
+            >
+              VTT
+            </button>
+          </div>
+
+          <button
+            onClick={() => requestRender(selectedSceneIdx)}
             disabled={renderState.active || isSelectedSceneTtsRendering}
             title={
               isSelectedSceneTtsRendering
@@ -1337,7 +1617,7 @@ export function App() {
           </button>
 
           <button
-            onClick={() => startRender(undefined)}
+            onClick={() => requestRender(undefined)}
             disabled={renderState.active || isTtsRendering}
             title={
               isTtsRendering
@@ -1442,6 +1722,14 @@ export function App() {
                   style={{ width: `${renderState.progress}%` }}
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => void cancelActiveRender()}
+                disabled={renderState.status === 'cancelling'}
+                className="ml-3 shrink-0 rounded-lg border border-rose-500/40 bg-rose-950/30 px-2.5 py-1.5 text-[11px] font-semibold text-rose-200 hover:bg-rose-900/40 disabled:opacity-50"
+              >
+                {renderState.status === 'cancelling' ? '停止中...' : '停止輸出'}
+              </button>
             </div>
           )}
           {renderState.outputUrl && !renderState.active && (
@@ -1482,7 +1770,7 @@ export function App() {
       {/* Main 3-Pane Studio Workspace */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT PANE: Scene Outline */}
-        <aside className="w-72 shrink-0 border-r border-slate-800/90 bg-[#131110] flex flex-col">
+        <aside className="w-52 2xl:w-72 shrink-0 border-r border-slate-800/90 bg-[#131110] flex flex-col">
           <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300">
               <Layers className="w-4 h-4 text-cyan-400" />
@@ -1643,7 +1931,10 @@ export function App() {
           </div>
 
           <div className="flex-1 flex items-center justify-center p-5 min-h-0">
-            <div className="relative w-full max-w-5xl aspect-video rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black">
+            <div
+              className="relative w-full max-w-5xl rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-black"
+              style={{ aspectRatio: '16 / 9', maxHeight: '100%', minHeight: 0 }}
+            >
               <Player
                 ref={playerRef}
                 component={TechTrainingVideo as unknown as React.FC<Record<string, unknown>>}
@@ -1653,13 +1944,15 @@ export function App() {
                   audioBaseUrl: '',
                   captionStyle: project.captionStyle,
                   videoTheme: project.videoTheme,
+                  backgroundMusic: project.backgroundMusic,
+                  technicalTermsWhitelist: project.technicalTermsWhitelist?.terms ?? [],
                 }}
                 durationInFrames={totalFrames}
                 fps={VIDEO_FPS}
                 compositionWidth={1920}
                 compositionHeight={1080}
-                style={{ width: '100%', height: '100%' }}
-                controls
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+                controls={false}
                 clickToPlay
                 bufferStateDelayInMilliseconds={250}
                 defaultPremountInSeconds={2}
@@ -1729,7 +2022,7 @@ export function App() {
         </main>
 
         {/* RIGHT PANE: Script, TTS & Motion Inspector */}
-        <aside className="w-96 shrink-0 border-l border-slate-800/90 bg-[#131110] flex flex-col">
+        <aside className="w-64 2xl:w-96 shrink-0 border-l border-slate-800/90 bg-[#131110] flex flex-col">
           {/* Inspector Tabs */}
           <div role="tablist" aria-label="場景編輯面板" className="grid grid-cols-3 border-b border-slate-800/90 bg-[#1A1713]">
             <button
@@ -1992,6 +2285,26 @@ export function App() {
                     onChange={(e) => updateScene(selectedSceneIdx, { script: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 leading-relaxed focus:outline-none focus:border-cyan-400"
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingTechnicalTermsAction(null);
+                      setIsTechnicalTermsOpen(true);
+                    }}
+                    className={`mt-2 w-full py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition ${
+                      project.technicalTermsWhitelist?.reviewedAt
+                        ? 'bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/35 text-cyan-200'
+                        : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/35 text-amber-200'
+                    }`}
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    編輯技術術語白名單
+                    <span className="text-[10px] opacity-80">
+                      {project.technicalTermsWhitelist?.reviewedAt
+                        ? `(${project.technicalTermsWhitelist.terms.length} 項已核准)`
+                        : '（需重新審核）'}
+                    </span>
+                  </button>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <button
                       type="button"
@@ -2354,6 +2667,98 @@ export function App() {
 
             {inspectorTab === 'engine-config' && (
               <div className="space-y-4">
+                <section className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-200">
+                      <FileAudio className="w-4 h-4" /> 背景音樂
+                    </div>
+                    {project.backgroundMusic && (
+                      <button
+                        type="button"
+                        onClick={() => setProject((current) => ({ ...current, backgroundMusic: undefined }))}
+                        className="text-[10px] font-semibold text-slate-400 hover:text-rose-300"
+                      >
+                        移除
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={musicFileInputRef}
+                    type="file"
+                    accept=".mp3,.wav,.m4a,.ogg,.aac,audio/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void uploadBackgroundMusic(file);
+                      event.target.value = '';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => musicFileInputRef.current?.click()}
+                    disabled={musicUploading}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs font-semibold text-slate-200 hover:border-amber-400/60 hover:text-white disabled:opacity-50"
+                  >
+                    {musicUploading ? '正在匯入音樂...' : project.backgroundMusic ? '更換音樂檔案' : '匯入本機音樂'}
+                  </button>
+                  {project.backgroundMusic && (
+                    <>
+                      <div className="truncate text-[11px] text-slate-300">{project.backgroundMusic.fileName}</div>
+                      <audio controls src={project.backgroundMusic.url} className="h-8 w-full" />
+                      <label className="block">
+                        <span className="mb-1 flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                          音量
+                          <output className="font-mono text-amber-200">{Math.round(project.backgroundMusic.volume * 100)}%</output>
+                        </span>
+                        <input
+                          type="range"
+                          min={0.02}
+                          max={0.4}
+                          step={0.01}
+                          value={project.backgroundMusic.volume}
+                          onChange={(event) => setProject((current) => ({
+                            ...current,
+                            backgroundMusic: current.backgroundMusic
+                              ? { ...current.backgroundMusic, volume: Number(event.target.value) }
+                              : undefined,
+                          }))}
+                          className="w-full accent-amber-400"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/70 p-2.5 text-xs text-slate-300">
+                        全片循環播放
+                        <input
+                          type="checkbox"
+                          checked={project.backgroundMusic.loop}
+                          onChange={(event) => setProject((current) => ({
+                            ...current,
+                            backgroundMusic: current.backgroundMusic
+                              ? { ...current.backgroundMusic, loop: event.target.checked }
+                              : undefined,
+                          }))}
+                          className="accent-amber-400"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-slate-400">授權來源 / 備註</span>
+                        <textarea
+                          rows={2}
+                          value={project.backgroundMusic.licenseNote || ''}
+                          onChange={(event) => setProject((current) => ({
+                            ...current,
+                            backgroundMusic: current.backgroundMusic
+                              ? { ...current.backgroundMusic, licenseNote: event.target.value }
+                              : undefined,
+                          }))}
+                          placeholder="例如：由使用者持有商用授權的音樂"
+                          className="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-amber-400 focus:outline-none"
+                        />
+                      </label>
+                    </>
+                  )}
+                  {musicError && <div className="text-[11px] text-rose-300">{musicError}</div>}
+                </section>
+
                 <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
@@ -2368,13 +2773,35 @@ export function App() {
                     </span>
                   </div>
                   <div>
-                    <label htmlFor="cfg-gnai-url" className="block text-[11px] text-slate-400 mb-1">GNAI_URL</label>
+                    <label htmlFor="cfg-llm-provider" className="block text-[11px] text-slate-400 mb-1">文字模型供應商</label>
+                    <select
+                      id="cfg-llm-provider"
+                      value={project.llmConfig?.provider || 'openai-compatible'}
+                      onChange={(event) => {
+                        const provider = event.target.value as keyof typeof LLM_PROVIDER_PRESETS;
+                        const next = {
+                          ...LLM_PROVIDER_PRESETS[provider],
+                          apiKey: project.llmConfig?.apiKey || '',
+                        };
+                        saveStoredLlmConfig(next);
+                        setProject((current) => ({ ...current, llmConfig: next }));
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
+                    >
+                      <option value="intel-gnai">Intel GNAI</option>
+                      <option value="openai-compatible">OpenAI-compatible</option>
+                      <option value="local">Local OpenAI-compatible</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="cfg-llm-url" className="block text-[11px] text-slate-400 mb-1">Base URL</label>
                     <input
-                      id="cfg-gnai-url"
+                      id="cfg-llm-url"
                       type="text"
                       value={project.llmConfig?.baseUrl ?? DEFAULT_GNAI_CONFIG.baseUrl}
                       onChange={(e) => {
                         const next = {
+                          provider: project.llmConfig?.provider || 'openai-compatible',
                           baseUrl: e.target.value,
                           apiKey: project.llmConfig?.apiKey || '',
                           model: project.llmConfig?.model || DEFAULT_GNAI_CONFIG.model,
@@ -2387,14 +2814,15 @@ export function App() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label htmlFor="cfg-gnai-token" className="block text-[11px] text-slate-400 mb-1">GNAI_TOKEN (本機儲存)</label>
+                      <label htmlFor="cfg-llm-token" className="block text-[11px] text-slate-400 mb-1">API Key (本機儲存)</label>
                       <input
-                        id="cfg-gnai-token"
+                        id="cfg-llm-token"
                         type="password"
-                        placeholder="貼上 GNAI Token"
+                        placeholder="貼上供應商 API Key"
                         value={project.llmConfig?.apiKey || ''}
                         onChange={(e) => {
                           const next = {
+                            provider: project.llmConfig?.provider || 'openai-compatible',
                             baseUrl: project.llmConfig?.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
                             apiKey: e.target.value,
                             model: project.llmConfig?.model || DEFAULT_GNAI_CONFIG.model,
@@ -2406,13 +2834,14 @@ export function App() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="cfg-gnai-model" className="block text-[11px] text-slate-400 mb-1">GNAI_MODEL</label>
+                      <label htmlFor="cfg-llm-model" className="block text-[11px] text-slate-400 mb-1">Model</label>
                       <input
-                        id="cfg-gnai-model"
+                        id="cfg-llm-model"
                         type="text"
                         value={project.llmConfig?.model ?? DEFAULT_GNAI_CONFIG.model}
                         onChange={(e) => {
                           const next = {
+                            provider: project.llmConfig?.provider || 'openai-compatible',
                             baseUrl: project.llmConfig?.baseUrl || DEFAULT_GNAI_CONFIG.baseUrl,
                             apiKey: project.llmConfig?.apiKey || '',
                             model: e.target.value,
@@ -2507,21 +2936,6 @@ export function App() {
                       }
                       className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white"
                     />
-      <QualityPreviewModal
-        isOpen={qualityModal.open}
-        initialTab={qualityModal.tab}
-        onClose={() => setQualityModal((prev) => ({ ...prev, open: false }))}
-        qualityReport={qualityReport}
-        stillsState={stillsState}
-        onGenerateStills={() => void startPreviewStills()}
-        onJumpToScene={(idx) => {
-          setSelectedSceneIdx(idx);
-          const frameOffset = project.scenes
-            .slice(0, idx)
-            .reduce((sum, s) => sum + Math.max(30, Math.round(s.durationSeconds * VIDEO_FPS)), 0);
-          playerRef.current?.seekTo(frameOffset);
-        }}
-      />
                   </div>
                 </div>
 
@@ -2534,16 +2948,55 @@ export function App() {
         </aside>
       </div>
 
+      <QualityPreviewModal
+        isOpen={qualityModal.open}
+        initialTab={qualityModal.tab}
+        onClose={() => setQualityModal((prev) => ({ ...prev, open: false, renderReview: undefined }))}
+        qualityReport={qualityReport}
+        renderReviewActive={qualityModal.renderReview !== undefined}
+        onContinueRender={qualityReport.errorCount > 0 ? undefined : () => {
+          const previewOnlySceneIndex = qualityModal.renderReview ?? undefined;
+          setQualityModal((current) => ({ ...current, open: false, renderReview: undefined }));
+          continueRenderAfterQuality(previewOnlySceneIndex, project);
+        }}
+        stillsState={stillsState}
+        onGenerateStills={requestPreviewStills}
+        onJumpToScene={(idx) => {
+          setSelectedSceneIdx(idx);
+          const frameOffset = project.scenes
+            .slice(0, idx)
+            .reduce((sum, s) => sum + Math.max(30, Math.round(s.durationSeconds * VIDEO_FPS)), 0);
+          playerRef.current?.seekTo(frameOffset);
+        }}
+      />
+
       <AiPipelineReviewModal
         isOpen={isAiPipelineOpen}
         onClose={() => setIsAiPipelineOpen(false)}
         project={project}
         onApplyProject={(nextProject) => {
-          setProject(nextProject);
+          setProject({ ...nextProject, technicalTermsWhitelist: undefined });
           setSelectedSceneIdx(0);
           playerRef.current?.seekTo(0);
-          void saveProjectToDisk(nextProject, false);
+          void saveProjectToDisk({ ...nextProject, technicalTermsWhitelist: undefined }, false);
         }}
+      />
+
+      <TechnicalTermsWhitelistModal
+        isOpen={isTechnicalTermsOpen}
+        project={project}
+        renderLabel={pendingTechnicalTermsAction?.type === 'stills'
+          ? '場景預覽'
+          : pendingTechnicalTermsAction?.type === 'render'
+          ? pendingTechnicalTermsAction.previewOnlySceneIndex !== undefined
+            ? '單幕輸出'
+            : '完整影片輸出'
+          : undefined}
+        onClose={() => {
+          setIsTechnicalTermsOpen(false);
+          setPendingTechnicalTermsAction(null);
+        }}
+        onApprove={approveTechnicalTerms}
       />
 
       <ScriptReviewModal

@@ -11,11 +11,16 @@ import {
   SceneDiagramData,
   SceneSpec,
   TechDomain,
+  TrainingBrief,
   TtsProvider,
   VisualTemplate,
 } from '../src/types/training';
 import { inferDomainFromText, isTechDomain } from '../src/utils/domainInference';
-import { generateCaptionsFromScript } from '../src/utils/captions';
+import { getAiElementPrompt, isAiSelectableSceneElement } from '../src/remotion/element-registry';
+import {
+  ensurePoppingTechnicalTermsPrimitive,
+  generateCaptionsFromScript,
+} from '../src/utils/captions';
 import {
   applyDeterministicRegionalFixes,
   collectSceneTextForTermCheck,
@@ -32,6 +37,7 @@ export interface GeneratePlanParams {
   defaultTtsProvider?: TtsProvider;
   language?: ContentLanguage;
   odmMode?: boolean;
+  brief?: TrainingBrief;
   colorPalette?: string[];
   llmConfig?: Partial<LlmConfig>;
 }
@@ -126,6 +132,9 @@ function sanitizeApiKey(raw?: string): string {
 
 function resolveLlmConfig(override?: Partial<LlmConfig>): LlmConfig {
   return {
+    provider: override?.provider || (/gnai\.intel\.com/i.test(
+      override?.baseUrl || process.env.GNAI_URL || process.env.LLM_BASE_URL || DEFAULT_GNAI_URL
+    ) ? 'intel-gnai' : 'openai-compatible'),
     baseUrl: (
       override?.baseUrl ||
       process.env.GNAI_URL ||
@@ -191,6 +200,19 @@ function clampEffect(effect: unknown, template: VisualTemplate, script: string):
     return effect as RemotionEffect;
   }
   return inferEffectFromScriptAndTemplate(script, template);
+}
+
+function normalizeBluetoothTemplate(template: VisualTemplate, script: string, domain: TechDomain): VisualTemplate {
+  if (domain !== 'bluetooth') return template;
+  const s = script.toLowerCase();
+  if (/地址|隱私|privacy|irp|rpa|irk/.test(s)) return 'architecture-flow';
+  if (/驗證|測試|檢查|checklist|核對/.test(s)) return 'debug-checklist';
+  if (/封包|欄位|簽章|csrk|confirm|request|response/.test(s)) return 'packet-frame';
+  if (/總結|回顧|結語|謝謝|學習路徑/.test(s)) return 'summary-takeaways';
+  if (['rf-link-budget', 'beamforming-array', 'qam-constellation', 'mlo-multilink', 'ofdm-spectrum'].includes(template)) {
+    return 'state-machine';
+  }
+  return template;
 }
 
 function inferPrimitivesFromScript(script: string, visualDescription?: string): RemotionPrimitive[] {
@@ -266,8 +288,11 @@ function resolveScenePrimitives(
   visualDescription?: string
 ): RemotionPrimitive[] {
   const outlineSuggestions = extractOutlinePrimitiveSuggestions(outlineText, sceneTitle, sceneIndex);
-  if (outlineSuggestions.length > 0) return outlineSuggestions;
-  return clampPrimitives(llmValue, script, visualDescription);
+  const selected = outlineSuggestions.length > 0
+    ? outlineSuggestions.filter(isAiSelectableSceneElement)
+    : clampPrimitives(llmValue, script, visualDescription);
+  const fallback = selected.length > 0 ? selected : clampPrimitives(undefined, script, visualDescription);
+  return ensurePoppingTechnicalTermsPrimitive(script, fallback) as RemotionPrimitive[];
 }
 
 function clampPrimitives(value: unknown, script: string, visualDescription?: string): RemotionPrimitive[] {
@@ -275,7 +300,7 @@ function clampPrimitives(value: unknown, script: string, visualDescription?: str
     const selected = [...new Set(value
       .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
-      .filter((item) => item.length > 0))].slice(0, 4);
+      .filter(isAiSelectableSceneElement))].slice(0, 4);
     if (selected.length > 0) return selected;
   }
   return inferPrimitivesFromScript(script, visualDescription).slice(0, 4);
@@ -518,6 +543,7 @@ async function callChatCompletionJson(
   let resp = await postJsonWithTlsFallback(urlStr, headers, buildBody(activeModel, true, !isFixedTempModel));
 
   if (
+    cfg.provider === 'intel-gnai' &&
     (resp.status === 404 || resp.status === 400) &&
     /not\s*found|unknown\s*model|invalid\s*model|does\s*not\s*exist/i.test(resp.text) &&
     activeModel.trim() !== DEFAULT_GNAI_MODEL
@@ -537,7 +563,7 @@ async function callChatCompletionJson(
   if (!resp.ok) {
     if (resp.status === 401) {
       throw new Error(
-        `LLM HTTP 401 (驗證失敗)：GNAI Token 無效、已過期，或權限不足。請至 gnai.intel.com 重新取得 Token 並貼入 GNAI_TOKEN（已自動過濾引號與 Bearer 前綴）。`
+        `LLM HTTP 401: the configured provider rejected the API key or authorization header.`
       );
     }
     throw new Error(`LLM HTTP ${resp.status}: ${resp.text.slice(0, 200)}`);
@@ -977,7 +1003,8 @@ function toSceneSpecs(
     const visualContext = [raw.title, raw.subtitle, script, raw.visualDescription].filter(Boolean).join(' ');
     const inferredTemplate = inferTemplateFromScript(visualContext, clampedTemplate);
     const desiredTemplate = AI_AUTO_TEMPLATES.has(inferredTemplate) ? inferredTemplate : clampedTemplate;
-    const template = chooseDiverseTemplate(desiredTemplate, idx, previousTemplates);
+    const selectedTemplate = chooseDiverseTemplate(desiredTemplate, idx, previousTemplates);
+    const template = normalizeBluetoothTemplate(selectedTemplate, script, domain);
     const clampedEffect = clampEffect(raw.effect, template, script);
     const effect = chooseDiverseEffect(clampedEffect, idx, previousEffects);
     previousTemplates.push(template);
@@ -1186,6 +1213,7 @@ ${JSON.stringify(slideSummaries, null, 2)}`;
     script: r.script,
     captions: generateCaptionsFromScript(r.script, balancedDurations[idx]),
     visualDescription: `100% 還原 PowerPoint 第 ${r.slide.slideNumber} 頁原始版面、文字、圖形、表格與圖片`,
+    remotionPrimitives: ensurePoppingTechnicalTermsPrimitive(r.script),
     pptxSlide: r.slide,
     pptxNotes: r.slide.notes,
     tts: {
@@ -1586,7 +1614,13 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
   - Write ALL video content in ${language.promptName}: titles, subtitles, narration, key points, visual descriptions, and diagram labels. Translate reference notes when necessary. Preserve technical acronyms, model numbers, units, and product names.
   - Spoken ${language.promptName} runs at approximately ${language.charsPerSecond} characters per second. Keep each script near ${Math.round(language.charsPerSecond * 0.9)} characters per second of scene duration so the narration finishes cleanly.
   - ${getRegionalTerminologyPromptGuidance(language.value)}
-3. SCRIPT vs GRAPHIC SEPARATION (VERY IMPORTANT):
+3. LESSON BRIEF:
+   - Audience: ${params.brief?.audience || 'Professionals'}. Match vocabulary depth and assumptions to this audience.
+   - Learning objective: ${params.brief?.objective || 'Explain the topic clearly enough for a practical professional recap.'}
+   - Tone: ${params.brief?.tone || 'calm-instructional'}. Keep the narration and pacing consistent with this tone.
+   - Structure the sequence as objective, explanation, concrete example or application, then recap.
+   - Declared source URLs: ${params.brief?.sourceUrls.length ? params.brief.sourceUrls.join(', ') : 'none provided'}. Treat them as user-declared references only; do not claim that their contents were fetched or verified.
+4. SCRIPT vs GRAPHIC SEPARATION (VERY IMPORTANT):
    - "keyPoints" and "diagramData" labels MUST be short, scannable visual anchors (keywords, component names, metrics, 2–8 words max).
    - Keep one central idea per scene. Show 2–4 keyPoints, at most 1–4 Remotion primitives, and at most 6 primary diagram items. Put supporting detail, caveats, and explanation in the spoken script, not on screen.
    - Never fill every available area. Preserve clear negative space and prioritize adequate, readable information over exhaustive lists. If content needs more than one focused visual, split it across scenes.
@@ -1596,7 +1630,9 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
    - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
    - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
-   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. If the outline has no explicit Remotion element suggestion for that scene, independently choose the smallest effective set: 1–4 reusable Remotion elements total. Existing reusable components include ["kinetic-caption", "svg-trace-path", "pop-badge", "state-card", "animated-counter", "camera-pan-zoom", "caption-highlight", "karaoke-captions", "comparison-bars", "donut-chart", "gauge-dial", "srt-caption-track", "horizontal-bar-chart", "line-chart", "number-counter", "pie-chart", "vertical-bar-chart", "notebook-paper", "paper-texture"], but another precise component name or custom element identifier is allowed.
+   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. Choose 1–4 reusable scene elements, but ONLY use IDs from this runtime-verified registry (do not invent names):
+${getAiElementPrompt()}
+   - Select GL components only when their WebGL visual materially clarifies the topic; otherwise prefer a non-GL chart, diagram, caption, or callout.
    - Provide topic-specific "diagramData" matching the template:
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
      * signal-waveform: { waveformChannels: [{label, color, type: "clock"|"data"|"rf-sine"|"ofdma"}], faultChannelIndex, visualCaption }

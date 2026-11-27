@@ -253,6 +253,7 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
             rawText: sourceDraft,
             defaultTtsProvider: next.ttsConfig.defaultProvider,
             language: languageDraft,
+            brief: next.brief,
             colorPalette: paletteDraft.filter((color) => /^#[0-9A-Fa-f]{6}$/.test(color)).slice(0, 5),
             llmConfig: next.llmConfig,
           }),
@@ -681,6 +682,29 @@ export const AiPipelineReviewModal: React.FC<AiPipelineReviewModalProps> = ({
                     </div>
                   ))}
                 </div>
+                {project.researchSources && project.researchSources.length > 0 && (
+                  <div className="p-3 rounded-lg border border-cyan-500/25 bg-cyan-950/15">
+                    <div className="text-[11px] font-bold text-cyan-300 mb-2">已讀取的公開網頁來源</div>
+                    <div className="space-y-2">
+                      {project.researchSources.map((source) => (
+                        <div key={source.url} className="flex items-start justify-between gap-3 border-t border-slate-800/70 pt-2 first:border-t-0 first:pt-0">
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold text-white break-words">{source.title}</div>
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-0.5 block text-[10px] text-cyan-300 hover:text-cyan-200 break-all"
+                            >
+                              {source.url}
+                            </a>
+                          </div>
+                          <div className="shrink-0 text-[10px] text-slate-500">{source.chars.toLocaleString()} 字元</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/50">
                   <div className="text-[11px] font-bold text-cyan-300 mb-2">AI 使用這些來源的方式</div>
                   <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">

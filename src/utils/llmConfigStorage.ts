@@ -3,10 +3,27 @@ import { LlmConfig } from '../types/training';
 export const GNAI_STORAGE_KEY = 'remotion_training_gnai_config_v1';
 
 export const DEFAULT_GNAI_CONFIG: LlmConfig = {
+  provider: 'intel-gnai',
   baseUrl: 'https://gnai.intel.com/api/providers/openai/v1',
   apiKey: '',
   model: 'gpt-5-mini',
 };
+
+export const LLM_PROVIDER_PRESETS = {
+  'intel-gnai': DEFAULT_GNAI_CONFIG,
+  'openai-compatible': {
+    provider: 'openai-compatible' as const,
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-4.1-mini',
+  },
+  local: {
+    provider: 'local' as const,
+    baseUrl: 'http://localhost:11434/v1',
+    apiKey: '',
+    model: 'qwen2.5:14b',
+  },
+} satisfies Record<string, LlmConfig>;
 
 export function sanitizeTokenInput(raw?: string): string {
   if (!raw) return '';
@@ -32,6 +49,7 @@ export function loadStoredLlmConfig(): LlmConfig {
     if (!raw) return { ...DEFAULT_GNAI_CONFIG };
     const parsed = JSON.parse(raw) as Partial<LlmConfig>;
     return {
+      provider: parsed.provider || (/localhost|127\.0\.0\.1/i.test(parsed.baseUrl || '') ? 'local' : 'openai-compatible'),
       baseUrl: parsed.baseUrl?.trim() || DEFAULT_GNAI_CONFIG.baseUrl,
       apiKey: sanitizeTokenInput(parsed.apiKey),
       model: parsed.model?.trim() || DEFAULT_GNAI_CONFIG.model,
@@ -47,6 +65,7 @@ export function saveStoredLlmConfig(config: LlmConfig): void {
     window.localStorage.setItem(
       GNAI_STORAGE_KEY,
       JSON.stringify({
+        provider: config.provider || 'openai-compatible',
         baseUrl: config.baseUrl?.trim() || DEFAULT_GNAI_CONFIG.baseUrl,
         apiKey: sanitizeTokenInput(config.apiKey),
         model: config.model?.trim() || DEFAULT_GNAI_CONFIG.model,

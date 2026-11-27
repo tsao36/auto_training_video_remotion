@@ -18,6 +18,8 @@ import { loadLocalEnv } from './loadEnv';
 import { inspectRenderedMedia } from './mediaQa';
 import { parsePptxBuffer } from './pptxParser';
 import { resolveRevealTarget, revealInFileExplorer } from './revealFile';
+import { researchSource } from './sourceResearch';
+import { ensurePoppingTechnicalTermsPrimitive, generateCaptionsFromScript } from '../src/utils/captions';
 import { evaluateProjectQuality } from '../src/utils/qualityLinter';
 import { splitScriptIntoSentences } from '../src/utils/sentenceEffects';
 import {
@@ -43,6 +45,7 @@ if (loadedEnvFiles.length > 0) {
   console.log(`[env] Loaded ${loadedEnvFiles.join(', ')}`);
 }
 const AUDIO_DIR = path.join(ROOT_DIR, 'public', 'audio');
+const MUSIC_DIR = path.join(ROOT_DIR, 'public', 'music');
 const PPTX_MEDIA_DIR = path.join(ROOT_DIR, 'public', 'pptx-media');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output');
 const PREVIEW_STILLS_DIR = path.join(OUTPUT_DIR, 'previews');
@@ -53,6 +56,7 @@ const VOICE_SAMPLE_FILE_RE = /^[a-f0-9]{16}\.(wav|mp3|m4a|ogg|webm)$/;
 
 fs.mkdirSync(VOICE_SAMPLES_DIR, { recursive: true });
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
+fs.mkdirSync(MUSIC_DIR, { recursive: true });
 fs.mkdirSync(PPTX_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 fs.mkdirSync(PREVIEW_STILLS_DIR, { recursive: true });
@@ -62,6 +66,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use('/audio', express.static(AUDIO_DIR));
+app.use('/music', express.static(MUSIC_DIR));
 app.use('/pptx-media', express.static(PPTX_MEDIA_DIR));
 app.use('/output', express.static(OUTPUT_DIR));
 
@@ -93,11 +98,27 @@ const previewStillsJobs = new Map<string, PreviewStillsJob>();
 const MAX_CONCURRENT_RENDERS = Math.max(1, Number(process.env.REMOTION_MAX_CONCURRENT_RENDERS) || 2);
 const REMOTION_RENDER_TOKEN = process.env.REMOTION_RENDER_TOKEN?.trim() || '';
 const REMOTION_ENTRY = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
+const REMOTION_BROWSER_EXECUTABLE = process.env.REMOTION_BROWSER_EXECUTABLE?.trim() || [
+  process.env['ProgramFiles(x86)'] && path.join(process.env['ProgramFiles(x86)']!, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+  process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+].find((candidate): candidate is string => Boolean(candidate && fs.existsSync(candidate)));
 let remotionBundlePromise: Promise<string> | null = null;
 
 function getRemotionBundle(): Promise<string> {
   if (!remotionBundlePromise) {
-    remotionBundlePromise = bundle({ entryPoint: REMOTION_ENTRY }).catch((error) => {
+    remotionBundlePromise = bundle({
+      entryPoint: REMOTION_ENTRY,
+      webpackOverride: (config) => ({
+        ...config,
+        resolve: {
+          ...config.resolve,
+          alias: {
+            ...config.resolve?.alias,
+            '@': path.join(ROOT_DIR, 'src'),
+          },
+        },
+      }),
+    }).catch((error) => {
       remotionBundlePromise = null;
       throw error;
     });
@@ -210,12 +231,66 @@ function readSavedProject(id: string): SavedProjectRecord | null {
   const filePath = getProjectFilePath(id);
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw) as SavedProjectRecord;
+  const record = JSON.parse(raw) as SavedProjectRecord;
+  return {
+    ...record,
+    project: normalizeProjectPresentation(record.project),
+  };
+}
+
+function normalizeProjectPresentation(project: TrainingProject): TrainingProject {
+  const normalizeScenes = <T extends Partial<SceneSpec>>(scenes: T[] = []): T[] =>
+    scenes.map((scene) => {
+      if (!scene.script) return scene;
+      const configuredDuration = Number(scene.durationSeconds) || 0;
+      const ttsDuration = Number(scene.tts?.actualDurationSec) || 0;
+      const durationSeconds = ttsDuration > 0 ? ttsDuration : configuredDuration;
+      return {
+        ...scene,
+        captions: durationSeconds > 0
+          ? generateCaptionsFromScript(scene.script, durationSeconds)
+          : scene.captions,
+        remotionPrimitives: ensurePoppingTechnicalTermsPrimitive(
+          scene.script,
+          scene.remotionPrimitives
+        ),
+      };
+    });
+
+  const stages = project.aiGenerationStages;
+  let remotionJson = stages?.remotionJson;
+  if (remotionJson?.json) {
+    try {
+      const parsed = JSON.parse(remotionJson.json) as { scenes?: Array<Partial<SceneSpec>> };
+      remotionJson = {
+        ...remotionJson,
+        json: JSON.stringify({ ...parsed, scenes: normalizeScenes(parsed.scenes) }, null, 2),
+      };
+    } catch {
+      remotionJson = stages?.remotionJson;
+    }
+  }
+
+  return {
+    ...project,
+    scenes: normalizeScenes(project.scenes) as SceneSpec[],
+    aiGenerationStages: stages
+      ? {
+          ...stages,
+          outline: {
+            ...stages.outline,
+            scenes: normalizeScenes(stages.outline.scenes),
+          },
+          remotionJson: remotionJson || stages.remotionJson,
+        }
+      : undefined,
+  };
 }
 
 function writeSavedProject(project: TrainingProject, newRender?: RenderedVideoRecord): SavedProjectRecord {
   const safeId = sanitizeProjectId(project.id);
   if (!safeId) throw new Error('無效的專案 ID');
+  const normalizedProject = normalizeProjectPresentation(project);
   const existing = readSavedProject(safeId);
   const now = new Date().toISOString();
 
@@ -231,7 +306,7 @@ function writeSavedProject(project: TrainingProject, newRender?: RenderedVideoRe
     updatedAt: now,
     renders,
     project: {
-      ...project,
+      ...normalizedProject,
       id: safeId,
     },
   };
@@ -379,10 +454,62 @@ app.get('/api/llm/status', (_req, res) => {
   res.json(getEnvLlmStatus());
 });
 
+app.post('/api/research-sources', async (req, res) => {
+  try {
+    const consent = req.body?.consent === true;
+    const urls = Array.isArray(req.body?.urls)
+      ? req.body.urls.filter((url: unknown): url is string => typeof url === 'string' && url.trim().length > 0).slice(0, 6)
+      : [];
+    if (!consent) {
+      res.status(400).json({ error: 'Explicit source access consent is required.' });
+      return;
+    }
+    if (urls.length === 0) {
+      res.status(400).json({ error: 'At least one source URL is required.' });
+      return;
+    }
+
+    const settled = await Promise.allSettled(urls.map((url: string) => researchSource(url)));
+    const sources = settled.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+    const errors = settled.flatMap((result, index) => result.status === 'rejected'
+      ? [{ url: urls[index], error: result.reason instanceof Error ? result.reason.message : 'Source could not be read.' }]
+      : []);
+    res.json({ sources, errors });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Source research failed.' });
+  }
+});
+
+app.post('/api/music/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: 'Choose an audio file to import.' });
+      return;
+    }
+    const extension = path.extname(req.file.originalname).toLowerCase();
+    const allowedExtensions = new Set(['.mp3', '.wav', '.m4a', '.ogg', '.aac']);
+    if (!allowedExtensions.has(extension) || !req.file.mimetype.startsWith('audio/')) {
+      res.status(400).json({ error: 'Background music must be an MP3, WAV, M4A, OGG, or AAC audio file.' });
+      return;
+    }
+    const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex').slice(0, 20);
+    const fileName = `${hash}${extension}`;
+    const filePath = path.join(MUSIC_DIR, fileName);
+    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, req.file.buffer);
+    res.json({
+      url: `/music/${fileName}`,
+      fileName: path.basename(req.file.originalname),
+      bytes: req.file.size,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Music import failed.' });
+  }
+});
+
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, colorPalette, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, brief, colorPalette, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -396,6 +523,18 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       defaultTtsProvider: defaultTtsProvider || 'openformosa',
       language: getContentLanguage(language || DEFAULT_CONTENT_LANGUAGE).value,
       odmMode: Boolean(odmMode),
+      brief: brief && typeof brief === 'object'
+        ? {
+            audience: typeof brief.audience === 'string' ? brief.audience.trim() : 'Professionals',
+            objective: typeof brief.objective === 'string' ? brief.objective.trim() : '',
+            tone: brief.tone === 'editorial' || brief.tone === 'technical-documentary'
+              ? brief.tone
+              : 'calm-instructional',
+            sourceUrls: Array.isArray(brief.sourceUrls)
+              ? brief.sourceUrls.filter((url: unknown): url is string => typeof url === 'string').slice(0, 12)
+              : [],
+          }
+        : undefined,
       colorPalette: Array.isArray(colorPalette)
         ? colorPalette.filter((color): color is string => typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color)).slice(0, 5)
         : undefined,
@@ -1210,11 +1349,12 @@ app.post('/api/preview-stills', async (req, res) => {
       res.status(429).json({ error: `Render queue limit reached (${MAX_CONCURRENT_RENDERS} active)` });
       return;
     }
-    const { projectTitle, scenes, captionStyle, videoTheme } = req.body as {
+    const { projectTitle, scenes, captionStyle, videoTheme, technicalTermsWhitelist } = req.body as {
       projectTitle: string;
       scenes: SceneSpec[];
       captionStyle?: TrainingProject['captionStyle'];
       videoTheme?: TrainingProject['videoTheme'];
+      technicalTermsWhitelist?: string[];
     };
     if (!Array.isArray(scenes) || scenes.length === 0) {
       res.status(400).json({ error: '沒有可預覽的場景' });
@@ -1244,12 +1384,14 @@ app.post('/api/preview-stills', async (req, res) => {
           audioBaseUrl: 'http://localhost:3001',
           captionStyle,
           videoTheme,
+          technicalTermsWhitelist: technicalTermsWhitelist ?? [],
         };
 
         const composition = await selectComposition({
           serveUrl: bundleLocation,
           id: 'TechTrainingVideo',
           inputProps,
+          ...(REMOTION_BROWSER_EXECUTABLE ? { browserExecutable: REMOTION_BROWSER_EXECUTABLE } : {}),
         });
 
         const jobDir = path.join(PREVIEW_STILLS_DIR, jobId);
@@ -1281,6 +1423,7 @@ app.post('/api/preview-stills', async (req, res) => {
             frame: midpointFrame,
             inputProps,
             imageFormat: 'png',
+            ...(REMOTION_BROWSER_EXECUTABLE ? { browserExecutable: REMOTION_BROWSER_EXECUTABLE } : {}),
           });
 
           stills.push({
@@ -1390,35 +1533,41 @@ app.post('/api/render', async (req, res) => {
           audioBaseUrl: 'http://localhost:3001',
           captionStyle: project?.captionStyle,
           videoTheme: project?.videoTheme,
+          backgroundMusic: project?.backgroundMusic,
+          technicalTermsWhitelist: project?.technicalTermsWhitelist?.terms ?? [],
         };
 
         const composition = await selectComposition({
           serveUrl: bundleLocation,
           id: 'TechTrainingVideo',
           inputProps,
+          ...(REMOTION_BROWSER_EXECUTABLE ? { browserExecutable: REMOTION_BROWSER_EXECUTABLE } : {}),
         });
 
         const outFile = `${jobId}.mp4`;
         const outputLocation = path.join(OUTPUT_DIR, outFile);
 
-        renderJobs.set(jobId, { id: jobId, status: 'rendering', progress: 20 });
+        renderJobs.set(jobId, { id: jobId, status: 'rendering', progress: 20, cancel });
 
         await renderMedia({
           composition,
           serveUrl: bundleLocation,
+          ...(REMOTION_BROWSER_EXECUTABLE ? { browserExecutable: REMOTION_BROWSER_EXECUTABLE } : {}),
           codec: 'h264',
           outputLocation,
           inputProps,
           cancelSignal,
           onProgress: ({ progress }) => {
             const job = renderJobs.get(jobId);
-            if (job) job.progress = 20 + Math.round(progress * 75);
+            if (job && !job.cancelled) {
+              job.progress = 20 + Math.round(progress * 75);
+            }
           },
         });
 
         // Post-render audio QA verification
         renderJobs.set(jobId, { id: jobId, status: 'qa', progress: 97 });
-        const expectAudio = selectedScenes.some(
+        const expectAudio = Boolean(project?.backgroundMusic?.url) || selectedScenes.some(
           (s) => Boolean(s?.tts?.audioUrl && s?.tts?.status === 'ready')
         );
         const mediaQa = inspectRenderedMedia(outputLocation, { expectAudio });

@@ -82,10 +82,27 @@ export type RemotionEffect =
 
 export type RemotionPrimitive = string;
 
+export type LlmProvider = 'intel-gnai' | 'openai-compatible' | 'local';
+
 export interface LlmConfig {
+  provider?: LlmProvider;
   baseUrl: string;
   apiKey: string;
   model: string;
+}
+
+export interface TrainingBrief {
+  audience: string;
+  objective: string;
+  tone: 'calm-instructional' | 'editorial' | 'technical-documentary';
+  sourceUrls: string[];
+}
+
+export interface ResearchSourceRecord {
+  url: string;
+  requestedUrl?: string;
+  title: string;
+  chars: number;
 }
 
 export interface DiagramNode {
@@ -364,6 +381,14 @@ export interface SceneSpec {
   captions?: Caption[];
 }
 
+export interface BackgroundMusicConfig {
+  url: string;
+  fileName: string;
+  volume: number;
+  loop: boolean;
+  licenseNote?: string;
+}
+
 export interface TtsEngineConfig {
   defaultProvider: 'openformosa' | 'ming-3.0';
   openformosa: {
@@ -429,6 +454,7 @@ export interface TrainingProject {
   language?: ContentLanguage;
   topic?: string;
   odmMode?: boolean;
+  brief?: TrainingBrief;
   domain: TechDomain;
   targetDurationSeconds: number;
   fps: number; // 30
@@ -437,8 +463,15 @@ export interface TrainingProject {
   sourceType: 'topic-llm' | 'pptx' | 'pdf' | 'research-text';
   sourceFileName?: string;
   rawSourceText: string;
+  researchSources?: ResearchSourceRecord[];
+  backgroundMusic?: BackgroundMusicConfig;
   captionStyle?: Partial<VideoCaptionStyle>;
   videoTheme?: VideoThemeId;
+  technicalTermsWhitelist?: {
+    terms: string[];
+    generatedAt?: string;
+    reviewedAt?: string;
+  };
   llmConfig?: LlmConfig;
   ttsConfig: TtsEngineConfig;
   // When true, TTS is not auto-generated on open; the user starts it after reviewing the script.

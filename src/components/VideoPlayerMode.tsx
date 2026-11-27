@@ -457,7 +457,10 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
           ) : (
             <div className="flex-1 flex flex-col max-w-6xl w-full mx-auto px-5 py-4 gap-4">
               {/* Video Viewport */}
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-800 bg-black shadow-2xl">
+              <div
+                className="relative w-full rounded-xl overflow-hidden border border-slate-800 bg-black shadow-2xl"
+                style={{ aspectRatio: '16 / 9', minHeight: 0 }}
+              >
                 {isPlayingMp4 && activeRender ? (
                   <video
                     key={activeRender.outputUrl}
@@ -501,6 +504,8 @@ export const VideoPlayerMode: React.FC<VideoPlayerModeProps> = ({
                       audioBaseUrl: '',
                       captionStyle: loadedProject.captionStyle,
                       videoTheme: loadedProject.videoTheme,
+                      backgroundMusic: loadedProject.backgroundMusic,
+                      technicalTermsWhitelist: loadedProject.technicalTermsWhitelist?.terms ?? [],
                     }}
                     durationInFrames={totalFrames}
                     fps={VIDEO_FPS}

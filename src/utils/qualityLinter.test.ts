@@ -141,6 +141,61 @@ describe('evaluateProjectQuality', () => {
     );
   });
 
+  it('warns when declared web sources lack saved provenance', () => {
+    const report = evaluateProjectQuality({
+      title: 'Sourced Lesson',
+      language: 'en-US',
+      brief: {
+        audience: 'Professionals',
+        objective: 'Explain the standard',
+        tone: 'calm-instructional',
+        sourceUrls: ['https://example.com/spec'],
+      },
+      researchSources: [],
+      scenes: [makeScene()],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toContain('research-provenance-missing');
+  });
+
+  it('accepts declared web sources with matching saved provenance', () => {
+    const report = evaluateProjectQuality({
+      title: 'Sourced Lesson',
+      language: 'en-US',
+      brief: {
+        audience: 'Professionals',
+        objective: 'Explain the standard',
+        tone: 'calm-instructional',
+        sourceUrls: ['https://example.com/spec'],
+      },
+      researchSources: [{
+        requestedUrl: 'https://example.com/spec',
+        url: 'https://docs.example.com/specification',
+        title: 'Specification',
+        chars: 1200,
+      }],
+      scenes: [makeScene()],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).not.toContain('research-provenance-missing');
+  });
+
+  it('warns when background music lacks a license note', () => {
+    const report = evaluateProjectQuality({
+      title: 'Licensed Music Lesson',
+      language: 'en-US',
+      backgroundMusic: {
+        url: '/music/track.mp3',
+        fileName: 'track.mp3',
+        volume: 0.12,
+        loop: true,
+      },
+      scenes: [makeScene()],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toContain('music-license-note-missing');
+  });
+
   it('warns when technical terms do not match the selected regional language', () => {
     const report = evaluateProjectQuality({
       title: 'Wi-Fi EAPOL',
