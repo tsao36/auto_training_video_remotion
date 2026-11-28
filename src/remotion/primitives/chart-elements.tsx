@@ -261,12 +261,11 @@ export const LineChart: React.FC<LineChartProps> = ({
             opacity: clamp01((drawProgress - 0.8) / 0.2),
             padding: "10px 14px",
             position: "absolute",
-            scale: interpolate(drawProgress, [0.8, 1], [0.8, 1], {
+            transform: `translate(-50%, -130%) scale(${interpolate(drawProgress, [0.8, 1], [0.8, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
-            }),
+            })})`,
             top: latest.y,
-            translate: "-50% -130%",
             whiteSpace: "nowrap",
           }}
         >

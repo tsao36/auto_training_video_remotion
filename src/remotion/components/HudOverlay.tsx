@@ -1,8 +1,16 @@
 import React from 'react';
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { DOMAIN_META, SceneSpec, VideoCaptionStyle, VideoThemeId } from '../../types/training';
+import {
+  getActiveCaption,
+  getTimedTechnicalTerms,
+  shouldUsePoppingTechnicalTerms,
+} from '../../utils/captions';
 import { getActiveSentenceCue } from '../../utils/sentenceEffects';
-import { getVideoTheme, getVideoThemeStyle } from '../../utils/videoThemes';
+import { getVideoTheme } from '../../utils/videoThemes';
+import { CAPTION_BAND_HEIGHT } from '../lib/caption-layout';
+import { PoppingTechnicalText } from '../primitives/popping-technical-text';
+import { TechnicalTermOverlay } from '../primitives/technical-term-overlay';
 
 interface HudOverlayProps {
   projectTitle: string;
@@ -12,6 +20,7 @@ interface HudOverlayProps {
   totalFrames: number;
   captionStyle?: Partial<VideoCaptionStyle>;
   videoTheme?: VideoThemeId;
+  technicalTermsWhitelist?: string[];
 }
 
 const ThemeLayoutFrame: React.FC<{ themeId?: VideoThemeId }> = ({ themeId }) => {
@@ -211,15 +220,16 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
   totalFrames,
   captionStyle,
   videoTheme,
+  technicalTermsWhitelist,
 }) => {
   const { fps } = useVideoConfig();
   const localFrame = useCurrentFrame();
   const meta = DOMAIN_META[scene.domain];
   const theme = getVideoTheme(videoTheme);
   const accent = scene.animation.accentColor || meta.accentColor;
-  const captionFontSize = Math.min(64, Math.max(24, captionStyle?.fontSize ?? 36));
+  const captionFontSize = Math.min(44, Math.max(24, captionStyle?.fontSize ?? 36));
   const captionFontWeight = captionStyle?.fontWeight ?? 600;
-  const captionBottomOffset = Math.min(180, Math.max(20, captionStyle?.bottomOffset ?? 36));
+  const captionBottomOffset = Math.min(20, Math.max(12, captionStyle?.bottomOffset ?? 16));
   const captionMaxWidth = Math.min(1800, Math.max(720, captionStyle?.maxWidth ?? 1480));
   const captionBackgroundOpacity = Math.min(1, Math.max(0.45, captionStyle?.backgroundOpacity ?? 0.9));
 
@@ -231,7 +241,11 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
   const progressPct = Math.min(100, Math.max(0, (globalFrame / Math.max(1, totalFrames)) * 100));
 
   // Beat-synchronized subtitle computation
-  const sceneTotalFrames = Math.max(30, Math.round(scene.durationSeconds * fps));
+  const effectiveDurationSec =
+    scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
+      ? scene.tts.actualDurationSec
+      : scene.durationSeconds;
+  const sceneTotalFrames = Math.max(30, Math.round(effectiveDurationSec * fps));
   const sceneProgress = Math.min(1, localFrame / sceneTotalFrames);
   const { cue: activeCue, cueProgress } = getActiveSentenceCue(
     scene.sentenceCues,
@@ -240,8 +254,16 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
     scene.template,
     scene.animation.effect || 'signal-pulse'
   );
-  const cueStartFrame = Math.round(activeCue.startRatio * sceneTotalFrames);
-  const activeSubtitleText = activeCue.sentences[0]?.trim() || scene.script;
+  const currentMs = (localFrame / fps) * 1000;
+  const activeCaption = getActiveCaption(scene.captions || [], currentMs);
+  const poppingTermsEnabled = shouldUsePoppingTechnicalTerms(scene);
+  const timedTechnicalTerms = poppingTermsEnabled
+    ? getTimedTechnicalTerms(scene.captions || [], currentMs, technicalTermsWhitelist)
+    : [];
+  const cueStartFrame = activeCaption
+    ? Math.round((activeCaption.startMs / 1000) * fps)
+    : Math.round(activeCue.startRatio * sceneTotalFrames);
+  const activeSubtitleText = activeCaption?.text.trim() || activeCue.sentences[0]?.trim() || scene.script;
   const visibleSubtitleText = activeSubtitleText;
   const sentenceLocalFrame = Math.max(0, localFrame - cueStartFrame);
   const subSpring = spring({
@@ -255,37 +277,14 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
     extrapolateRight: 'clamp',
   });
 
-  const renderHighlightedSubtitle = (text: string) => {
-    const parts = text.split(/(\b\d+(?:\.\d+)?(?:%|x|ms|ns|GHz|MHz|V|dB|dBm)?\b|\b(?:PCIe|BIOS|EC|SPI|I2C|OFDMA|MU-MIMO|SNR|RF|BLE|PHY|MAC)\b)/g);
-    return parts.map((part, idx) => {
-      if (!part) return null;
-      const isHighlight = /^(\d+(?:\.\d+)?(?:%|x|ms|ns|GHz|MHz|V|dB|dBm)?|PCIe|BIOS|EC|SPI|I2C|OFDMA|MU-MIMO|SNR|RF|BLE|PHY|MAC)$/.test(part);
-      return isHighlight ? (
-        <span key={idx} style={{ color: accent, fontWeight: 800 }}>
-          {part}
-        </span>
-      ) : (
-        <React.Fragment key={idx}>{part}</React.Fragment>
-      );
-    });
-  };
+  const visibleCueProgress = activeCaption
+    ? Math.min(1, Math.max(0, (currentMs - activeCaption.startMs) / Math.max(1, activeCaption.endMs - activeCaption.startMs)))
+    : cueProgress;
 
   const isPptxSlide = scene.template === 'pptx-slide' && Boolean(scene.pptxSlide);
 
   return (
     <AbsoluteFill style={{ pointerEvents: 'none', zIndex: isPptxSlide ? 20 : undefined }}>
-      {/* Tech Grid Background (hidden on 1:1 PowerPoint slides) */}
-      {!isPptxSlide && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            ...getVideoThemeStyle(videoTheme, localFrame),
-            zIndex: 0,
-          }}
-        />
-      )}
-
       {!isPptxSlide && <ThemeLayoutFrame themeId={videoTheme} />}
       {!isPptxSlide && <ThemeMotionLayer themeId={videoTheme} />}
 
@@ -373,14 +372,21 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
         </div>
       )}
 
-      {/* Packet-Traffic Effect Overlay (Device A -> Device B multi-channel mini simulator on any template) */}
-      {!isPptxSlide && scene.template !== 'packet-simulator' && activeCue.effect === 'packet-traffic' && (
+      {/* Packet-Traffic Effect Overlay (only for wireless domains on non-occluding templates) */}
+      {!isPptxSlide &&
+        (scene.domain === 'wifi' || scene.domain === 'bluetooth' || scene.domain === 'rf') &&
+        scene.template !== 'packet-simulator' &&
+        scene.template !== 'kpi-metrics' &&
+        scene.template !== 'fault-tree' &&
+        scene.template !== 'debug-checklist' &&
+        scene.template !== 'summary-takeaways' &&
+        activeCue.effect === 'packet-traffic' && (
         <div
           style={{
             position: 'absolute',
             left: 110,
             right: 110,
-            bottom: scene.animation.showSubtitles && activeSubtitleText ? 128 : 42,
+            bottom: CAPTION_BAND_HEIGHT + 24,
             zIndex: 18,
             display: 'flex',
             justifyContent: 'center',
@@ -446,14 +452,35 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
         </div>
       )}
 
+      <TechnicalTermOverlay
+        captions={scene.captions || []}
+        accentColor={accent}
+        enabled={poppingTermsEnabled}
+        allowedTerms={technicalTermsWhitelist}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: CAPTION_BAND_HEIGHT,
+          zIndex: 19,
+          background: `linear-gradient(180deg, ${theme.backgroundColor}F2 0%, ${theme.backgroundColor} 38%)`,
+          borderTop: `1px solid ${accent}33`,
+          boxShadow: `0 -12px 32px ${theme.backgroundColor}99`,
+        }}
+      />
+
       {/* Synchronized Narration Subtitle Bar (Per-Beat Dynamic) */}
       {scene.animation.showSubtitles && activeSubtitleText && (
         <div
           style={{
             position: 'absolute',
             bottom: captionBottomOffset,
-            left: 110,
-            right: 110,
+            left: 58,
+            right: 58,
             display: 'flex',
             justifyContent: 'center',
             zIndex: 20,
@@ -467,8 +494,8 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               overflow: 'hidden',
               backgroundColor: theme.captionSurface.replace(/\.[0-9]+\)/, `.${Math.round(captionBackgroundOpacity * 100)})`),
               border: `1px solid ${accent}44`,
-              borderRadius: 14,
-              padding: '14px 30px 18px',
+              borderRadius: 8,
+              padding: '10px 26px 12px',
               color: '#F1F5F9',
               fontSize: captionFontSize,
               fontWeight: captionFontWeight,
@@ -479,7 +506,16 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
               fontFamily: theme.titleFontFamily,
             }}
           >
-            <div>{renderHighlightedSubtitle(visibleSubtitleText)}</div>
+            <div>
+              <PoppingTechnicalText
+                text={visibleSubtitleText}
+                terms={timedTechnicalTerms}
+                currentMs={currentMs}
+                fps={fps}
+                accentColor={accent}
+                inactiveColor="#F1F5F9"
+              />
+            </div>
             <div
               style={{
                 position: 'absolute',
@@ -492,7 +528,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
             >
               <div
                 style={{
-                  width: `${Math.round(cueProgress * 100)}%`,
+                  width: `${Math.round(visibleCueProgress * 100)}%`,
                   height: '100%',
                   backgroundColor: accent,
                 }}

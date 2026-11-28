@@ -2,6 +2,7 @@ import React from 'react';
 import { fitText } from '@remotion/layout-utils';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { DOMAIN_META, EFFECT_LABELS, SceneSpec, VideoThemeId } from '../../types/training';
+import { shouldUsePoppingTechnicalTerms } from '../../utils/captions';
 import { getVideoTheme } from '../../utils/videoThemes';
 
 const HEADLINE_FONT_FAMILY = 'Inter, "Noto Sans TC", system-ui, sans-serif';
@@ -47,15 +48,25 @@ interface SceneRendererProps {
   scene: SceneSpec;
   assetBaseUrl?: string;
   videoTheme?: VideoThemeId;
+  technicalTermsWhitelist?: string[];
 }
 
-export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUrl = '', videoTheme }) => {
+export const SceneRenderer: React.FC<SceneRendererProps> = ({
+  scene,
+  assetBaseUrl = '',
+  videoTheme,
+  technicalTermsWhitelist,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const meta = DOMAIN_META[scene.domain];
   const presentationTheme = getVideoTheme(videoTheme);
   const accent = scene.animation.accentColor || meta.accentColor;
-  const sceneTotalFrames = Math.max(30, Math.round(scene.durationSeconds * fps));
+  const effectiveDurationSec =
+    scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
+      ? scene.tts.actualDurationSec
+      : scene.durationSeconds;
+  const sceneTotalFrames = Math.max(30, Math.round(effectiveDurationSec * fps));
   const sceneProgress = Math.min(1, frame / sceneTotalFrames);
 
   const { cue: activeCue, cues: allCues, cueProgress } = getActiveSentenceCue(
@@ -80,6 +91,10 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         slide={scene.pptxSlide}
         assetBaseUrl={assetBaseUrl}
         progressiveReveal={isProgressiveScene}
+        captions={scene.captions}
+        allowedTerms={technicalTermsWhitelist}
+        captionTermHighlight={shouldUsePoppingTechnicalTerms(scene)}
+        accentColor={accent}
         getItemRevealFrame={getItemRevealFrame}
       />
     );
@@ -104,7 +119,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
 
   const headerProgress = spring({ frame, fps, config: springConfig });
   const headerY = interpolate(headerProgress, [0, 1], [18, 0]);
-  const headerOpacity = interpolate(frame, [0, 7], [0, 1], { extrapolateRight: 'clamp' });
+  const headerOpacity = interpolate(frame, [0, 7], [0.76, 1], { extrapolateRight: 'clamp' });
 
   const headerTitleFontSize = computeFittedFontSize(scene.title, 1180, presentationTheme.titleWeight, 32, 52, presentationTheme.titleFontFamily);
   const heroTitleFontSize = computeFittedFontSize(scene.title, 1450, presentationTheme.titleWeight, 44, 74, presentationTheme.titleFontFamily);
@@ -176,21 +191,6 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
           gap: headerLayout === 'flow-canvas' ? 18 : 10,
         }}
       >
-        <div
-          style={{
-            padding: headerLayout === 'flow-canvas' ? '8px 18px' : '10px 16px',
-            borderRadius: headerLayout === 'flow-canvas' ? 999 : presentationTheme.panelRadius,
-            backgroundColor: effect === 'glitch-alert' ? 'rgba(245, 158, 11, 0.16)' : presentationTheme.hudSurface,
-            border: `1px solid ${effect === 'glitch-alert' ? '#F59E0B88' : presentationTheme.panelBorder}`,
-            color: effect === 'glitch-alert' ? '#FCD34D' : '#E2E8F0',
-            fontFamily: presentationTheme.labelFontFamily,
-            fontSize: 15,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          BEAT {activeCue.beatIndex + 1}/{allCues.length} • {effectShortName}
-        </div>
         {scene.diagramData?.visualCaption && (
           <div
             style={{
@@ -275,7 +275,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                 marginBottom: 28,
               }}
             >
-              {meta.label} • BEAT {activeCue.beatIndex + 1}/{allCues.length}
+              {meta.label}
             </div>
             <h1
               style={{
@@ -997,6 +997,11 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
         ? targetIndex % Math.max(1, fields.length)
         : Math.min(fields.length - 1, Math.floor(sceneProgress * fields.length));
     const activeField = fields[activeFieldIdx] || fields[0];
+    const formatBits = (bits: string | number | undefined) => {
+      if (bits === undefined || bits === null || bits === '') return '—';
+      const s = String(bits).trim();
+      return /^\d+$/.test(s) ? `${s} bits` : s;
+    };
     const scanProgress = (frame % 75) / 75;
 
     return (
@@ -1086,7 +1091,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                             borderRadius: 6,
                           }}
                         >
-                          {f.bits}
+                          {formatBits(f.bits)}
                         </span>
                         {isFocused && (
                           <span style={{ fontSize: 12, fontWeight: 800, color: '#F8FAFC' }}>FOCUS</span>
@@ -1132,7 +1137,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                 }}
               >
                 <div style={{ fontSize: 15, fontWeight: 800, color: activeField.color || accent, letterSpacing: '0.08em', marginBottom: 10 }}>
-                  FIELD INSPECTOR • {activeField.bits} • {activeField.value || 'BIT FIELD'}
+                  FIELD INSPECTOR • {formatBits(activeField.bits)} • {activeField.value || 'BIT FIELD'}
                 </div>
                 <div style={{ fontSize: 34, fontWeight: 800, color: '#F8FAFC', marginBottom: 12 }}>
                   {activeField.name}
@@ -1256,16 +1261,16 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                       <div style={{ fontSize: 13, fontWeight: 800, color: statusColor, letterSpacing: '0.1em', marginBottom: 8 }}>
                         STATE 0{i + 1} {isFocused ? '• ACTIVE' : ''}
                       </div>
-                      <div style={{ fontSize: 26, fontWeight: 800, color: '#F8FAFC' }}>{st.label}</div>
+                      <div style={{ fontSize: states.length >= 5 ? 21 : 26, fontWeight: 800, color: '#F8FAFC', wordBreak: 'keep-all' }}>{st.label}</div>
                       {st.sublabel && (
-                        <div style={{ fontSize: 16, color: '#CBD5E1', marginTop: 8 }}>{st.sublabel}</div>
+                        <div style={{ fontSize: states.length >= 5 ? 14 : 16, color: '#CBD5E1', marginTop: 8 }}>{st.sublabel}</div>
                       )}
                     </div>
                     {i < states.length - 1 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 92 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: states.length >= 5 ? 64 : 92 }}>
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: 700,
                             color: i === activeStateIdx ? accent : '#94A3B8',
                             marginBottom: 6,
@@ -1276,7 +1281,7 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                         </div>
                         <div
                           style={{
-                            width: 76,
+                            width: states.length >= 5 ? 50 : 76,
                             height: 3,
                             backgroundColor: i <= activeStateIdx ? accent : 'rgba(148,163,184,0.35)',
                             position: 'relative',
@@ -1816,8 +1821,8 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
               >
                 <div style={{ color: activeCardAccent, fontSize: 18, fontWeight: 800, marginBottom: 14, letterSpacing: '0.06em' }}>
                   {scene.template === 'debug-checklist'
-                    ? `ACTIVE TRIAGE STEP 0${activeCardIdx + 1} • ${effectShortName} ▶`
-                    : `SPOTLIGHT TAKEAWAY 0${activeCardIdx + 1} • ${effectShortName} ▶`}
+                    ? `ACTIVE TRIAGE STEP 0${activeCardIdx + 1} ▶`
+                    : `SPOTLIGHT TAKEAWAY 0${activeCardIdx + 1} ▶`}
                 </div>
                 <div style={{ color: '#F8FAFC', fontSize: 34, fontWeight: 700, lineHeight: 1.42 }}>
                   <AnimatedMetricText
@@ -1902,8 +1907,8 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, assetBaseUr
                   >
                     <div style={{ color: cardAccent, fontSize: 18, fontWeight: 800, marginBottom: 12 }}>
                       {scene.template === 'debug-checklist'
-                        ? `STEP 0${i + 1} • ${isFocused ? `${effectShortName} ▶` : 'TRIAGE CHECK'}`
-                        : `KEY TAKEAWAY 0${i + 1}${isFocused ? ` • ${effectShortName}` : ''}`}
+                        ? `STEP 0${i + 1} • ${isFocused ? 'ACTIVE ▶' : 'TRIAGE CHECK'}`
+                        : `KEY TAKEAWAY 0${i + 1}${isFocused ? ' • FOCUS' : ''}`}
                     </div>
                     <div style={{ color: '#F8FAFC', fontSize: 27, fontWeight: 600, lineHeight: 1.4 }}>
                       <AnimatedMetricText

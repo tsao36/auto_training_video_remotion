@@ -6,6 +6,7 @@ import {
   getTechnicalTermOverlayQueue,
   getTimedTechnicalTerms,
   generateProjectCaptions,
+  normalizeSceneCaptions,
   serializeCaptions,
 } from './captions';
 import type { SceneSpec } from '../types/training';
@@ -114,5 +115,27 @@ describe('technical-term caption alignment', () => {
       'camera-pan-zoom',
       'popping-word-captions',
     ]);
+  });
+
+  it('rescales stale pre-TTS captions to match actual narration duration', () => {
+    const normalized = normalizeSceneCaptions({
+      script: 'LTSSM 狀態機檢視。定位轉換失敗點。',
+      durationSeconds: 16,
+      tts: {
+        provider: 'openformosa',
+        voiceId: 'voice',
+        speed: 1.08,
+        status: 'ready',
+        actualDurationSec: 15.6,
+      },
+      captions: [
+        { text: 'LTSSM 狀態機檢視。', startMs: 0, endMs: 5000, timestampMs: 2500, confidence: 1 },
+        { text: '定位轉換失敗點。', startMs: 5000, endMs: 10000, timestampMs: 7500, confidence: 1 },
+      ],
+    });
+
+    expect(normalized[0].startMs).toBe(0);
+    expect(normalized[0].endMs).toBe(7800);
+    expect(normalized[1].endMs).toBe(15600);
   });
 });

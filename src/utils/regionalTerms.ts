@@ -48,6 +48,8 @@ const ZH_TW_TERM_RULES: readonly RegionalTermRule[] = [
   { wrong: '默認', preferred: '預設' },
   { wrong: '兼容', preferred: '相容' },
   { wrong: '字節', preferred: '位元組' },
+  { wrong: '寄存器', preferred: '暫存器', reason: '台灣硬體與韌體工程用語為「暫存器」（register），非中國大陸用語「寄存器」' },
+  { wrong: '邏輯分析器', preferred: '邏輯分析儀' },
   { wrong: '信道', preferred: '通道' },
   { wrong: '視頻', preferred: '影片' },
   { wrong: '高清', preferred: '高畫質', reason: '台灣工程與多媒體用語為「高畫質」（high definition），非中國大陸用語「高清」' },

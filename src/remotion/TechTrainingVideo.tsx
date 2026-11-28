@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { AbsoluteFill, Audio, Series, useCurrentFrame, useVideoConfig } from 'remotion';
 import { BackgroundMusicConfig, SceneSpec, VideoCaptionStyle, VideoThemeId } from '../types/training';
-import { generateCaptionsFromScript } from '../utils/captions';
+import { normalizeSceneCaptions } from '../utils/captions';
 import { getVideoTheme, getVideoThemeStyle } from '../utils/videoThemes';
 import { HudOverlay } from './components/HudOverlay';
 import { ScenePrimitiveLayer } from './components/ScenePrimitiveLayer';
@@ -44,9 +44,7 @@ export const TechTrainingVideo: React.FC<TechTrainingVideoProps> = ({
       : scene.durationSeconds;
     return {
       ...scene,
-      captions: scene.captions?.length
-        ? scene.captions
-        : generateCaptionsFromScript(scene.script, effectiveDuration),
+      captions: normalizeSceneCaptions(scene, effectiveDuration),
     };
   }), [fps, scenes]);
 

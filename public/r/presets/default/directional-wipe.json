@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "directional-wipe",
+  "type": "registry:ui",
+  "description": "Soft-edged wipe that uncovers the next scene without exposing the background",
+  "dependencies": [
+    "remotion",
+    "@remotion/transitions"
+  ],
+  "registryDependencies": [
+    "@remotionui/transition-timing"
+  ],
+  "files": [
+    {
+      "path": "registry/bases/default/primitives/directional-wipe.tsx",
+      "type": "registry:ui",
+      "target": "src/remotion/primitives/directional-wipe.tsx",
+      "content": "import type { TransitionPresentation } from \"@remotion/transitions\";\nimport { useMemo } from \"react\";\nimport { AbsoluteFill } from \"remotion\";\nimport {\n  resolveTransitionTiming,\n  transitionPhase,\n  type TransitionVariant,\n} from \"@/remotion/lib/transition-timing\";\n\nexport type DirectionalWipeDirection =\n  | \"from-left\"\n  | \"from-right\"\n  | \"from-top\"\n  | \"from-bottom\";\n\nexport type DirectionalWipeProps = {\n  direction?: DirectionalWipeDirection;\n  /** Width of the soft edge as a share of the frame, 0â1. 0 cuts hard. */\n  edgeSoftness?: number;\n  /** Parallax the scenes carry under the wipe, as a share of the frame. */\n  depth?: number;\n};\n\nconst GRADIENT_AXIS: Record<DirectionalWipeDirection, string> = {\n  \"from-left\": \"to right\",\n  \"from-right\": \"to left\",\n  \"from-top\": \"to bottom\",\n  \"from-bottom\": \"to top\",\n};\n\nconst PARALLAX_AXIS: Record<\n  DirectionalWipeDirection,\n  { axis: \"x\" | \"y\"; sign: number }\n> = {\n  \"from-left\": { axis: \"x\", sign: -1 },\n  \"from-right\": { axis: \"x\", sign: 1 },\n  \"from-top\": { axis: \"y\", sign: -1 },\n  \"from-bottom\": { axis: \"y\", sign: 1 },\n};\n\n/**\n * Soft-edged reveal mask. The edge travels from just past the far side of the\n * frame to just past the near side, so at `displace === 0` the scene is whole\n * and at `displace === 1` none of it is left â the feather never clips short.\n */\nfunction wipeMask(\n  direction: DirectionalWipeDirection,\n  displace: number,\n  softness: number,\n): string {\n  const feather = Math.max(softness, 0) * 50;\n  const edge = (1 - displace) * (100 + feather * 2) - feather;\n\n  return `linear-gradient(${GRADIENT_AXIS[direction]}, #000 ${edge - feather}%, transparent ${edge + feather}%)`;\n}\n\nconst DirectionalWipePresentation: React.FC<\n  React.ComponentProps<\n    NonNullable<TransitionPresentation<DirectionalWipeProps>[\"component\"]>\n  >\n> = ({\n  children,\n  presentationProgress,\n  presentationDirection,\n  passedProps: { direction = \"from-left\", edgeSoftness = 0.12, depth = 0.08 },\n}) => {\n  const phase = transitionPhase(presentationProgress, presentationDirection);\n\n  const style = useMemo(() => {\n    const { axis, sign } = PARALLAX_AXIS[direction];\n    const travel = sign * phase.displace * depth * 100;\n    const shift =\n      axis === \"x\"\n        ? `${phase.isEntering ? travel : -travel}% 0%`\n        : `0% ${phase.isEntering ? travel : -travel}%`;\n\n    // The outgoing scene is covered by the incoming one rather than wiped\n    // itself. Masking both would open a hole onto the background mid-cut.\n    if (!phase.isEntering) {\n      return { translate: shift };\n    }\n\n    const mask = wipeMask(direction, phase.displace, edgeSoftness);\n\n    return {\n      translate: shift,\n      WebkitMaskImage: mask,\n      maskImage: mask,\n      WebkitMaskSize: \"100% 100%\",\n      maskSize: \"100% 100%\",\n      WebkitMaskRepeat: \"no-repeat\",\n      maskRepeat: \"no-repeat\",\n    };\n  }, [depth, direction, edgeSoftness, phase.displace, phase.isEntering]);\n\n  return <AbsoluteFill style={style}>{children}</AbsoluteFill>;\n};\n\n/** Directional wipe with depth and soft edge for TransitionSeries */\nexport function directionalWipe(\n  props: DirectionalWipeProps = {},\n): TransitionPresentation<DirectionalWipeProps> {\n  return {\n    component: DirectionalWipePresentation,\n    props,\n  };\n}\n\nexport type TransitionDirectionalWipeConfig = {\n  durationInFrames?: number;\n  direction?: DirectionalWipeDirection;\n  edgeSoftness?: number;\n  depth?: number;\n  variant?: TransitionVariant;\n};\n\nexport function transitionDirectionalWipe({\n  durationInFrames = 22,\n  direction = \"from-left\",\n  edgeSoftness = 0.12,\n  depth = 0.08,\n  variant = \"editorial\",\n}: TransitionDirectionalWipeConfig = {}) {\n  return {\n    presentation: directionalWipe({ direction, edgeSoftness, depth }),\n    timing: resolveTransitionTiming({ durationInFrames, variant }),\n  };\n}\n\nexport function getTransitionDirectionalWipeDuration(\n  config: TransitionDirectionalWipeConfig = {},\n  fps: number,\n): number {\n  return transitionDirectionalWipe(config).timing.getDurationInFrames({ fps });\n}\n"
+    }
+  ],
+  "atlas": {
+    "lane": "cuts",
+    "drive": "time",
+    "tier": "advanced"
+  }
+}

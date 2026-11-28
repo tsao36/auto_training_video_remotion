@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "timing",
+  "type": "registry:lib",
+  "description": "Frame timing helpers and enter easing",
+  "dependencies": [
+    "remotion"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/bases/default/lib/timing.ts",
+      "type": "registry:lib",
+      "target": "src/remotion/lib/timing.ts",
+      "content": "import { Easing, interpolate } from \"remotion\";\n\nexport const DEFAULT_FPS = 30;\n\n/** Crisp UI entrance curve from Remotion timing best practices */\nexport const EASING_ENTER = Easing.bezier(0.16, 1, 0.3, 1);\n\n/** Exit curve â accelerates away (Easing.in) */\nexport const EASING_EXIT = Easing.in(Easing.cubic);\n\nexport function secondsToFrames(seconds: number, fps = DEFAULT_FPS): number {\n  return Math.round(seconds * fps);\n}\n\nexport function framesToSeconds(frames: number, fps = DEFAULT_FPS): number {\n  return frames / fps;\n}\n\nexport function staggerDelay(\n  index: number,\n  staggerInFrames: number,\n  baseDelayInFrames = 0,\n): number {\n  return baseDelayInFrames + index * staggerInFrames;\n}\n\n/** Normalized 0â1 enter progress with default ease-out curve */\nexport function enterProgress(\n  frame: number,\n  delayInFrames: number,\n  durationInFrames: number,\n  easing = EASING_ENTER,\n): number {\n  return interpolate(\n    frame,\n    [delayInFrames, delayInFrames + durationInFrames],\n    [0, 1],\n    {\n      easing,\n      extrapolateLeft: \"clamp\",\n      extrapolateRight: \"clamp\",\n    },\n  );\n}\n\n/** Normalized 0â1 exit progress with default ease-in curve */\nexport function exitProgress(\n  frame: number,\n  delayInFrames: number,\n  durationInFrames: number,\n  easing = EASING_EXIT,\n): number {\n  return interpolate(\n    frame,\n    [delayInFrames, delayInFrames + durationInFrames],\n    [0, 1],\n    {\n      easing,\n      extrapolateLeft: \"clamp\",\n      extrapolateRight: \"clamp\",\n    },\n  );\n}\n"
+    }
+  ]
+}

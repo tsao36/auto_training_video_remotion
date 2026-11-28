@@ -40,49 +40,120 @@ export function alignCaptionsToSilences(
   const fallback = generateCaptionsFromScript(script, durationSec);
   const phrases = splitCaptionIntoChunks(script);
   const boundaryCount = Math.max(0, phrases.length - 1);
+  if (boundaryCount === 0 || durationSec <= 0) return fallback;
+
   const usable = silences
-    .filter((interval) => interval.startSec > 0.08 && interval.endSec < durationSec - 0.08)
+    .filter((interval) => interval.startSec > 0.08 && interval.endSec < durationSec - 0.08 && interval.endSec >= interval.startSec)
     .sort((a, b) => a.startSec - b.startSec);
-  if (boundaryCount === 0 || usable.length < Math.min(2, boundaryCount)) return fallback;
+  if (usable.length === 0) return fallback;
 
-  const totalLength = phrases.reduce((sum, phrase) => sum + phrase.length, 0) || 1;
-  const expected = phrases.slice(0, -1).reduce<number[]>((targets, phrase, index) => {
-    const prior = index === 0 ? 0 : phrases.slice(0, index).reduce((sum, value) => sum + value.length, 0);
-    targets.push(((prior + phrase.length) / totalLength) * durationSec);
-    return targets;
-  }, []);
+  const lengths = phrases.map((phrase) => Math.max(1, phrase.length));
+  const totalLength = lengths.reduce((sum, len) => sum + len, 0);
+  const expectedBoundaries: number[] = [];
+  let cumulative = 0;
+  for (let i = 0; i < boundaryCount; i++) {
+    cumulative += lengths[i];
+    expectedBoundaries.push((cumulative / totalLength) * durationSec);
+  }
 
-  const remaining = [...usable];
-  const selected = expected.map((target) => {
-    let bestIndex = 0;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    remaining.forEach((interval, index) => {
-      const distance = Math.abs(interval.startSec - target);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
+  const avgPhraseSec = durationSec / phrases.length;
+  const maxDriftSec = Math.max(0.75, Math.min(2.2, avgPhraseSec * 0.65));
+  const minPhraseSec = Math.max(0.35, Math.min(0.6, avgPhraseSec * 0.35));
+
+  // Match each expected phrase boundary to the nearest unused silence within maxDriftSec
+  // while preserving monotonic time order and minimum readable phrase durations.
+  const matched: Array<SilenceInterval | null> = new Array(boundaryCount).fill(null);
+  let silenceCursor = 0;
+  let prevConfirmedEnd = 0;
+
+  for (let i = 0; i < boundaryCount; i++) {
+    const target = expectedBoundaries[i];
+    let bestIdx = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+
+    for (let j = silenceCursor; j < usable.length; j++) {
+      const candidate = usable[j];
+      const dist = Math.abs(candidate.startSec - target);
+      if (
+        dist <= maxDriftSec &&
+        candidate.startSec >= prevConfirmedEnd + minPhraseSec &&
+        durationSec - candidate.endSec >= minPhraseSec * (boundaryCount - i) * 0.5
+      ) {
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = j;
+        }
       }
-    });
-    const [match] = remaining.splice(bestIndex, 1);
-    return match;
-  }).sort((a, b) => a.startSec - b.startSec);
+    }
 
-  let startSec = 0;
-  return phrases.map((text, index) => {
-    const silence = selected[index];
-    const endSec = silence
-      ? Math.min(durationSec, silence.startSec)
-      : durationSec;
-    const caption: Caption = {
+    if (bestIdx >= 0) {
+      matched[i] = usable[bestIdx];
+      prevConfirmedEnd = usable[bestIdx].endSec;
+      silenceCursor = bestIdx + 1;
+    }
+  }
+
+  // If no boundaries matched a measured silence, fall back cleanly to proportional timing
+  if (matched.every((entry) => entry === null)) return fallback;
+
+  // Build resolved boundary intervals: confirmed silences stay anchored, unmatched
+  // boundaries are interpolated proportionally by character length between anchors.
+  const boundaries: Array<{ endOfPrev: number; startOfNext: number }> = new Array(boundaryCount);
+  let anchorIdx = -1;
+  let anchorStartSec = 0;
+
+  while (anchorIdx < boundaryCount) {
+    let nextAnchorIdx = anchorIdx + 1;
+    while (nextAnchorIdx < boundaryCount && matched[nextAnchorIdx] === null) {
+      nextAnchorIdx++;
+    }
+
+    const spanEndSec =
+      nextAnchorIdx < boundaryCount
+        ? matched[nextAnchorIdx]!.startSec
+        : durationSec;
+    const firstPhrase = anchorIdx + 1;
+    const lastPhrase = nextAnchorIdx; // inclusive
+    const spanChars = lengths
+      .slice(firstPhrase, lastPhrase + 1)
+      .reduce((sum, len) => sum + len, 0) || 1;
+    const spanDuration = Math.max(0, spanEndSec - anchorStartSec);
+
+    let runningChars = 0;
+    for (let b = anchorIdx + 1; b < nextAnchorIdx; b++) {
+      runningChars += lengths[b];
+      const t = anchorStartSec + (runningChars / spanChars) * spanDuration;
+      boundaries[b] = { endOfPrev: t, startOfNext: t };
+    }
+
+    if (nextAnchorIdx < boundaryCount) {
+      const silence = matched[nextAnchorIdx]!;
+      boundaries[nextAnchorIdx] = {
+        endOfPrev: Math.min(durationSec, silence.startSec),
+        startOfNext: Math.min(durationSec, silence.endSec),
+      };
+      anchorStartSec = boundaries[nextAnchorIdx].startOfNext;
+    }
+    anchorIdx = nextAnchorIdx;
+  }
+
+  const captions: Caption[] = phrases.map((text, index) => {
+    const startSec = index === 0 ? 0 : boundaries[index - 1].startOfNext;
+    const endSec = index === phrases.length - 1 ? durationSec : boundaries[index].endOfPrev;
+    const startMs = Math.round(startSec * 1000);
+    const endMs = Math.round(endSec * 1000);
+    return {
       text,
-      startMs: Math.round(startSec * 1000),
-      endMs: Math.round(endSec * 1000),
-      timestampMs: Math.round(((startSec + endSec) / 2) * 1000),
+      startMs,
+      endMs,
+      timestampMs: Math.round((startMs + endMs) / 2),
       confidence: 0.9,
     };
-    startSec = silence ? Math.min(durationSec, silence.endSec) : durationSec;
-    return caption;
   });
+
+  // Safety check: if any caption ended up too short (<250ms) or inverted, fall back to proportional timing
+  const hasDegenerateCaption = captions.some((c) => c.endMs - c.startMs < 250);
+  return hasDegenerateCaption ? fallback : captions;
 }
 
 export function generateAlignedCaptions(script: string, durationSec: number, audioPath: string): Caption[] {

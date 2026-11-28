@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "springs",
+  "type": "registry:lib",
+  "description": "Default spring configurations",
+  "dependencies": [
+    "remotion"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/bases/default/lib/springs.ts",
+      "type": "registry:lib",
+      "target": "src/remotion/lib/springs.ts",
+      "content": "import type { SpringConfig } from \"remotion\";\n\nexport const springSmooth: SpringConfig = {\n  damping: 200,\n  mass: 1,\n  stiffness: 100,\n  overshootClamping: true,\n};\n\nexport const springSnappy: SpringConfig = {\n  damping: 20,\n  mass: 0.8,\n  stiffness: 200,\n  overshootClamping: true,\n};\n\nexport const springBouncy: SpringConfig = {\n  damping: 12,\n  mass: 0.9,\n  stiffness: 180,\n  overshootClamping: false,\n};\n"
+    }
+  ]
+}

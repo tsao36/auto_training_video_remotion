@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Caption } from '@remotion/captions';
 import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import {
   PptxElement,
@@ -6,11 +7,17 @@ import {
   PptxSlideData,
   PptxTextParagraph,
 } from '../../types/training';
+import { getTimedTechnicalTerms, type TimedTechnicalTerm } from '../../utils/captions';
+import { PoppingTechnicalText } from '../primitives/popping-technical-text';
 
 interface PptxSlideRendererProps {
   slide: PptxSlideData;
   assetBaseUrl?: string;
   progressiveReveal?: boolean;
+  captions?: Caption[];
+  allowedTerms?: string[];
+  captionTermHighlight?: boolean;
+  accentColor?: string;
   getItemRevealFrame: (itemIndex: number, itemCount: number, defaultFrame: number) => number;
 }
 
@@ -70,7 +77,13 @@ function getSvgPolygonPoints(shapeType: string, w: number, h: number): string | 
   }
 }
 
-const ParagraphList: React.FC<{ paragraphs: PptxTextParagraph[] }> = ({ paragraphs }) => (
+const ParagraphList: React.FC<{
+  paragraphs: PptxTextParagraph[];
+  terms: TimedTechnicalTerm[];
+  currentMs: number;
+  fps: number;
+  accentColor: string;
+}> = ({ paragraphs, terms, currentMs, fps, accentColor }) => (
   <>
     {paragraphs.map((p, pIdx) => {
       const hasContent = p.runs.some((r) => r.text.length > 0);
@@ -121,7 +134,13 @@ const ParagraphList: React.FC<{ paragraphs: PptxTextParagraph[] }> = ({ paragrap
                   whiteSpace: 'pre-wrap',
                 }}
               >
-                {r.text}
+                <PoppingTechnicalText
+                  text={r.text}
+                  terms={terms}
+                  currentMs={currentMs}
+                  fps={fps}
+                  accentColor={accentColor}
+                />
               </span>
             );
           })}
@@ -131,10 +150,14 @@ const ParagraphList: React.FC<{ paragraphs: PptxTextParagraph[] }> = ({ paragrap
   </>
 );
 
-const SlideElementView: React.FC<{ el: PptxElement; assetBaseUrl: string }> = ({
-  el,
-  assetBaseUrl,
-}) => {
+const SlideElementView: React.FC<{
+  el: PptxElement;
+  assetBaseUrl: string;
+  terms: TimedTechnicalTerm[];
+  currentMs: number;
+  fps: number;
+  accentColor: string;
+}> = ({ el, assetBaseUrl, terms, currentMs, fps, accentColor }) => {
   const transforms: string[] = [];
   if (el.rotationDeg) transforms.push(`rotate(${el.rotationDeg}deg)`);
   if (el.flipH) transforms.push('scaleX(-1)');
@@ -273,7 +296,13 @@ const SlideElementView: React.FC<{ el: PptxElement; assetBaseUrl: string }> = ({
                         padding: '8px 12px',
                       }}
                     >
-                      <ParagraphList paragraphs={cell.textParagraphs} />
+                      <ParagraphList
+                        paragraphs={cell.textParagraphs}
+                        terms={terms}
+                        currentMs={currentMs}
+                        fps={fps}
+                        accentColor={accentColor}
+                      />
                     </td>
                   );
                 })}
@@ -344,7 +373,13 @@ const SlideElementView: React.FC<{ el: PptxElement; assetBaseUrl: string }> = ({
       )}
       {el.paragraphs && el.paragraphs.length > 0 && (
         <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-          <ParagraphList paragraphs={el.paragraphs} />
+          <ParagraphList
+            paragraphs={el.paragraphs}
+            terms={terms}
+            currentMs={currentMs}
+            fps={fps}
+            accentColor={accentColor}
+          />
         </div>
       )}
     </div>
@@ -355,10 +390,18 @@ export const PptxSlideRenderer: React.FC<PptxSlideRendererProps> = ({
   slide,
   assetBaseUrl = '',
   progressiveReveal = false,
+  captions = [],
+  allowedTerms,
+  captionTermHighlight = false,
+  accentColor = '#00C2FF',
   getItemRevealFrame,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const currentMs = (frame / fps) * 1000;
+  const terms = captionTermHighlight
+    ? getTimedTechnicalTerms(captions, currentMs, allowedTerms)
+    : [];
   const leadInFrames = progressiveReveal ? 6 : 0;
   const fadeOpacity = interpolate(frame, [leadInFrames, leadInFrames + 6], [0, 1], {
     extrapolateLeft: 'clamp',
@@ -420,7 +463,14 @@ export const PptxSlideRenderer: React.FC<PptxSlideRendererProps> = ({
                 pointerEvents: 'none',
               }}
             >
-              <SlideElementView el={el} assetBaseUrl={assetBaseUrl} />
+              <SlideElementView
+                el={el}
+                assetBaseUrl={assetBaseUrl}
+                terms={terms}
+                currentMs={currentMs}
+                fps={fps}
+                accentColor={accentColor}
+              />
             </div>
           );
         })}

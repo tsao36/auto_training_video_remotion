@@ -8,6 +8,10 @@ import {
   VisualTemplate,
 } from '../types/training';
 import { collectSceneTextForTermCheck, findRegionalTermMatches } from './regionalTerms';
+import {
+  isFullViewportPrimitive,
+  isStructuredDiagramTemplate,
+} from '../remotion/lib/scene-layout-policy';
 
 const INTERNAL_TEMPLATE_IDS: ReadonlySet<string> = new Set<VisualTemplate>([
   'title-hero',
@@ -207,6 +211,65 @@ export function evaluateProjectQuality(
           sceneId: scene.id,
         });
       }
+
+      if (isStructuredDiagramTemplate(scene.template)) {
+        const occluding = (scene.remotionPrimitives || []).filter(isFullViewportPrimitive);
+        if (occluding.length > 0) {
+          issues.push({
+            level: 'warning',
+            code: 'primitive-occludes-diagram',
+            message: `場景 ${sceneNo} 的全畫面元素（${occluding.join('、')}）會覆蓋 ${scene.template} 技術圖表，建議移除以維持畫面清晰。`,
+            sceneIndex: index,
+            sceneId: scene.id,
+          });
+        }
+      }
+    }
+
+    if (scene.tts?.speed && scene.tts.speed < 1.0) {
+      issues.push({
+        level: 'warning',
+        code: 'tts-tempo-too-slow',
+        message: `場景 ${sceneNo} 語速設定為 ${scene.tts.speed}x（低於 1.0x），觀看節奏偏慢，建議調整為 1.05x–1.15x。`,
+        sceneIndex: index,
+        sceneId: scene.id,
+      });
+    }
+
+    const effectiveDurationSec =
+      scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
+        ? scene.tts.actualDurationSec
+        : duration;
+    const lastCaptionEndMs = scene.captions?.at(-1)?.endMs ?? 0;
+    if (
+      effectiveDurationSec > 0 &&
+      lastCaptionEndMs > 0 &&
+      Math.abs(lastCaptionEndMs - effectiveDurationSec * 1000) / (effectiveDurationSec * 1000) > 0.15
+    ) {
+      issues.push({
+        level: 'warning',
+        code: 'caption-audio-desync',
+        message: `場景 ${sceneNo} 字幕結束時間（${(lastCaptionEndMs / 1000).toFixed(1)}s）與實際語音時長（${effectiveDurationSec.toFixed(1)}s）落差過大，建議重新對齊字幕。`,
+        sceneIndex: index,
+        sceneId: scene.id,
+      });
+    }
+
+    if (scene.captions && scene.captions.length > 0) {
+      const degenerateCount = scene.captions.filter(
+        (c, ci) =>
+          c.endMs - c.startMs < 250 ||
+          (ci > 0 && c.startMs < scene.captions![ci - 1].startMs)
+      ).length;
+      if (degenerateCount > 0) {
+        issues.push({
+          level: 'warning',
+          code: 'caption-timing-degenerate',
+          message: `場景 ${sceneNo} 有 ${degenerateCount} 段字幕時長過短（<0.25s）或重疊歸零，觀眾將無法閱讀完整字幕，建議重新對齊。`,
+          sceneIndex: index,
+          sceneId: scene.id,
+        });
+      }
     }
 
     if (duration < 3) {
@@ -214,6 +277,14 @@ export function evaluateProjectQuality(
         level: 'warning',
         code: 'scene-too-short',
         message: `場景 ${sceneNo} 時長僅 ${duration} 秒，建議至少 3 秒以上。`,
+        sceneIndex: index,
+        sceneId: scene.id,
+      });
+    } else if (!scene.pptxSlide && effectiveDurationSec > 10.5) {
+      issues.push({
+        level: 'warning',
+        code: 'scene-too-long',
+        message: `場景 ${sceneNo} 時長達 ${effectiveDurationSec.toFixed(1)} 秒（超過 10 秒），觀看節奏偏慢，建議精簡旁白或拆分為兩幕。`,
         sceneIndex: index,
         sceneId: scene.id,
       });

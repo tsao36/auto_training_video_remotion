@@ -1,0 +1,16 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "layout",
+  "type": "registry:lib",
+  "description": "Format-agnostic layout helpers",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/bases/default/lib/layout.ts",
+      "type": "registry:lib",
+      "target": "src/remotion/lib/layout.ts",
+      "content": "/** Video-layout safe area â 80px sides / 100px vertical at 1080p reference */\nconst REFERENCE_WIDTH = 1080;\nconst REFERENCE_HEIGHT = 1080;\nconst HORIZONTAL_SAFE = 80;\nconst VERTICAL_SAFE = 100;\n\nexport type SafePaddingOptions = {\n  width: number;\n  height: number;\n  ratio?: number;\n};\n\nexport type SafeAreaPadding = {\n  paddingLeft: number;\n  paddingRight: number;\n  paddingTop: number;\n  paddingBottom: number;\n};\n\n/** Per-edge safe area from video-layout guidance */\nexport function getSafeAreaPadding({\n  width,\n  height,\n}: {\n  width: number;\n  height: number;\n}): SafeAreaPadding {\n  const horizontal = Math.round((HORIZONTAL_SAFE / REFERENCE_WIDTH) * width);\n  const vertical = Math.round((VERTICAL_SAFE / REFERENCE_HEIGHT) * height);\n\n  return {\n    paddingLeft: horizontal,\n    paddingRight: horizontal,\n    paddingTop: vertical,\n    paddingBottom: vertical,\n  };\n}\n\n/** Uniform padding â max of horizontal/vertical safe insets */\nexport function getSafePadding({\n  width,\n  height,\n  ratio,\n}: SafePaddingOptions): number {\n  if (ratio !== undefined) {\n    return Math.round(Math.min(width, height) * ratio);\n  }\n\n  const { paddingLeft, paddingTop } = getSafeAreaPadding({ width, height });\n  return Math.max(paddingLeft, paddingTop);\n}\n\n/**\n * Scale a font size defined at 1080p width to any composition width.\n * Skill minimums at 1080: headline 84, supporting 44, label 32.\n */\nexport function scaleFont(\n  sizeAt1080: number,\n  width: number,\n  referenceWidth = REFERENCE_WIDTH,\n): number {\n  return Math.round(sizeAt1080 * (width / referenceWidth));\n}\n\nexport type Rect = {\n  x: number;\n  y: number;\n  width: number;\n  height: number;\n};\n\n/** Clamp a rect inside the video safe area (for spotlight targets, overlays). */\nexport function clampRectToSafeArea(\n  rect: Rect,\n  frameWidth: number,\n  frameHeight: number,\n): Rect {\n  const safe = getSafeAreaPadding({ width: frameWidth, height: frameHeight });\n  const minX = safe.paddingLeft;\n  const minY = safe.paddingTop;\n  const maxX = frameWidth - safe.paddingRight;\n  const maxY = frameHeight - safe.paddingBottom;\n\n  const width = Math.min(rect.width, maxX - minX);\n  const height = Math.min(rect.height, maxY - minY);\n  const x = Math.min(Math.max(rect.x, minX), maxX - width);\n  const y = Math.min(Math.max(rect.y, minY), maxY - height);\n\n  return { x, y, width, height };\n}\n\n/** Preview aspect presets for docs QA */\nexport const PREVIEW_LANDSCAPE = { width: 960, height: 540 } as const;\nexport const PREVIEW_PORTRAIT = { width: 1080, height: 1920 } as const;\nexport const PREVIEW_HD = { width: 1920, height: 1080 } as const;\n"
+    }
+  ]
+}

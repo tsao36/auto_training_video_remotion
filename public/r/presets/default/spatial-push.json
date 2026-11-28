@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "spatial-push",
+  "type": "registry:ui",
+  "description": "Push where both scenes travel locked edge to edge across the frame",
+  "dependencies": [
+    "remotion",
+    "@remotion/transitions"
+  ],
+  "registryDependencies": [
+    "@remotionui/transition-timing"
+  ],
+  "files": [
+    {
+      "path": "registry/bases/default/primitives/spatial-push.tsx",
+      "type": "registry:ui",
+      "target": "src/remotion/primitives/spatial-push.tsx",
+      "content": "import type { TransitionPresentation } from \"@remotion/transitions\";\nimport { useMemo } from \"react\";\nimport { AbsoluteFill } from \"remotion\";\nimport {\n  resolveTransitionTiming,\n  transitionPhase,\n  type TransitionVariant,\n} from \"@/remotion/lib/transition-timing\";\n\nexport type SpatialPushDirection =\n  | \"from-left\"\n  | \"from-right\"\n  | \"from-top\"\n  | \"from-bottom\";\n\nexport type SpatialPushProps = {\n  direction?: SpatialPushDirection;\n  perspective?: number;\n  /**\n   * Share of the frame each scene travels, 0â1. Anything below 1 leaves part\n   * of the frame uncovered mid-push, so only lower it over a solid backdrop.\n   */\n  pushDepth?: number;\n  /**\n   * Degrees each panel rotates away from the camera. Off by default: rotating\n   * a full-frame panel in 3D pulls one edge in, and the frame it uncovers is\n   * bare background. Raise it only over a backdrop, or with `pushDepth < 1`.\n   */\n  tilt?: number;\n};\n\nconst AXIS: Record<SpatialPushDirection, { axis: \"x\" | \"y\"; sign: number }> = {\n  \"from-left\": { axis: \"x\", sign: -1 },\n  \"from-right\": { axis: \"x\", sign: 1 },\n  \"from-top\": { axis: \"y\", sign: -1 },\n  \"from-bottom\": { axis: \"y\", sign: 1 },\n};\n\nconst SpatialPushPresentation: React.FC<\n  React.ComponentProps<\n    NonNullable<TransitionPresentation<SpatialPushProps>[\"component\"]>\n  >\n> = ({\n  children,\n  presentationProgress,\n  presentationDirection,\n  passedProps: {\n    direction = \"from-left\",\n    perspective = 1200,\n    pushDepth = 1,\n    tilt = 0,\n  },\n}) => {\n  // Both scenes are locked to the same travel across the whole window: a push\n  // is one move of two panels, not two independent entrances.\n  const phase = transitionPhase(presentationProgress, presentationDirection, {\n    lead: 1,\n  });\n\n  const style = useMemo(() => {\n    const { axis, sign } = AXIS[direction];\n    // A push moves both scenes the same way across the frame: the incoming one\n    // arrives from `direction`, the outgoing one is shoved out the far side.\n    const travel = sign * (phase.isEntering ? 1 : -1) * phase.displace * pushDepth * 100;\n    const rotate = axis === \"x\" ? \"rotateY\" : \"rotateX\";\n    const rotateSign = axis === \"x\" ? 1 : -1;\n    const angle = sign * rotateSign * (phase.isEntering ? 1 : -1) * phase.displace * tilt;\n    // Overscan only pays for the tilt. Without one the panels are already\n    // flush edge to edge, and scaling them would open the seam it closes.\n    const scale = tilt === 0 ? 1 : 1 + phase.displace * 0.06;\n    const shift = axis === \"x\" ? `${travel}% 0%` : `0% ${travel}%`;\n\n    return {\n      translate: shift,\n      transform: `perspective(${perspective}px) ${rotate}(${angle}deg) scale(${scale})`,\n      transformOrigin: \"center center\",\n    };\n  }, [direction, perspective, phase.displace, phase.isEntering, pushDepth, tilt]);\n\n  return <AbsoluteFill style={style}>{children}</AbsoluteFill>;\n};\n\n/** Perspective push transition for TransitionSeries */\nexport function spatialPush(\n  props: SpatialPushProps = {},\n): TransitionPresentation<SpatialPushProps> {\n  return {\n    component: SpatialPushPresentation,\n    props,\n  };\n}\n\nexport type TransitionSpatialPushConfig = {\n  durationInFrames?: number;\n  direction?: SpatialPushDirection;\n  perspective?: number;\n  pushDepth?: number;\n  tilt?: number;\n  variant?: TransitionVariant;\n};\n\nexport function transitionSpatialPush({\n  durationInFrames = 24,\n  direction = \"from-left\",\n  perspective = 1200,\n  pushDepth = 1,\n  tilt = 0,\n  variant = \"editorial\",\n}: TransitionSpatialPushConfig = {}) {\n  return {\n    presentation: spatialPush({ direction, perspective, pushDepth, tilt }),\n    timing: resolveTransitionTiming({ durationInFrames, variant }),\n  };\n}\n\nexport function getTransitionSpatialPushDuration(\n  config: TransitionSpatialPushConfig = {},\n  fps: number,\n): number {\n  return transitionSpatialPush(config).timing.getDurationInFrames({ fps });\n}\n"
+    }
+  ],
+  "atlas": {
+    "lane": "cuts",
+    "drive": "time",
+    "tier": "advanced"
+  }
+}

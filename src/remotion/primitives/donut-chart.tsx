@@ -131,7 +131,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         // The exit dismisses the whole chart rather than unwinding the sweep:
         // a ring that retracts reads as data being withdrawn.
         opacity: 1 - clamp01(exit / 0.7),
-        scale: `${1 - exit * 0.06}`,
+        transform: `scale(${1 - exit * 0.06})`,
       }}
     >
       <div style={{ position: "relative", width: size, height: size }}>

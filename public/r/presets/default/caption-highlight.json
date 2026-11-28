@@ -1,0 +1,31 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "caption-highlight",
+  "type": "registry:ui",
+  "description": "TikTok-style word-by-word caption highlight",
+  "dependencies": [
+    "remotion",
+    "@remotion/captions"
+  ],
+  "registryDependencies": [
+    "@remotionui/caption-utils",
+    "@remotionui/layout",
+    "@remotionui/motion-tokens"
+  ],
+  "files": [
+    {
+      "path": "registry/bases/default/primitives/caption-highlight.tsx",
+      "type": "registry:ui",
+      "target": "src/remotion/primitives/caption-highlight.tsx",
+      "content": "import type { TikTokPage } from \"@remotion/captions\";\nimport { Fragment } from \"react\";\nimport {\n  interpolate,\n  interpolateColors,\n  useCurrentFrame,\n  useVideoConfig,\n} from \"remotion\";\nimport {\n  getAbsoluteTimeMs,\n  getTokenEmphasis,\n} from \"@/remotion/lib/caption-utils\";\nimport { scaleFont } from \"@/remotion/lib/layout\";\nimport { EASING, EMPHASIS } from \"@/remotion/lib/motion-tokens\";\n\nexport type CaptionHighlightProps = {\n  page: TikTokPage;\n  activeColor?: string;\n  inactiveColor?: string;\n  fontSize?: number;\n  fontWeight?: number | string;\n  activeWeight?: number | string;\n  textAlign?: \"left\" | \"center\";\n  lineHeight?: number;\n  /** Peak scale of the active word. Defaults to `EMPHASIS.subtle`. */\n  emphasisScale?: number;\n  /**\n   * Drop shadow behind every word, tuned for light text over busy real\n   * footage. Set `false` to render flat when the caller already controls\n   * contrast (a solid background, an overlay scrim).\n   */\n  shadow?: boolean;\n  /**\n   * Optional frame override.\n   * Pass a parent `frame` when using inside `<Sequence from={...}>`.\n   */\n  frame?: number;\n};\n\n/** Legible over live-action video without flattening the text like a stroke would. */\nconst READABILITY_SHADOW =\n  \"0 1px 2px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.45)\";\n\nconst clamp01 = (value: number) => Math.min(1, Math.max(0, value));\n\n/**\n * Caption tokens carry their own leading space. It has to sit outside the\n * scaled box â a word that grows inside its own space closes the gap to the\n * word before it.\n */\nfunction splitLeadingSpace(text: string) {\n  const leading = /^\\s+/.exec(text)?.[0] ?? \"\";\n  return { leading, word: text.slice(leading.length) };\n}\n\nexport const CaptionHighlight: React.FC<CaptionHighlightProps> = ({\n  page,\n  activeColor = \"#ff6b00\",\n  inactiveColor = \"#111111\",\n  fontSize: fontSizeProp,\n  fontWeight = 650,\n  activeWeight = 800,\n  textAlign = \"center\",\n  lineHeight = 1.12,\n  emphasisScale = EMPHASIS.subtle,\n  shadow = true,\n  frame: frameOverride,\n}) => {\n  const localFrame = useCurrentFrame();\n  const frame = frameOverride ?? localFrame;\n  const { fps, width } = useVideoConfig();\n  const fontSize = fontSizeProp ?? scaleFont(64, width);\n  const absoluteTimeMs = getAbsoluteTimeMs(page, frame, fps);\n\n  return (\n    <div\n      style={{\n        color: inactiveColor,\n        fontSize,\n        fontWeight,\n        letterSpacing: 0,\n        // The active word grows into the gaps on both sides, so the resting\n        // rhythm has to be wider than a bare space character.\n        wordSpacing: \"0.12em\",\n        lineHeight,\n        textAlign,\n        whiteSpace: \"pre-wrap\",\n        textShadow: shadow ? READABILITY_SHADOW : undefined,\n      }}\n    >\n      {page.tokens.map((token) => {\n        const emphasis = clamp01(getTokenEmphasis(frame, token, page, fps));\n        // One ramp drives colour, weight, size and opacity â the word is\n        // emphasised as a single gesture rather than a colour swap.\n        const color = interpolateColors(\n          emphasis,\n          [0, 1],\n          [inactiveColor, activeColor],\n        );\n        const scale = interpolate(emphasis, [0, 1], [1, emphasisScale], {\n          extrapolateLeft: \"clamp\",\n          extrapolateRight: \"clamp\",\n          easing: EASING.pop,\n          output: \"perceptual-scale\",\n        });\n        const opacity = interpolate(emphasis, [0, 1], [0.78, 1], {\n          extrapolateLeft: \"clamp\",\n          extrapolateRight: \"clamp\",\n          easing: EASING.enter,\n        });\n\n        const { leading, word } = splitLeadingSpace(token.text);\n\n        return (\n          <Fragment key={`${token.fromMs}-${token.text}`}>\n            {leading}\n            <span\n              style={{\n                color,\n                // Weight is a step, not a ramp â half-bold reads as a render bug.\n                fontWeight: emphasis > 0.5 ? activeWeight : fontWeight,\n                opacity,\n                display: \"inline-block\",\n                scale,\n                translate: `0 ${(-0.025 * emphasis).toFixed(4)}em`,\n                transformOrigin: \"center bottom\",\n              }}\n            >\n              {word}\n            </span>\n          </Fragment>\n        );\n      })}\n    </div>\n  );\n};\n"
+    }
+  ],
+  "atlas": {
+    "lane": "signals",
+    "drive": "data",
+    "tier": "advanced",
+    "tags": [
+      "captions"
+    ]
+  }
+}

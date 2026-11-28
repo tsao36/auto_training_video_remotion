@@ -48,9 +48,9 @@ const BlurRevealPresentation: React.FC<
         phase.displace > 0.002
           ? `blur(${(phase.displace * maxBlur).toFixed(2)}px)`
           : undefined,
-      scale: phase.isEntering
+      transform: `scale(${phase.isEntering
         ? 1 + phase.displace * scaleBy
-        : 1 - phase.displace * scaleBy * 0.66,
+        : 1 - phase.displace * scaleBy * 0.66})`,
     };
   }, [
     isHeld,

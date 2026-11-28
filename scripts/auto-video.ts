@@ -9,10 +9,12 @@ import pdfParse from 'pdf-parse';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { getAudioDurationSec } from '../server/audioDuration';
+import { generateAlignedCaptions } from '../server/captionAlignment';
 import { generateVideoPlanWithLlm } from '../server/llmGenerator';
 import { loadLocalEnv } from '../server/loadEnv';
 import { inspectRenderedMedia } from '../server/mediaQa';
 import { parsePptxBuffer } from '../server/pptxParser';
+import { resolveRemotionBrowserExecutable } from '../server/remotionBrowser';
 import {
   ContentLanguage,
   DEFAULT_CONTENT_LANGUAGE,
@@ -142,7 +144,7 @@ async function synthesizeSceneAudio(
   scene: SceneSpec,
   language: ContentLanguage,
   provider: TtsProvider
-): Promise<{ audioUrl: string; durationSec: number; mode: string }> {
+): Promise<{ audioUrl: string; audioPath: string; durationSec: number; mode: string }> {
   const text = (scene.script || '').trim();
   const safeId = (scene.id || `scene-${scene.index + 1}`).replace(/[^a-zA-Z0-9_-]/g, '');
   const hash = crypto
@@ -161,7 +163,7 @@ async function synthesizeSceneAudio(
           model: 'OpenFormosa/BlueMagpie-TTS',
           voice: scene.tts.voiceId || 'hung_yi_lee',
           input: text,
-          speed: scene.tts.speed || 1.0,
+          speed: scene.tts.speed || 1.08,
           response_format: 'wav',
         }),
         signal: AbortSignal.timeout(60000),
@@ -169,9 +171,10 @@ async function synthesizeSceneAudio(
       if (resp.ok) {
         const buf = Buffer.from(await resp.arrayBuffer());
         const fileName = `${safeId}-${hash}.wav`;
-        fs.writeFileSync(path.join(AUDIO_DIR, fileName), buf);
+        const wavPath = path.join(AUDIO_DIR, fileName);
+        fs.writeFileSync(wavPath, buf);
         const dur = getAudioDurationSec(buf, 'wav') ?? scene.durationSeconds;
-        return { audioUrl: `/audio/${fileName}`, durationSec: dur, mode: 'openformosa' };
+        return { audioUrl: `/audio/${fileName}`, audioPath: wavPath, durationSec: dur, mode: 'openformosa' };
       }
     } catch {
       // Fallback to Edge neural TTS below
@@ -183,13 +186,13 @@ async function synthesizeSceneAudio(
   if (fs.existsSync(mp3Path) && fs.statSync(mp3Path).size > 512) {
     const buf = fs.readFileSync(mp3Path);
     const dur = getAudioDurationSec(buf, 'mp3') ?? scene.durationSeconds;
-    return { audioUrl: `/audio/${mp3FileName}`, durationSec: dur, mode: 'cached' };
+    return { audioUrl: `/audio/${mp3FileName}`, audioPath: mp3Path, durationSec: dur, mode: 'cached' };
   }
 
   const edgeVoice = getContentLanguage(language).edgeVoice;
   const tts = new MsEdgeTTS();
   await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-  const speed = scene.tts.speed || 1.0;
+  const speed = scene.tts.speed || 1.08;
   const ratePct = Math.round((speed - 1) * 100);
   const rateStr = ratePct >= 0 ? `+${ratePct}%` : `${ratePct}%`;
   const sanitizedText = text.replace(/</g, ' ').replace(/>/g, ' ').trim() || '請輸入旁白內容';
@@ -201,7 +204,7 @@ async function synthesizeSceneAudio(
   const audioBuf = Buffer.concat(chunks);
   fs.writeFileSync(mp3Path, audioBuf);
   const dur = getAudioDurationSec(audioBuf, 'mp3') ?? scene.durationSeconds;
-  return { audioUrl: `/audio/${mp3FileName}`, durationSec: dur, mode: 'edge-neural' };
+  return { audioUrl: `/audio/${mp3FileName}`, audioPath: mp3Path, durationSec: dur, mode: 'edge-neural' };
 }
 
 async function startAssetServer(): Promise<{ server: http.Server; baseUrl: string }> {
@@ -364,9 +367,10 @@ async function main() {
 
   const project = await loadOrBuildProject(opts);
 
-  // Stage 2: Batch TTS synthesis
+  // Stage 2: Batch TTS synthesis (with consistent voice provider & silence-aligned captions)
   if (!opts.skipTts) {
-    console.log(`[2/6] 開始批次合成語音（共 ${project.scenes.length} 幕，引擎：${opts.tts}）...`);
+    let activeProvider: TtsProvider = opts.tts;
+    console.log(`[2/6] 開始批次合成語音（共 ${project.scenes.length} 幕，引擎：${activeProvider}）...`);
     for (let i = 0; i < project.scenes.length; i++) {
       const scene = project.scenes[i];
       if (!scene.script?.trim()) continue;
@@ -377,16 +381,20 @@ async function main() {
       const res = await synthesizeSceneAudio(
         scene,
         project.language || opts.language,
-        opts.tts
+        activeProvider
       );
+      if (activeProvider === 'openformosa' && res.mode !== 'openformosa') {
+        activeProvider = 'browser-fallback';
+      }
       scene.tts = {
         ...scene.tts,
-        provider: opts.tts,
+        provider: res.mode === 'openformosa' ? 'openformosa' : activeProvider,
         status: 'ready',
         audioUrl: res.audioUrl,
         actualDurationSec: res.durationSec,
       };
       scene.durationSeconds = Math.max(3, Math.ceil(res.durationSec + 0.5));
+      scene.captions = generateAlignedCaptions(scene.script, res.durationSec, res.audioPath);
       console.log(`      #${i + 1} ${scene.title} → ${res.mode} (${res.durationSec.toFixed(1)}s)`);
     }
   } else {
@@ -432,17 +440,33 @@ async function main() {
   try {
     console.log('[4/6] 打包 Remotion 專案...');
     const entry = path.join(ROOT_DIR, 'src', 'remotion', 'index.ts');
-    const bundleLocation = await bundle({ entryPoint: entry });
+    const bundleLocation = await bundle({
+      entryPoint: entry,
+      webpackOverride: (current) => ({
+        ...current,
+        resolve: {
+          ...current.resolve,
+          alias: {
+            ...current.resolve?.alias,
+            '@': path.resolve(ROOT_DIR, 'src'),
+          },
+        },
+      }),
+    });
     const inputProps = {
       projectTitle: project.title,
       scenes: project.scenes,
       audioBaseUrl: baseUrl,
       captionStyle: project.captionStyle,
     };
+    const browserExecutable = resolveRemotionBrowserExecutable({
+      override: process.env.REMOTION_BROWSER_EXECUTABLE,
+    });
     const composition = await selectComposition({
       serveUrl: bundleLocation,
       id: 'TechTrainingVideo',
       inputProps,
+      browserExecutable,
     });
 
     if (!opts.skipPreviews) {
@@ -452,8 +476,12 @@ async function main() {
       let cursor = 0;
       for (let i = 0; i < project.scenes.length; i++) {
         const scene = project.scenes[i];
-        const frames = Math.max(30, Math.round((Number(scene.durationSeconds) || 5) * VIDEO_FPS));
-        const midpoint = cursor + Math.floor(frames / 2);
+        const effectiveSec =
+          scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
+            ? scene.tts.actualDurationSec
+            : Number(scene.durationSeconds) || 5;
+        const frames = Math.max(30, Math.round(effectiveSec * VIDEO_FPS));
+        const midpoint = Math.min(composition.durationInFrames - 1, cursor + Math.floor(frames / 2));
         cursor += frames;
         const safeSceneId = (scene.id || `scene-${i + 1}`).replace(/[^a-zA-Z0-9_-]/g, '');
         const outPng = path.join(previewDir, `${String(i + 1).padStart(2, '0')}-${safeSceneId}.png`);
@@ -464,6 +492,7 @@ async function main() {
           frame: midpoint,
           inputProps,
           imageFormat: 'png',
+          browserExecutable,
         });
       }
       console.log(`      已產出 ${project.scenes.length} 張場景預覽圖`);
@@ -486,6 +515,7 @@ async function main() {
       codec: 'h264',
       outputLocation: outputPath,
       inputProps,
+      browserExecutable,
       onProgress: ({ progress }) => {
         const pct = Math.floor(progress * 10) * 10;
         if (pct > lastPct) {

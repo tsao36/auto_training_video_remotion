@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { RemotionEffect, SentenceEffectCue } from '../types/training';
 import { generateCaptionsFromScript, splitCaptionIntoChunks } from './captions';
@@ -39,12 +41,15 @@ function expectValidCues(cues: SentenceEffectCue[]) {
 }
 
 describe('splitCaptionIntoChunks', () => {
-  it('breaks long captions at punctuation without dropping text', () => {
-    const source = '藍牙與許多裝置共享 2.4 GHz ISM 頻段。理解頻段範圍與鄰頻干擾，是設計連線穩定性的第一步。';
+  it('breaks only at punctuation and never inside decimal values', () => {
+    const source = '藍牙與許多裝置共享 2.4 GHz ISM 頻段。理解頻段範圍與鄰頻干擾，是設計連線穩定性的第一步。接下來示範 Wi‑Fi 與藍牙的頻率重疊情況與標準位置。';
     const chunks = splitCaptionIntoChunks(source, 18);
-    expect(chunks.length).toBeGreaterThan(2);
-    expect(chunks.join('').replace(/\s/g, '')).toBe(source.replace(/\s/g, ''));
-    expect(chunks.every((chunk) => Array.from(chunk).length <= 32)).toBe(true);
+    expect(chunks).toEqual([
+      '藍牙與許多裝置共享 2.4 GHz ISM 頻段。',
+      '理解頻段範圍與鄰頻干擾，',
+      '是設計連線穩定性的第一步。',
+      '接下來示範 Wi‑Fi 與藍牙的頻率重疊情況與標準位置。',
+    ]);
   });
 
   it('returns blank input as no chunks', () => {
@@ -215,12 +220,35 @@ describe('getElementRevealFrame', () => {
 });
 
 describe('generateCaptionsFromScript', () => {
-  it('creates one caption for each sentence without splitting commas', () => {
+  it('creates exactly one timed caption for each punctuation segment', () => {
     const script = '先確認 3.3V 電源，再檢查時序。接著量測鏈路品質。';
     const captions = generateCaptionsFromScript(script, 12);
-    expect(captions).toHaveLength(2);
-    expect(captions[0].text.trim()).toBe('先確認 3.3V 電源，再檢查時序。');
-    expect(captions[1].text.trim()).toBe('接著量測鏈路品質。');
+    expect(captions.map((caption) => caption.text)).toEqual([
+      '先確認 3.3V 電源，',
+      '再檢查時序。',
+      '接著量測鏈路品質。',
+    ]);
+    expect(captions[0].startMs).toBe(0);
+    expect(captions.at(-1)?.endMs).toBe(12000);
+    captions.slice(1).forEach((caption, index) => {
+      expect(caption.startMs).toBe(captions[index].endMs);
+    });
+  });
+
+  it('normalizes every saved scene through the same punctuation-only policy', () => {
+    const projectsDirectory = path.resolve(process.cwd(), 'projects');
+    let auditedScenes = 0;
+    for (const file of fs.readdirSync(projectsDirectory).filter((name) => name.endsWith('.json'))) {
+      const project = JSON.parse(fs.readFileSync(path.join(projectsDirectory, file), 'utf8')).project;
+      for (const scene of project?.scenes || []) {
+        auditedScenes += 1;
+        const segments = splitCaptionIntoChunks(scene.script);
+        const captions = generateCaptionsFromScript(scene.script, scene.durationSeconds);
+        expect(captions.map((caption) => caption.text), `${file}: ${scene.title}`).toEqual(segments);
+        expect(captions.every((caption) => caption.text.length > 0)).toBe(true);
+      }
+    }
+    expect(auditedScenes).toBeGreaterThan(0);
   });
 });
 

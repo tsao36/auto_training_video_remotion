@@ -1,4 +1,3 @@
-import { loadFont } from "@remotion/google-fonts/Inter";
 import {
   AbsoluteFill,
   interpolate,
@@ -10,10 +9,7 @@ import { CODE_THEMES } from "@/remotion/lib/code-syntax";
 import { getSafeAreaPadding } from "@/remotion/lib/layout";
 import { EASING } from "@/remotion/lib/motion-tokens";
 
-const { fontFamily } = loadFont("normal", {
-  weights: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-});
+const fontFamily = 'Inter, "Noto Sans TC", system-ui, sans-serif';
 
 export type LowerThirdProps = {
   title: string;
@@ -202,7 +198,7 @@ export const LowerThird: React.FC<LowerThirdProps> = ({
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 opacity: badgeIn,
-                scale: `${interpolate(badgeIn, [0, 1], [0.86, 1])}`,
+                transform: `scale(${interpolate(badgeIn, [0, 1], [0.86, 1])})`,
               }}
             >
               {badge}

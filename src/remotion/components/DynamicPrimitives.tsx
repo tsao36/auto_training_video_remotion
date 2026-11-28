@@ -245,8 +245,7 @@ export const SceneTransitionWrapper: React.FC<{
 }> = ({ sceneIndex, sceneTotalFrames, accentColor, children }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const blankLeadInFrames = sceneIndex % 2 === 1 ? 6 : 0;
-  const entranceFrame = Math.max(0, frame - blankLeadInFrames);
+  const entranceFrame = frame;
 
   const enterSpring = spring({
     frame: entranceFrame,
@@ -288,7 +287,7 @@ export const SceneTransitionWrapper: React.FC<{
         inset: 0,
         transform: `translate(${enterX}px, ${enterY}px) scale(${enterScale * exitScale})`,
         opacity: Math.min(
-          interpolate(entranceFrame, [0, 6], [0, 1], {
+          interpolate(entranceFrame, [0, 6], [0.72, 1], {
             extrapolateLeft: 'clamp',
             extrapolateRight: 'clamp',
           }),

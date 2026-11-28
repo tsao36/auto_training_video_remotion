@@ -1,13 +1,9 @@
-import { loadFont } from "@remotion/google-fonts/Inter";
 import { Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { CODE_THEMES } from "@/remotion/lib/code-syntax";
 import { clampRectToSafeArea, getSafeAreaPadding } from "@/remotion/lib/layout";
 import { EASING } from "@/remotion/lib/motion-tokens";
 
-const { fontFamily } = loadFont("normal", {
-  weights: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-});
+const fontFamily = 'Inter, "Noto Sans TC", system-ui, sans-serif';
 
 export type SpotlightTarget = {
   x: number;
@@ -187,7 +183,7 @@ export const CalloutSpotlight: React.FC<CalloutSpotlightProps> = ({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            scale: `${interpolate(backgroundIn, [0, 1], [1.04, 1])}`,
+            transform: `scale(${interpolate(backgroundIn, [0, 1], [1.04, 1])})`,
           }}
         />
       ) : null}
@@ -221,7 +217,7 @@ export const CalloutSpotlight: React.FC<CalloutSpotlightProps> = ({
           borderRadius: 14 * u,
           border: `${2 * u}px solid ${accentColor}`,
           opacity: ping > 0 && ping < 1 ? (1 - ping) * 0.85 : 0,
-          scale: `${interpolate(ping, [0, 1], [1, 1.12])}`,
+          transform: `scale(${interpolate(ping, [0, 1], [1, 1.12])})`,
         }}
       />
 
@@ -235,7 +231,7 @@ export const CalloutSpotlight: React.FC<CalloutSpotlightProps> = ({
           height: gap,
           background: accentColor,
           transformOrigin: cardBelow ? "top center" : "bottom center",
-          scale: `1 ${connector}`,
+          transform: `scale(1, ${connector})`,
           opacity: 0.85 * (1 - exit),
         }}
       />

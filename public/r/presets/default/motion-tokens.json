@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "motion-tokens",
+  "type": "registry:lib",
+  "description": "Named motion duration and stagger tokens",
+  "dependencies": [
+    "remotion"
+  ],
+  "registryDependencies": [
+    "@remotionui/timing",
+    "@remotionui/layout"
+  ],
+  "files": [
+    {
+      "path": "registry/bases/default/lib/motion-tokens.ts",
+      "type": "registry:lib",
+      "target": "src/remotion/lib/motion-tokens.ts",
+      "content": "import { Easing } from \"remotion\";\nimport { EASING_ENTER, EASING_EXIT, secondsToFrames } from \"./timing\";\n\n/** Named frame durations â pair with `springs.ts` or `enterProgress()` */\nexport const DURATION = {\n  fast: secondsToFrames(0.4),\n  normal: secondsToFrames(0.8),\n  slow: secondsToFrames(1.2),\n} as const;\n\nexport const DELAY = {\n  none: 0,\n  short: secondsToFrames(0.15),\n  medium: secondsToFrames(0.3),\n} as const;\n\nexport const STAGGER = {\n  tight: 4,\n  normal: 8,\n  relaxed: 12,\n} as const;\n\n/**\n * Emphasis scale steps. One word popping inside a line of text carries a lot\n * less headroom than a card lifting off a page, so emphasis is a named ramp\n * rather than a per-component magic number â pair with `EASING.pop`.\n */\nexport const EMPHASIS = {\n  /** Type-level accent: a highlighted word inside running copy. */\n  subtle: 1.05,\n  /** Standalone element that owns its own line. */\n  medium: 1.1,\n  /** Hero beat â one per scene at most. */\n  strong: 1.18,\n} as const;\n\n/**\n * Copy-paste BÃ©zier curves from Remotion timing guidance.\n * Curves are shared with `timing.ts` so a component picks the same motion\n * whether it imports the token object or the standalone curve.\n */\nexport const EASING = {\n  /** Strong ease-out â entrances, decelerates into place */\n  enter: EASING_ENTER,\n  /** Ease-in â exits accelerate away. Never ease-out an exit. */\n  exit: EASING_EXIT,\n  /** Balanced ease-in-out â editorial holds */\n  editorial: Easing.bezier(0.45, 0, 0.55, 1),\n  /** Slight overshoot â emphasis pops */\n  pop: Easing.bezier(0.34, 1.56, 0.64, 1),\n} as const;\n"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { ensurePoppingTechnicalTermsPrimitive } from './captions';
 import {
   DOMAIN_META,
   SceneDiagramData,
@@ -321,6 +322,7 @@ export function buildPlanFromSource(params: {
       durationSeconds,
       keyPoints,
       script,
+      remotionPrimitives: ensurePoppingTechnicalTermsPrimitive(script),
       diagramData,
       tts: {
         provider: params.defaultTtsProvider,

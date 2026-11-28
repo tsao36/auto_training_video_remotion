@@ -10,7 +10,7 @@ function makeScene(overrides: Partial<SceneSpec> = {}): SceneSpec {
     subtitle: 'DEBUG FLOW',
     domain: 'debug-logic',
     template: 'architecture-flow',
-    durationSeconds: 12,
+    durationSeconds: 10,
     keyPoints: ['檢查 REFCLK 100MHz', '確認 PERST# 釋放時序'],
     script: '我們先從時脈與重置訊號開始排查。',
     tts: {
@@ -217,5 +217,58 @@ describe('evaluateProjectQuality', () => {
         }),
       ])
     );
+  });
+
+  it('warns on occluding full-viewport primitives, slow TTS tempo, and caption-audio desync', () => {
+    const report = evaluateProjectQuality({
+      title: 'PCIe Gen5 LTSSM',
+      language: 'zh-TW',
+      scenes: [
+        makeScene({
+          template: 'packet-frame',
+          durationSeconds: 16,
+          remotionPrimitives: ['code-reveal', 'popping-word-captions'],
+          tts: {
+            provider: 'openformosa',
+            voiceId: 'voice',
+            speed: 0.95,
+            status: 'ready',
+            audioUrl: '/audio/test.wav',
+            actualDurationSec: 15.8,
+          },
+          captions: [
+            { text: '先檢查 Ordered Set 欄位。', startMs: 0, endMs: 10000, timestampMs: 5000, confidence: 1 },
+          ],
+        }),
+      ],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        'primitive-occludes-diagram',
+        'tts-tempo-too-slow',
+        'caption-audio-desync',
+        'scene-too-long',
+      ])
+    );
+  });
+
+  it('warns on degenerate zero-duration or flashing captions', () => {
+    const report = evaluateProjectQuality({
+      title: 'PCIe Gen5 LTSSM',
+      language: 'zh-TW',
+      scenes: [
+        makeScene({
+          durationSeconds: 12,
+          captions: [
+            { text: '第一段字幕，', startMs: 0, endMs: 94, timestampMs: 47, confidence: 0.9 },
+            { text: '第二段字幕，', startMs: 247, endMs: 12000, timestampMs: 6123, confidence: 0.9 },
+            { text: '被歸零的字幕。', startMs: 12000, endMs: 12000, timestampMs: 12000, confidence: 0.9 },
+          ],
+        }),
+      ],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toContain('caption-timing-degenerate');
   });
 });

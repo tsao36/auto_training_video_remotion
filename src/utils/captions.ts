@@ -199,15 +199,45 @@ export function splitCaptionIntoChunks(text: string, _legacyMaxWidthUnits = 36):
     .filter(Boolean);
 }
 
+export function normalizeSceneCaptions(
+  scene: Pick<SceneSpec, 'script' | 'captions' | 'durationSeconds' | 'tts'>,
+  effectiveDurationSec?: number
+): Caption[] {
+  const durationSeconds = effectiveDurationSec && effectiveDurationSec > 0
+    ? effectiveDurationSec
+    : scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
+      ? scene.tts.actualDurationSec
+      : scene.durationSeconds;
+  const totalDurationMs = Math.round(Math.max(0, durationSeconds) * 1000);
+  if (!scene.captions?.length) {
+    return generateCaptionsFromScript(scene.script, durationSeconds);
+  }
+  const lastEndMs = scene.captions.at(-1)?.endMs ?? 0;
+  if (totalDurationMs > 0 && lastEndMs > 0 && Math.abs(lastEndMs - totalDurationMs) / totalDurationMs > 0.12) {
+    const scale = totalDurationMs / lastEndMs;
+    return scene.captions.map((caption, index) => {
+      const startMs = Math.round(caption.startMs * scale);
+      const endMs = index === scene.captions!.length - 1
+        ? totalDurationMs
+        : Math.max(startMs + 1, Math.round(caption.endMs * scale));
+      return {
+        ...caption,
+        startMs,
+        endMs,
+        timestampMs: Math.round((startMs + endMs) / 2),
+      };
+    });
+  }
+  return scene.captions;
+}
+
 export function generateProjectCaptions(scenes: SceneSpec[]): Array<Caption & { sceneId: string }> {
   let offsetMs = 0;
   return scenes.flatMap((scene) => {
     const durationSeconds = scene.tts?.actualDurationSec && scene.tts.actualDurationSec > 0
       ? scene.tts.actualDurationSec
       : scene.durationSeconds;
-    const captions = scene.captions?.length
-      ? scene.captions
-      : generateCaptionsFromScript(scene.script, durationSeconds);
+    const captions = normalizeSceneCaptions(scene, durationSeconds);
     const sceneCaptions = captions.map((caption) => ({
       ...caption,
       sceneId: scene.id,

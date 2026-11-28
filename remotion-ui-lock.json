@@ -1,0 +1,257 @@
+{
+    "version":  1,
+    "files":  {
+                  "src/remotion/lib/caption-utils.ts":  {
+                                                            "component":  "caption-utils",
+                                                            "sha256":  "a4d89699c56ebe9937da60ddcc0678f92ec849b0ea93eb01f400521d2c3cc569"
+                                                        },
+                  "src/remotion/lib/chart-utils.ts":  {
+                                                          "component":  "chart-utils",
+                                                          "sha256":  "35c7958aa2e0a4bdd77a9af851038952638045a07268fe86973e1bafc7e685c6"
+                                                      },
+                  "src/remotion/lib/code-syntax.tsx":  {
+                                                           "component":  "code-syntax",
+                                                           "sha256":  "7b21db966173ccd53fdad8c65cd0329e899a4b34fa361a23680612ffd2a2332d"
+                                                       },
+                  "src/remotion/lib/layout.ts":  {
+                                                     "component":  "layout",
+                                                     "sha256":  "a3d0fa61a0e7b9b209aa2f585fb39ee631f3f6b39d8b049a9d8b7f23df7a7449"
+                                                 },
+                  "src/remotion/lib/motion-tokens.ts":  {
+                                                            "component":  "motion-tokens",
+                                                            "sha256":  "d0da13d0ee0abe1e667c7af4b8690cc807cb0daef35b8eb60fd57ae4333cad6e"
+                                                        },
+                  "src/remotion/lib/springs.ts":  {
+                                                      "component":  "springs",
+                                                      "sha256":  "1649db23e929abdf505b98d90c09d862bb3be82d401401ee586351bf82ae38bc"
+                                                  },
+                  "src/remotion/lib/timing.ts":  {
+                                                     "component":  "timing",
+                                                     "sha256":  "a31ab2cd918c06a79714053ba9f5cee8b7fc2f111ff2fb34964f55cfc32f67e4"
+                                                 },
+                  "src/remotion/lib/transition-timing.ts":  {
+                                                                "component":  "transition-timing",
+                                                                "sha256":  "5f7b91495d81e59f34d80c2548a5be75398711850a605cb277196db74be9c57c"
+                                                            },
+                  "src/remotion/primitives/blur-reveal.tsx":  {
+                                                                  "component":  "blur-reveal",
+                                                                  "sha256":  "abda952c52f2c1a9507211276e544950e723b3b186ee682a4ad0967cfb7833fb"
+                                                              },
+                  "src/remotion/primitives/caption-highlight.tsx":  {
+                                                                        "component":  "caption-highlight",
+                                                                        "sha256":  "1a4e3c903eda735c310560317cdcbd28781378a7996712732561cdb99ef3e80e"
+                                                                    },
+                  "src/remotion/primitives/comparison-bars.tsx":  {
+                                                                      "component":  "comparison-bars",
+                                                                      "sha256":  "e50c5d2fccc8e24c194ea512b3eec793fb950ecb1da445c87edfbe16636589ea"
+                                                                  },
+                  "src/remotion/primitives/directional-wipe.tsx":  {
+                                                                       "component":  "directional-wipe",
+                                                                       "sha256":  "a90ebe2986b26b63e257635eb6a4cf072146dae6c745d32543309651b0af081b"
+                                                                   },
+                  "src/remotion/primitives/donut-chart.tsx":  {
+                                                                  "component":  "donut-chart",
+                                                                  "sha256":  "b5692e0bf181f8a080d440a5d65313e4f770429a43fd539c09e8c20f808ec998"
+                                                              },
+                  "src/remotion/primitives/gauge-dial.tsx":  {
+                                                                 "component":  "gauge-dial",
+                                                                 "sha256":  "2a2f970b6a1f9d4aaaa3d6b2e8733f5638cb6178a6fd4eee3fbd589183eb43a6"
+                                                             },
+                  "src/remotion/primitives/karaoke-captions.tsx":  {
+                                                                       "component":  "karaoke-captions",
+                                                                       "sha256":  "f98b64188591d562ca315d8b147fd17cc0449b0668dd610a5dd4d2b277fc040a"
+                                                                   },
+                  "src/remotion/primitives/spatial-push.tsx":  {
+                                                                   "component":  "spatial-push",
+                                                                   "sha256":  "f64505dbf7e4f550ea3ba5bfbd9797e92c5d9c7fca237052adbfdf1cdcd28666"
+                                                               },
+                  "src/remotion/primitives/srt-caption-track.tsx":  {
+                                                                        "component":  "srt-caption-track",
+                                                                        "sha256":  "3b9227caac829667c2916a610dff27b37350a4acd063ef39e340db4588a4be59"
+                                                                    },
+                  "src/remotion/primitives/transition-blinds.tsx":  {
+                                                                        "component":  "transition-blinds",
+                                                                        "sha256":  "7729133d4915530fceae2f70b1f70a5c747b2c82e4c9fe40a1f2af0d98f15ec2"
+                                                                    },
+                  "src/remotion/scenes/animated-bar-chart/index.tsx":  {
+                                                                           "component":  "animated-bar-chart",
+                                                                           "sha256":  "3fcfc51c047ca68977ff89177cd93360eff90ac7e69dd8e41ff88badccbefba8"
+                                                                       },
+                  "src/remotion/scenes/callout-spotlight/index.tsx":  {
+                                                                          "component":  "callout-spotlight",
+                                                                          "sha256":  "590aa0c0217f4c26d01ec331823d62a7fca3f5a970f73c1e9b501fb1131eb117"
+                                                                      },
+                  "src/remotion/scenes/device-mockup-3d/index.tsx":  {
+                                                                         "component":  "device-mockup-3d",
+                                                                         "sha256":  "9be3477172af175b2dbac7cea7f29c8f13f61737bc0ba448b4bc8e74e4ad9234"
+                                                                     },
+                  "src/remotion/scenes/lower-third/index.tsx":  {
+                                                                    "component":  "lower-third",
+                                                                    "sha256":  "1e97861b36c9e9d1b40e6af470e012300db8c5c1af94e49a36def437671bc2e5"
+                                                                },
+                  "src/remotion/primitives/typewriter.tsx":  {
+                                                                 "component":  "typewriter",
+                                                                 "sha256":  "498412d8c9864efcc0b76159ba7e8579b32ca002eadaf70766901e486956e277"
+                                                             },
+                  "src/remotion/primitives/aurora-bg.tsx":  {
+                                                                "component":  "aurora-bg",
+                                                                "sha256":  "66623e80b12bef1078bf772ad0cc032527008db9f2d30200af43a570a690c509"
+                                                            },
+                  "src/remotion/primitives/audio-pulse.tsx":  {
+                                                                  "component":  "audio-pulse",
+                                                                  "sha256":  "44a177fd90ff9a4d2c542d48551e88e5bfc53d8a1d6387624cc636baacc68f97"
+                                                              },
+                  "src/remotion/lib/audio-viz-utils.ts":  {
+                                                              "component":  "audio-viz-utils",
+                                                              "sha256":  "23ec78dec18e5053df9329e20de8002b827ee4162acfad319f3daf48bcda6cac"
+                                                          },
+                  "src/remotion/primitives/beat-pulse-grid.tsx":  {
+                                                                      "component":  "beat-pulse-grid",
+                                                                      "sha256":  "fd8fbb8d3beb8e7bd17ccf6724f892e11677a020fee9fc8e173e02cfe38d446c"
+                                                                  },
+                  "src/remotion/primitives/arrow-annotate.tsx":  {
+                                                                     "component":  "arrow-annotate",
+                                                                     "sha256":  "bb1bab158bc82675232b37db5e2857f72059163d52292e972cb12203d57fe72a"
+                                                                 },
+                  "src/remotion/primitives/connector-lines.tsx":  {
+                                                                      "component":  "connector-lines",
+                                                                      "sha256":  "668060dc481a86f7714580d6d3f845a756b1ade2401d0c25d9855aa93453c925"
+                                                                  },
+                  "src/remotion/scenes/device-mockup-zoom/index.tsx":  {
+                                                                           "component":  "device-mockup-zoom",
+                                                                           "sha256":  "608c4dbbe28839c8a793e0e7ff0e20409b28fe70aca85989669e011d2bae9537"
+                                                                       },
+                  "src/remotion/primitives/multi-device-lineup.tsx":  {
+                                                                          "component":  "multi-device-lineup",
+                                                                          "sha256":  "daba44e2a0d71dccdff53e56eefdad90d6ded5eb0aa9b0f01c74b089fb725150"
+                                                                      },
+                  "src/remotion/scenes/card-stack-3d/index.tsx":  {
+                                                                      "component":  "card-stack-3d",
+                                                                      "sha256":  "04d0d5971e1ee12051ce9ae5a2336c10983ae96524c988a730473ecbbdeef82f"
+                                                                  },
+                  "src/remotion/scenes/text-extrude-3d/index.tsx":  {
+                                                                        "component":  "text-extrude-3d",
+                                                                        "sha256":  "19562d910383202fae3901981a65402ad09a08dceb893e185a0c6770b844433c"
+                                                                    },
+                  "src/remotion/primitives/grain-gradient-bg.tsx":  {
+                                                                        "component":  "grain-gradient-bg",
+                                                                        "sha256":  "fe53af1dd45a7db5dce61bc66aef2d43a80633044c2f6085f6ee9475090e869b"
+                                                                    },
+                  "src/remotion/lib/paper-shader.tsx":  {
+                                                            "component":  "paper-shader",
+                                                            "sha256":  "de84638247543308462873a57e389a92a3b8fc01aebcf2887a2278a4fb0b57fe"
+                                                        },
+                  "src/remotion/primitives/dither-field-bg.tsx":  {
+                                                                      "component":  "dither-field-bg",
+                                                                      "sha256":  "80b1156fe479ec3a865915fb77fdda2fe1374d0766c2e7161098d2127aaeccd8"
+                                                                  },
+                  "src/remotion/primitives/text-animator.tsx":  {
+                                                                    "component":  "text-animator",
+                                                                    "sha256":  "e8e4fbf40e61e33f6700fc3148652f6f37b5076ca4dc7e751d9dd83fb9a1c0d0"
+                                                                },
+                  "src/remotion/lib/ae-motion.ts":  {
+                                                        "component":  "ae-motion",
+                                                        "sha256":  "cb65431786b191eaae68d5a5848671c28d81907158cb0f331635f11d53f70cfa"
+                                                    },
+                  "src/remotion/lib/glyph-layout.ts":  {
+                                                           "component":  "glyph-layout",
+                                                           "sha256":  "e5fc3c8ac64d167195386bb017b0a2a3e6ffab547645d1eb1c1b366f50a64d13"
+                                                       },
+                  "src/remotion/lib/text-selectors.ts":  {
+                                                             "component":  "text-selectors",
+                                                             "sha256":  "145f357766cdc6e6c066443632120e1ba9ad7ea3556264c1d31eb1170aca36ea"
+                                                         },
+                  "src/remotion/lib/text-split.ts":  {
+                                                         "component":  "text-split",
+                                                         "sha256":  "5ce1f231c2e90d3daa8a2c23ce7b09b878e842bb8abd3c905978d36697c01b76"
+                                                     },
+                  "src/remotion/lib/motion-primitive.ts":  {
+                                                               "component":  "motion-primitive",
+                                                               "sha256":  "05eebe50678b1a34e8cf9a0e8a8877bd904662da2067e6749046ad673a55280f"
+                                                           },
+                  "src/remotion/primitives/shape-layer.tsx":  {
+                                                                  "component":  "shape-layer",
+                                                                  "sha256":  "cb48d090b2235734bab816a3ab4f3ccff88207c7a502b72c272522cc53113b00"
+                                                              },
+                  "src/remotion/lib/bezier-path.ts":  {
+                                                          "component":  "bezier-path",
+                                                          "sha256":  "328782d1e011475a64a5e6befecb8093e93df6646a7ee5fa548fdf8d7343df33"
+                                                      },
+                  "src/remotion/lib/shape-ops.ts":  {
+                                                        "component":  "shape-ops",
+                                                        "sha256":  "3d0bcda65ec208110c4ff3b02776ae84d0712cdbabb4da5d049b9202bf3dd3e9"
+                                                    },
+                  "src/remotion/lib/curve-fit.ts":  {
+                                                        "component":  "curve-fit",
+                                                        "sha256":  "4dd4db8415998a587098f15e90f3ab595a30c5f45d9e40c2bd204534b5b0ebb6"
+                                                    },
+                  "src/remotion/scenes/code-reveal/index.tsx":  {
+                                                                    "component":  "code-reveal",
+                                                                    "sha256":  "9b7331de5d693dea3002e21243fe1f99b91a22a7c230506bd7698d54dbbf3b78"
+                                                                },
+                  "src/remotion/lib/ai-composer-utils.tsx":  {
+                                                                 "component":  "ai-composer-utils",
+                                                                 "sha256":  "a36174314e3ab795da41c9fa787e038c0337eb2d770f245070492dfd7ace666c"
+                                                             },
+                  "src/remotion/scenes/caption-bumper/index.tsx":  {
+                                                                       "component":  "caption-bumper",
+                                                                       "sha256":  "d08e9ee3cebe94b04461845f94948f8a2d5dc67af223c30e7db4a32c2adc76a0"
+                                                                   },
+                  "src/remotion/lib/text-fit-utils.ts":  {
+                                                             "component":  "text-fit-utils",
+                                                             "sha256":  "6a3a94566ed28278e3a099d128bc6415c1e7355db326c34ecfde72527cf75a43"
+                                                         },
+                  "src/remotion/primitives/transition-card-flip.tsx":  {
+                                                                           "component":  "transition-card-flip",
+                                                                           "sha256":  "62abe72ce93476771496ae137537c55d23f0211d03cb7d168ef5240c6061a2d0"
+                                                                       },
+                  "src/remotion/primitives/chromatic-aberration-wipe.tsx":  {
+                                                                                "component":  "chromatic-aberration-wipe",
+                                                                                "sha256":  "1c565ed65664e0bc6720b720e679b171b5db8e2c0b53ce82ea3bdffa7a08758d"
+                                                                            },
+                  "src/compositions/data-story/index.tsx":  {
+                                                                "component":  "data-story",
+                                                                "sha256":  "9eba9de6ad835a5bd88a0052e7eec8ab961ee6011d9de23d1097ea8827e86dca"
+                                                            },
+                  "src/remotion/scenes/auto-fit-title/index.tsx":  {
+                                                                       "component":  "auto-fit-title",
+                                                                       "sha256":  "dd1a1566f9d627f7a7695a29133235da043bbe98627fe92026e028093df1b178"
+                                                                   },
+                  "src/remotion/scenes/metric-ticker/index.tsx":  {
+                                                                      "component":  "metric-ticker",
+                                                                      "sha256":  "df01cab08b2b2ec5a946bce8b9ea18d249c0a932fddaa07fb0d77a4eb7c7d8b2"
+                                                                  },
+                  "src/remotion/primitives/line-chart-draw.tsx":  {
+                                                                      "component":  "line-chart-draw",
+                                                                      "sha256":  "89d4eaf4d9aa38490f8edfbe09efa3c29f27faa06873b407098ee64abc2e7d71"
+                                                                  },
+                  "src/remotion/lib/path-utils.ts":  {
+                                                         "component":  "path-utils",
+                                                         "sha256":  "2c24ba9c1e511f38970093c5a47fb794a1647a709c77839a6c7ad77c6b382007"
+                                                     },
+                  "src/remotion/scenes/timeline-steps/index.tsx":  {
+                                                                       "component":  "timeline-steps",
+                                                                       "sha256":  "bd8b4a2517954f5982552e62d2b7aacf321103a44f67e881bf032f9739e1e24f"
+                                                                   },
+                  "src/remotion/scenes/end-card/index.tsx":  {
+                                                                 "component":  "end-card",
+                                                                 "sha256":  "db319fe86e4dade744f9a3e9d42aea7194777f18c15afb8170552ba2ceffe5c3"
+                                                             },
+                  "src/remotion/primitives/transition-fade.tsx":  {
+                                                                      "component":  "transition-fade",
+                                                                      "sha256":  "ea620f36ad21e273f39b5c3f135747b1db7b3de3962648db7aa321f739ca768a"
+                                                                  },
+                  "src/compositions/browser-flow/index.tsx":  {
+                                                                  "component":  "browser-flow",
+                                                                  "sha256":  "1caff387c1a3059aabc33570df08ba7d60e27b5d4a9fa4018a8ea4652f531c28"
+                                                              },
+                  "src/remotion/scenes/title-card/index.tsx":  {
+                                                                   "component":  "title-card",
+                                                                   "sha256":  "f96952b0520cac0e930a7636a98887a36f9d9d2fc837285c6e975d077c3a718c"
+                                                               },
+                  "src/remotion/scenes/chat-to-preview/index.tsx":  {
+                                                                        "component":  "chat-to-preview",
+                                                                        "sha256":  "d28affd93c75a76fa444489ef05c1e652a834d047525e052fdba8ab1d316fc94"
+                                                                    }
+              }
+}

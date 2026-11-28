@@ -1,4 +1,3 @@
-import { loadFont } from "@remotion/google-fonts/Inter";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import {
   formatAxisValue,
@@ -10,10 +9,7 @@ import {
 import { getSafeAreaPadding, scaleFont } from "@/remotion/lib/layout";
 import { DURATION, EASING, STAGGER } from "@/remotion/lib/motion-tokens";
 
-const { fontFamily } = loadFont("normal", {
-  weights: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-});
+const fontFamily = 'Inter, "Noto Sans TC", system-ui, sans-serif';
 
 export type AnimatedBarChartProps = {
   data: ChartDatum[];

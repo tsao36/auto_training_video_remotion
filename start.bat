@@ -20,8 +20,10 @@ if not exist node_modules (
   )
 )
 
-rem Web UI is on 5173, API on 3001, BlueMagpie-TTS on 8001; open the browser once Vite has had time to start.
-start "" /b cmd /c "timeout /t 4 /nobreak >nul & start http://127.0.0.1:5173/"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\ensure-single-vite.ps1"
+
+rem Vite selects a port normally, or uses PORT when provided. open=true lets Vite open the actual address.
+set "open=true"
 
 echo Starting Remotion Tech Training Studio (Web + API + BlueMagpie-TTS). Press Ctrl+C to stop.
 call npm run dev

@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import { EFFECT_LABELS, RemotionEffect, TEMPLATE_LABELS, VisualTemplate } from '../types/training';
 import { fetchRandomBrandPalette } from '../utils/colorPaletteApi';
+import { REMOTION_ELEMENT_REGISTRY } from '../remotion/element-registry';
 
 type PlaygroundCategory = 'motion' | 'bottom-captions' | 'critical-captions' | 'charts' | 'transitions' | 'templates' | 'audio' | 'backgrounds' | 'overlays' | 'maps' | 'storytelling' | 'text-effects';
-type PlaygroundItem = RemotionEffect | VisualTemplate | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'kinetic-caption' | 'svg-trace-path' | 'pop-badge' | 'state-card' | 'animated-counter' | 'camera-pan-zoom' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds' | 'basic-captions' | 'rounded-captions' | 'moving-pill-captions' | 'popping-word-captions' | 'word-highlight-captions' | 'horizontal-bar-chart' | 'line-chart' | 'number-counter' | 'pie-chart' | 'vertical-bar-chart' | 'wiggling-callout' | 'peel' | 'shine' | 'tear-apart' | 'rotating-cards' | 'picture-in-picture' | 'slide-to-split' | 'map-flyover' | 'spinning-globe' | 'watercolor-map' | 'location-lower-third' | 'name-lower-third' | 'social-safe-zones' | 'news-article-highlight' | 'speed-lines' | 'on-screen-messages' | 'polaroid-pictures' | 'circle-marker' | 'crossed-off' | 'cylinder-text' | 'spinning-text-wheel' | 'text-marker' | 'oscilloscope' | 'voice-note' | 'mirrored-spectrum' | 'notebook-paper' | 'paper-texture' | 'rotating-starburst' | 'moving-waves' | 'moving-zigzags' | 'liquid-contours' | 'youtube-comment' | 'youtube-end-card' | 'youtube-subscribe';
+type PlaygroundItem = RemotionEffect | VisualTemplate | string | 'caption-highlight' | 'karaoke-captions' | 'srt-caption-track' | 'kinetic-caption' | 'svg-trace-path' | 'pop-badge' | 'state-card' | 'animated-counter' | 'camera-pan-zoom' | 'donut-chart' | 'gauge-dial' | 'comparison-bars' | 'blur-reveal' | 'directional-wipe' | 'spatial-push' | 'transition-blinds' | 'basic-captions' | 'rounded-captions' | 'moving-pill-captions' | 'popping-word-captions' | 'word-highlight-captions' | 'horizontal-bar-chart' | 'line-chart' | 'number-counter' | 'pie-chart' | 'vertical-bar-chart' | 'wiggling-callout' | 'peel' | 'shine' | 'tear-apart' | 'rotating-cards' | 'picture-in-picture' | 'slide-to-split' | 'map-flyover' | 'spinning-globe' | 'watercolor-map' | 'location-lower-third' | 'name-lower-third' | 'social-safe-zones' | 'news-article-highlight' | 'speed-lines' | 'on-screen-messages' | 'polaroid-pictures' | 'circle-marker' | 'crossed-off' | 'cylinder-text' | 'spinning-text-wheel' | 'text-marker' | 'oscilloscope' | 'voice-note' | 'mirrored-spectrum' | 'notebook-paper' | 'paper-texture' | 'rotating-starburst' | 'moving-waves' | 'moving-zigzags' | 'liquid-contours' | 'youtube-comment' | 'youtube-end-card' | 'youtube-subscribe';
 
 interface CatalogItem {
   id: PlaygroundItem;
@@ -193,6 +194,28 @@ const CATALOG: Record<PlaygroundCategory, CatalogItem[]> = {
       })),
   ],
 };
+
+const UI_CATEGORY_MAP: Record<string, PlaygroundCategory> = {
+  primitives: 'motion',
+  'data-media': 'audio',
+  'paths-shapes': 'storytelling',
+  'maps-device': 'maps',
+  '3d': 'templates',
+  shaders: 'backgrounds',
+  'motion-graphics': 'text-effects',
+  scenes: 'templates',
+  transitions: 'transitions',
+  compositions: 'templates',
+};
+
+for (const item of REMOTION_ELEMENT_REGISTRY) {
+  CATALOG[UI_CATEGORY_MAP[item.category]].push({
+    id: item.id,
+    label: item.label,
+    description: item.purpose,
+    aiUse: `${item.requiredData}${item.requiresGl ? ' • WebGL / ANGLE' : ''}`,
+  });
+}
 
 const ITEM_ICONS: Record<PlaygroundCategory, React.ComponentType<{ className?: string }>> = {
   motion: WandSparkles,

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "blur-reveal",
+  "type": "registry:ui",
+  "description": "Cut where the outgoing scene softens away and the incoming one resolves out of blur",
+  "dependencies": [
+    "remotion",
+    "@remotion/transitions"
+  ],
+  "registryDependencies": [
+    "@remotionui/transition-timing"
+  ],
+  "files": [
+    {
+      "path": "registry/bases/default/primitives/blur-reveal.tsx",
+      "type": "registry:ui",
+      "target": "src/remotion/primitives/blur-reveal.tsx",
+      "content": "import type { TransitionPresentation } from \"@remotion/transitions\";\nimport { useMemo } from \"react\";\nimport { AbsoluteFill } from \"remotion\";\nimport {\n  resolveTransitionTiming,\n  transitionPhase,\n  type TransitionVariant,\n} from \"@/remotion/lib/transition-timing\";\n\nexport type BlurRevealProps = {\n  maxBlur?: number;\n  /** Scale headroom the blur rides on. 0 keeps the frame perfectly still. */\n  scaleBy?: number;\n  shouldBlurOutExitingScene?: boolean;\n};\n\nconst BlurRevealPresentation: React.FC<\n  React.ComponentProps<\n    NonNullable<TransitionPresentation<BlurRevealProps>[\"component\"]>\n  >\n> = ({\n  children,\n  presentationProgress,\n  presentationDirection,\n  passedProps: {\n    maxBlur = 24,\n    scaleBy = 0.03,\n    shouldBlurOutExitingScene = true,\n  },\n}) => {\n  const isEntering = presentationDirection === \"entering\";\n  const phase = transitionPhase(presentationProgress, presentationDirection, {\n    lead: isEntering ? 0.74 : 0.7,\n    fade: true,\n  });\n  const isHeld = !isEntering && !shouldBlurOutExitingScene;\n\n  const style = useMemo(() => {\n    if (isHeld) {\n      return { opacity: 1 };\n    }\n\n    // `displace` is 0 whenever the scene is at rest, so a scene that is not\n    // mid-transition renders untouched â no blur, no scale.\n    return {\n      opacity: phase.opacity,\n      filter:\n        phase.displace > 0.002\n          ? `blur(${(phase.displace * maxBlur).toFixed(2)}px)`\n          : undefined,\n      scale: phase.isEntering\n        ? 1 + phase.displace * scaleBy\n        : 1 - phase.displace * scaleBy * 0.66,\n    };\n  }, [\n    isHeld,\n    maxBlur,\n    phase.displace,\n    phase.isEntering,\n    phase.opacity,\n    scaleBy,\n  ]);\n\n  return <AbsoluteFill style={style}>{children}</AbsoluteFill>;\n};\n\n/** Blur + opacity reveal presentation for TransitionSeries */\nexport function blurReveal(\n  props: BlurRevealProps = {},\n): TransitionPresentation<BlurRevealProps> {\n  return {\n    component: BlurRevealPresentation,\n    props,\n  };\n}\n\nexport type TransitionBlurRevealConfig = {\n  durationInFrames?: number;\n  maxBlur?: number;\n  scaleBy?: number;\n  variant?: TransitionVariant;\n  shouldBlurOutExitingScene?: boolean;\n};\n\n/** Blur reveal transition config for use with TransitionSeries.Transition */\nexport function transitionBlurReveal({\n  durationInFrames = 22,\n  maxBlur = 24,\n  scaleBy = 0.03,\n  variant = \"editorial\",\n  shouldBlurOutExitingScene = true,\n}: TransitionBlurRevealConfig = {}) {\n  return {\n    presentation: blurReveal({ maxBlur, scaleBy, shouldBlurOutExitingScene }),\n    timing: resolveTransitionTiming({ durationInFrames, variant }),\n  };\n}\n\nexport function getTransitionBlurRevealDuration(\n  config: TransitionBlurRevealConfig = {},\n  fps: number,\n): number {\n  return transitionBlurReveal(config).timing.getDurationInFrames({ fps });\n}\n"
+    }
+  ],
+  "atlas": {
+    "lane": "cuts",
+    "drive": "time",
+    "tier": "advanced"
+  }
+}

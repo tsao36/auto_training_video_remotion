@@ -312,7 +312,7 @@ export const PoppingWordCaptions: React.FC<CaptionElementProps> = ({
                 style={{
                   color: emphasis > 0.5 ? highlightColor : textColor,
                   display: "inline-block",
-                  scale: 1 + emphasis * 0.12,
+                  transform: `scale(${1 + emphasis * 0.12})`,
                   transformOrigin: "center bottom",
                   whiteSpace: "pre",
                 }}

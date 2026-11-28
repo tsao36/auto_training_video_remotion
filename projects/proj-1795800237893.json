@@ -1,0 +1,881 @@
+{
+  "id": "proj-1795800237893",
+  "createdAt": "2026-11-28T02:20:21.708Z",
+  "updatedAt": "2026-11-28T02:20:21.708Z",
+  "renders": [],
+  "project": {
+    "id": "proj-1795800237893",
+    "title": "PCIe Gen5 LTSSM 鏈路訓練與除錯實戰",
+    "subtitle": "PC / 筆電工程師的速查與實務步驟",
+    "language": "zh-TW",
+    "topic": "PCIe Gen5 LTSSM 鏈路訓練與除錯實戰",
+    "domain": "debug-logic",
+    "targetDurationSeconds": 90,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "sourceType": "topic-llm",
+    "rawSourceText": "",
+    "ttsConfig": {
+      "defaultProvider": "openformosa",
+      "openformosa": {
+        "baseUrl": "http://127.0.0.1:8001/v1/tts",
+        "apiKey": "",
+        "model": "OpenFormosa/BlueMagpie-TTS",
+        "voice": "hung_yi_lee"
+      },
+      "mingTts": {
+        "baseUrl": "http://localhost:8000/v1/tts",
+        "apiKey": "",
+        "model": "inclusionAI/Ming-3.0-tts",
+        "speaker": "ming-tech-zh-en",
+        "style": "professional-training"
+      }
+    },
+    "scenes": [
+      {
+        "id": "scene-1795800218053-0",
+        "index": 0,
+        "title": "開場與學習目標",
+        "subtitle": "本課程重點與適用對象",
+        "domain": "debug-logic",
+        "template": "title-hero",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "主題: PCIe Gen5",
+          "目標: LTSSM 除錯",
+          "對象: PC/筆電工程師"
+        ],
+        "script": "本單元帶你快速掌握 PCIe Gen5 LTSSM 鏈路訓練與除錯步驟，精準定位失敗來源並建立回復策略。",
+        "captions": [
+          {
+            "text": "本單元帶你快速掌握 PCIe Gen5 LTSSM 鏈路訓練與除錯步驟，",
+            "startMs": 0,
+            "endMs": 5421,
+            "timestampMs": 2711,
+            "confidence": 0.9
+          },
+          {
+            "text": "精準定位失敗來源並建立回復策略。",
+            "startMs": 5615,
+            "endMs": 8140,
+            "timestampMs": 6878,
+            "confidence": 0.9
+          }
+        ],
+        "visualDescription": "以柔和科技 aurora-bg 作為背景；中心 kinetic-caption 顯示課程標題，下方以 caption-bumper 彈出三個學習目標關鍵字，畫面留白確保可讀性，強調主題與對象。",
+        "remotionPrimitives": [
+          "aurora-bg",
+          "kinetic-caption",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "visualCaption": "課程：LTSSM 概念 → 檢查項目 → 示範與回復"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-0-3f68da4ffef459.wav",
+          "actualDurationSec": 8.14
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "zoom-focus",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-1",
+        "index": 1,
+        "title": "LTSSM 狀態總覽",
+        "subtitle": "為什麼先看 LTSSM",
+        "domain": "debug-logic",
+        "template": "state-machine",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "Detect → Polling → Configuration",
+          "L0 / Recovery 狀態切換"
+        ],
+        "script": "先看 LTSSM 卡在 Detect、Polling、Configuration 或 Recovery 哪個狀態，就能立刻鎖定下一步量測方向。",
+        "captions": [
+          {
+            "text": "先看 LTSSM 卡在 Detect、",
+            "startMs": 0,
+            "endMs": 1761,
+            "timestampMs": 880,
+            "confidence": 1
+          },
+          {
+            "text": "Polling、",
+            "startMs": 1761,
+            "endMs": 2502,
+            "timestampMs": 2131,
+            "confidence": 1
+          },
+          {
+            "text": "Configuration 或 Recovery 哪個狀態，",
+            "startMs": 2502,
+            "endMs": 5283,
+            "timestampMs": 3892,
+            "confidence": 1
+          },
+          {
+            "text": "就能立刻鎖定下一步量測方向。",
+            "startMs": 5283,
+            "endMs": 6580,
+            "timestampMs": 5931,
+            "confidence": 1
+          }
+        ],
+        "visualDescription": "以 state-card 展示 LTSSM 各主要狀態節點，connector-lines 顯示常見轉換路徑；使用 cascade-reveal 動畫逐步揭示每個階段的意義，幫助判斷失敗階段。",
+        "remotionPrimitives": [
+          "state-card",
+          "connector-lines",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "stateNodes": [
+            {
+              "id": "detect",
+              "label": "Detect",
+              "sublabel": "PHY 偵測",
+              "status": "normal"
+            },
+            {
+              "id": "polling",
+              "label": "Polling",
+              "sublabel": "速度/通道擬合",
+              "status": "active"
+            },
+            {
+              "id": "cfg",
+              "label": "Configuration",
+              "sublabel": "連線完成前",
+              "status": "normal"
+            },
+            {
+              "id": "l0",
+              "label": "L0",
+              "sublabel": "鏈路正常",
+              "status": "normal"
+            },
+            {
+              "id": "recovery",
+              "label": "Recovery",
+              "sublabel": "錯誤回復",
+              "status": "normal"
+            }
+          ],
+          "stateTransitions": [
+            {
+              "from": "detect",
+              "to": "polling",
+              "trigger": "PHY ready",
+              "isErrorPath": false
+            },
+            {
+              "from": "polling",
+              "to": "cfg",
+              "trigger": "training success",
+              "isErrorPath": false
+            },
+            {
+              "from": "polling",
+              "to": "recovery",
+              "trigger": "EQ fail",
+              "isErrorPath": true
+            },
+            {
+              "from": "recovery",
+              "to": "polling",
+              "trigger": "attempt recovery",
+              "isErrorPath": false
+            }
+          ],
+          "visualCaption": "觀察 LTSSM 可快速定位訓練階段"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-1-42b0b7906cf329.wav",
+          "actualDurationSec": 6.58
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "cascade-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-2",
+        "index": 2,
+        "title": "Ordered Set 與符號檢查",
+        "subtitle": "TS1 / TS2 與 Comma 同步要點",
+        "domain": "debug-logic",
+        "template": "packet-frame",
+        "durationSeconds": 10,
+        "keyPoints": [
+          "OrderedSet TS1/TS2",
+          "Comma 檢測",
+          "Symbol 同步"
+        ],
+        "script": "訓練仰賴 TS1/TS2 Ordered Set 與 Comma 同步；若抓到失序或遺漏，通常是 PHY 時序或通道品質異常。",
+        "captions": [
+          {
+            "text": "訓練仰賴 TS1/TS2 Ordered Set 與 Comma 同步；",
+            "startMs": 0,
+            "endMs": 4264,
+            "timestampMs": 2132,
+            "confidence": 0.9
+          },
+          {
+            "text": "若抓到失序或遺漏，",
+            "startMs": 4397,
+            "endMs": 5878,
+            "timestampMs": 5138,
+            "confidence": 0.9
+          },
+          {
+            "text": "通常是 PHY 時序或通道品質異常。",
+            "startMs": 5878,
+            "endMs": 8840,
+            "timestampMs": 7359,
+            "confidence": 0.9
+          }
+        ],
+        "visualDescription": "畫面顯示代表性的 ordered set 框架與欄位，arrow-annotate 指向 TS1/TS2 的關鍵比特，caption-highlight 強調 Comma 與符號同步位置，sweep-scan 動畫掃描符號流動。",
+        "remotionPrimitives": [
+          "arrow-annotate",
+          "caption-highlight",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "packetFields": [
+            {
+              "name": "OrderedSetType",
+              "bits": 8,
+              "value": "TS1/TS2",
+              "description": "訓練字元類型",
+              "color": "#2E86AB",
+              "highlight": true
+            },
+            {
+              "name": "SymbolPattern",
+              "bits": 32,
+              "value": "K28.5/COMMA",
+              "description": "對齊與同步符號",
+              "color": "#A23B72",
+              "highlight": true
+            },
+            {
+              "name": "Reserved",
+              "bits": 24,
+              "value": "0x00",
+              "description": "保留欄位",
+              "color": "#CCCCCC",
+              "highlight": false
+            },
+            {
+              "name": "Sequence",
+              "bits": 8,
+              "value": "0x01",
+              "description": "ordered set 序號",
+              "color": "#F29E4C",
+              "highlight": false
+            }
+          ],
+          "visualCaption": "檢查 ordered set 的 comma 與符號序列"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-2-7fb04655a68901.wav",
+          "actualDurationSec": 8.84
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "sweep-scan",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-3",
+        "index": 3,
+        "title": "從系統讀取 LTSSM 與暫存器",
+        "subtitle": "配置空間與 driver log 快速檢查",
+        "domain": "debug-logic",
+        "template": "code-log",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "CONFIG 空間",
+          "Link Status",
+          "LTSSM 報告"
+        ],
+        "script": "用 setpci 與驅動日誌讀取 Link Status 與 LTSSM 狀態，搭配 DMA 紀錄即可分辨硬體、韌體或驅動問題。",
+        "captions": [
+          {
+            "text": "用 setpci 與驅動日誌讀取 Link Status 與 LTSSM 狀態，",
+            "startMs": 0,
+            "endMs": 5256,
+            "timestampMs": 2628,
+            "confidence": 1
+          },
+          {
+            "text": "搭配 DMA 紀錄即可分辨硬體、",
+            "startMs": 5256,
+            "endMs": 7359,
+            "timestampMs": 6307,
+            "confidence": 1
+          },
+          {
+            "text": "韌體或驅動問題。",
+            "startMs": 7359,
+            "endMs": 8410,
+            "timestampMs": 7884,
+            "confidence": 1
+          }
+        ],
+        "visualDescription": "使用 code-log 顯示 PCIe 配置空間與驅動 log 範例，camera-pan-zoom 聚焦在重要行（LTSSM 狀態、Link Status）；sweep-scan 動畫用於強調讀取與變化序列。",
+        "remotionPrimitives": [
+          "code-log",
+          "camera-pan-zoom",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "codeLanguage": "bash",
+          "codeTitle": "範例：lspci / setpci 讀取",
+          "codeLines": [
+            {
+              "lineNo": 1,
+              "text": "lspci -vv | grep -i \"LnkSta\"",
+              "level": "normal",
+              "annotation": ""
+            },
+            {
+              "lineNo": 2,
+              "text": "LnkSta: Speed 32GT/s, Width x4, TrErr- Train- SlotClk+",
+              "level": "highlight",
+              "annotation": "Link Rate 與 Lane Count"
+            },
+            {
+              "lineNo": 3,
+              "text": "setpci -s 00:1f.0 0xX.Y = 0x##",
+              "level": "normal",
+              "annotation": "讀取暫存器檢查 LTSSM"
+            },
+            {
+              "lineNo": 4,
+              "text": "DRIVER: LTSSM=Polling_Rx, PHY EQ retries=3",
+              "level": "warn",
+              "annotation": "常見警示行為"
+            }
+          ],
+          "visualCaption": "從系統層讀取配置空間與驅動日誌"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-3-f1b351b3fd00b3.wav",
+          "actualDurationSec": 8.41
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "zoom-focus",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-4",
+        "index": 4,
+        "title": "模擬與封包重放",
+        "subtitle": "用模擬器或邏輯分析儀重現問題",
+        "domain": "debug-logic",
+        "template": "packet-simulator",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "模擬 Root↔Endpoint",
+          "lane 差錯",
+          "重試 / ACK"
+        ],
+        "script": "透過封包重放模擬 Lane 反序、衰減與抖動，觀察 PHY 的重試與 ACK 反應，能快速區分物理層缺陷或韌體回復不足。",
+        "captions": [
+          {
+            "text": "透過封包重放模擬 Lane 反序、",
+            "startMs": 0,
+            "endMs": 2301,
+            "timestampMs": 1150,
+            "confidence": 1
+          },
+          {
+            "text": "衰減與抖動，",
+            "startMs": 2301,
+            "endMs": 3113,
+            "timestampMs": 2707,
+            "confidence": 1
+          },
+          {
+            "text": "觀察 PHY 的重試與 ACK 反應，",
+            "startMs": 3113,
+            "endMs": 5684,
+            "timestampMs": 4398,
+            "confidence": 1
+          },
+          {
+            "text": "能快速區分物理層缺陷或韌體回復不足。",
+            "startMs": 5684,
+            "endMs": 8120,
+            "timestampMs": 6902,
+            "confidence": 1
+          }
+        ],
+        "visualDescription": "以 packet-simulator 展示 Root Complex 與 Endpoint 間的多通道傳送，connector-lines 顯示 lane 流向，animated-counter 顯示重試次數與延遲，signal-pulse 用跳動顯示訊號事件。",
+        "remotionPrimitives": [
+          "connector-lines",
+          "animated-counter",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "simDeviceA": {
+            "name": "Root Complex",
+            "role": "RC",
+            "ipOrMac": "PCIe RC"
+          },
+          "simDeviceB": {
+            "name": "Endpoint",
+            "role": "EP",
+            "ipOrMac": "PCIe EP"
+          },
+          "simChannels": [
+            {
+              "id": 0,
+              "label": "Lane0",
+              "band": "Gen5",
+              "bandwidth": "32GT/s",
+              "color": "#2E86AB",
+              "interference": "low"
+            },
+            {
+              "id": 1,
+              "label": "Lane1",
+              "band": "Gen5",
+              "bandwidth": "32GT/s",
+              "color": "#A23B72",
+              "interference": "medium"
+            }
+          ],
+          "simPackets": [
+            {
+              "seq": 1,
+              "channelId": 0,
+              "direction": "A->B",
+              "label": "TS1",
+              "sizeBytes": 32,
+              "status": "ok"
+            },
+            {
+              "seq": 2,
+              "channelId": 1,
+              "direction": "A->B",
+              "label": "TS1 (corrupt)",
+              "sizeBytes": 32,
+              "status": "retry"
+            },
+            {
+              "seq": 3,
+              "channelId": 1,
+              "direction": "B->A",
+              "label": "ACK",
+              "sizeBytes": 8,
+              "status": "ok"
+            }
+          ],
+          "visualCaption": "重放 ordered set，觀察重試與 ACK 行為"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-4-8988d07b1224b7.wav",
+          "actualDurationSec": 8.12
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "signal-pulse",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-5",
+        "index": 5,
+        "title": "量測指標與合格門檻",
+        "subtitle": "為何要設定 KPI 與門檻",
+        "domain": "debug-logic",
+        "template": "kpi-metrics",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "LinkRate: Gen5 x4",
+          "BER 目標 1e-12",
+          "LTSSM 訓練時間"
+        ],
+        "script": "先訂好 Link Rate、Lane Count、BER 1e-12 與訓練時間門檻，只要超標就立刻轉入 PHY 深度量測。",
+        "captions": [
+          {
+            "text": "先訂好 Link Rate、",
+            "startMs": 0,
+            "endMs": 1712,
+            "timestampMs": 856,
+            "confidence": 1
+          },
+          {
+            "text": "Lane Count、",
+            "startMs": 1712,
+            "endMs": 3056,
+            "timestampMs": 2384,
+            "confidence": 1
+          },
+          {
+            "text": "BER 1e-12 與訓練時間門檻，",
+            "startMs": 3056,
+            "endMs": 5257,
+            "timestampMs": 4156,
+            "confidence": 1
+          },
+          {
+            "text": "只要超標就立刻轉入 PHY 深度量測。",
+            "startMs": 5257,
+            "endMs": 7580,
+            "timestampMs": 6418,
+            "confidence": 1
+          }
+        ],
+        "visualDescription": "使用 animated-counter 與 comparison-bars 顯示主要 KPI（LinkRate、Throughput、BER、LTG 時間），zoom-focus 強調超標或不合格項目，便於工程判斷是否需進一步介入。",
+        "remotionPrimitives": [
+          "animated-counter",
+          "comparison-bars",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "kpiMetrics": [
+            {
+              "label": "LinkRate",
+              "value": "32GT/s x4",
+              "delta": "+/-0",
+              "target": "32GT/s x4",
+              "status": "good"
+            },
+            {
+              "label": "Throughput",
+              "value": "≈128Gbps",
+              "delta": "-",
+              "target": "128Gbps",
+              "status": "neutral"
+            },
+            {
+              "label": "BER",
+              "value": "1e-11",
+              "delta": "+10x",
+              "target": "1e-12",
+              "status": "warn"
+            },
+            {
+              "label": "LTSSM Time",
+              "value": "120ms",
+              "delta": "+20ms",
+              "target": "100ms",
+              "status": "warn"
+            }
+          ],
+          "visualCaption": "設定並監控 Link 的量測門檻"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-5-f3039391a0b5f5.wav",
+          "actualDurationSec": 7.58
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "packet-traffic",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-6",
+        "index": 6,
+        "title": "系統化除錯清單",
+        "subtitle": "逐步檢查項目與優先順序",
+        "domain": "debug-logic",
+        "template": "debug-checklist",
+        "durationSeconds": 8,
+        "keyPoints": [
+          "電源與 PLL",
+          "接地與連接器",
+          "FW / 驅動設定",
+          "示波器追蹤"
+        ],
+        "script": "依序排查電源與 PLL、連接器接地、韌體 Link 設定，再用示波器追蹤 Ordered Set 時序，逐步鎖定根因。",
+        "captions": [
+          {
+            "text": "依序排查電源與 PLL、",
+            "startMs": 0,
+            "endMs": 1452,
+            "timestampMs": 726,
+            "confidence": 1
+          },
+          {
+            "text": "連接器接地、",
+            "startMs": 1452,
+            "endMs": 2178,
+            "timestampMs": 1815,
+            "confidence": 1
+          },
+          {
+            "text": "韌體 Link 設定，",
+            "startMs": 2178,
+            "endMs": 3509,
+            "timestampMs": 2843,
+            "confidence": 1
+          },
+          {
+            "text": "再用示波器追蹤 Ordered Set 時序，",
+            "startMs": 3509,
+            "endMs": 6293,
+            "timestampMs": 4901,
+            "confidence": 1
+          },
+          {
+            "text": "逐步鎖定根因。",
+            "startMs": 6293,
+            "endMs": 7140,
+            "timestampMs": 6716,
+            "confidence": 1
+          }
+        ],
+        "visualDescription": "notebook-paper 顯示逐步檢查清單，pop-badge 用來標示優先級或完成狀態，cascade-reveal 按步驟顯示每個檢查項，便於工程師現場執行。",
+        "remotionPrimitives": [
+          "notebook-paper",
+          "pop-badge",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "visualCaption": "清單：電源 → 連接 → FW → 示波器"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-6-4d95f9bc4ce8ba.wav",
+          "actualDurationSec": 7.14
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "cascade-reveal",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-7",
+        "index": 7,
+        "title": "故障樹範例",
+        "subtitle": "若卡在 Recovery，如何排查根因",
+        "domain": "debug-logic",
+        "template": "fault-tree",
+        "durationSeconds": 9,
+        "keyPoints": [
+          "Recovery Loop",
+          "PHY 錯誤",
+          "配置不一致"
+        ],
+        "script": "卡在 Recovery 時按故障樹排查：PHY 回發生錯誤誤先查 PCB 與接腳，暫存器異常查韌體驅動，否則評估矽晶片相容性。",
+        "captions": [
+          {
+            "text": "卡在 Recovery 時按故障樹排查：",
+            "startMs": 0,
+            "endMs": 2473,
+            "timestampMs": 1237,
+            "confidence": 0.9
+          },
+          {
+            "text": "PHY 回發生錯誤誤先查 PCB 與接腳，",
+            "startMs": 2649,
+            "endMs": 5054,
+            "timestampMs": 3852,
+            "confidence": 0.9
+          },
+          {
+            "text": "暫存器異常查韌體驅動，",
+            "startMs": 5054,
+            "endMs": 6447,
+            "timestampMs": 5751,
+            "confidence": 0.9
+          },
+          {
+            "text": "否則評估矽晶片相容性。",
+            "startMs": 6447,
+            "endMs": 7840,
+            "timestampMs": 7144,
+            "confidence": 0.9
+          }
+        ],
+        "visualDescription": "以 fault-tree 展示「Link Not Up」的分支：Recovery 迴圈、PHY 錯誤、配置不一致與韌體相容性。使用 arrow-annotate 與 connector-lines 指向關鍵檢查點，glitch-alert 用於描述錯誤跡象。",
+        "remotionPrimitives": [
+          "arrow-annotate",
+          "connector-lines",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "faultRoot": "Link Not Up",
+          "faultBranches": [
+            {
+              "symptom": "Recovery loop",
+              "check": "示波器序列與 comma",
+              "passAction": "檢查暫存器配置",
+              "failRootCause": "PHY 訊號品質或時序",
+              "severity": "high"
+            },
+            {
+              "symptom": "配置不一致",
+              "check": "CFG Space / Driver flags",
+              "passAction": "測試模擬重放",
+              "failRootCause": "FW 與驅動不一致",
+              "severity": "medium"
+            },
+            {
+              "symptom": "無物理 Link",
+              "check": "電源 / PLL",
+              "passAction": "更換互連或 cable",
+              "failRootCause": "硬體損壞",
+              "severity": "high"
+            }
+          ],
+          "visualCaption": "從症狀導向檢查以找出根因"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-7-a2ed0410a16706.wav",
+          "actualDurationSec": 7.84
+        },
+        "animation": {
+          "motionStyle": "step-reveal",
+          "effect": "glitch-alert",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      },
+      {
+        "id": "scene-1795800218053-8",
+        "index": 8,
+        "title": "總結與工程師備忘",
+        "subtitle": "重點回顧與下一步建議",
+        "domain": "debug-logic",
+        "template": "summary-takeaways",
+        "durationSeconds": 11,
+        "keyPoints": [
+          "觀察 LTSSM",
+          "核對 Ordered Set",
+          "量測與模擬",
+          "逐步排查"
+        ],
+        "script": "總結：先看 LTSSM 狀態與 TS1/TS2，再用量測與清單排查；若未解，收集日誌、波形與暫存器快照回報設計團隊。",
+        "captions": [
+          {
+            "text": "總結：",
+            "startMs": 0,
+            "endMs": 410,
+            "timestampMs": 205,
+            "confidence": 0.9
+          },
+          {
+            "text": "先看 LTSSM 狀態與 TS1/TS2，",
+            "startMs": 410,
+            "endMs": 3280,
+            "timestampMs": 1845,
+            "confidence": 0.9
+          },
+          {
+            "text": "再用量測與清單排查；",
+            "startMs": 3436,
+            "endMs": 5849,
+            "timestampMs": 4643,
+            "confidence": 0.9
+          },
+          {
+            "text": "若未解，",
+            "startMs": 6069,
+            "endMs": 6697,
+            "timestampMs": 6383,
+            "confidence": 0.9
+          },
+          {
+            "text": "收集日誌、",
+            "startMs": 6697,
+            "endMs": 7483,
+            "timestampMs": 7090,
+            "confidence": 0.9
+          },
+          {
+            "text": "波形與暫存器快照回報設計團隊。",
+            "startMs": 7483,
+            "endMs": 9840,
+            "timestampMs": 8662,
+            "confidence": 0.9
+          }
+        ],
+        "visualDescription": "使用 typewriter 逐字揭示四個重點結論，kinetic-caption 強調實務建議。畫面留白並保持每項重點簡潔，便於工程師錄下作為備忘。",
+        "remotionPrimitives": [
+          "typewriter",
+          "kinetic-caption",
+          "popping-word-captions"
+        ],
+        "diagramData": {
+          "visualCaption": "重點：狀態→符號→量測→排查"
+        },
+        "tts": {
+          "provider": "openformosa",
+          "voiceId": "formosa-pro-tw",
+          "speed": 1.12,
+          "status": "ready",
+          "audioUrl": "/audio/scene-1795800218053-8-f951132fc22eb7.wav",
+          "actualDurationSec": 9.84
+        },
+        "animation": {
+          "motionStyle": "spring-snappy",
+          "effect": "zoom-focus",
+          "accentColor": "#00C2FF",
+          "showSubtitles": true,
+          "showProgressHud": true
+        }
+      }
+    ]
+  }
+}

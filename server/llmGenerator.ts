@@ -18,6 +18,10 @@ import {
 import { inferDomainFromText, isTechDomain } from '../src/utils/domainInference';
 import { getAiElementPrompt, isAiSelectableSceneElement } from '../src/remotion/element-registry';
 import {
+  isFullViewportPrimitive,
+  isStructuredDiagramTemplate,
+} from '../src/remotion/lib/scene-layout-policy';
+import {
   ensurePoppingTechnicalTermsPrimitive,
   generateCaptionsFromScript,
 } from '../src/utils/captions';
@@ -285,25 +289,37 @@ function resolveScenePrimitives(
   sceneIndex: number,
   llmValue: unknown,
   script: string,
-  visualDescription?: string
+  visualDescription?: string,
+  template?: VisualTemplate
 ): RemotionPrimitive[] {
+  const suppressFullViewport = isStructuredDiagramTemplate(template);
+  const filterAllowed = (items: string[]) =>
+    items.filter((item) => isAiSelectableSceneElement(item) && (!suppressFullViewport || !isFullViewportPrimitive(item)));
+
   const outlineSuggestions = extractOutlinePrimitiveSuggestions(outlineText, sceneTitle, sceneIndex);
   const selected = outlineSuggestions.length > 0
-    ? outlineSuggestions.filter(isAiSelectableSceneElement)
-    : clampPrimitives(llmValue, script, visualDescription);
-  const fallback = selected.length > 0 ? selected : clampPrimitives(undefined, script, visualDescription);
+    ? filterAllowed(outlineSuggestions).slice(0, 2)
+    : clampPrimitives(llmValue, script, visualDescription, suppressFullViewport);
+  const fallback = selected.length > 0 ? selected : clampPrimitives(undefined, script, visualDescription, suppressFullViewport);
   return ensurePoppingTechnicalTermsPrimitive(script, fallback) as RemotionPrimitive[];
 }
 
-function clampPrimitives(value: unknown, script: string, visualDescription?: string): RemotionPrimitive[] {
+function clampPrimitives(
+  value: unknown,
+  script: string,
+  visualDescription?: string,
+  suppressFullViewport = false
+): RemotionPrimitive[] {
+  const isAllowed = (item: string) =>
+    isAiSelectableSceneElement(item) && (!suppressFullViewport || !isFullViewportPrimitive(item));
   if (Array.isArray(value)) {
     const selected = [...new Set(value
       .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
-      .filter(isAiSelectableSceneElement))].slice(0, 4);
+      .filter(isAllowed))].slice(0, 2);
     if (selected.length > 0) return selected;
   }
-  return inferPrimitivesFromScript(script, visualDescription).slice(0, 4);
+  return inferPrimitivesFromScript(script, visualDescription).filter(isAllowed).slice(0, 2);
 }
 
 function limitDiagramDensity(diagramData: SceneDiagramData): SceneDiagramData {
@@ -416,7 +432,7 @@ function normalizeDurationsToTarget(scenes: LlmScenePayload[], targetSeconds: nu
   const count = scenes.length;
   if (count === 0) return [];
   const minPerScene = 3;
-  const maxPerScene = Math.max(25, Math.ceil(targetSeconds / count) + 6);
+  const maxPerScene = Math.max(10, Math.ceil(targetSeconds / count));
   const clampedTarget = Math.max(count * minPerScene, Math.round(targetSeconds));
 
   const durations = scenes.map((s) =>
@@ -1035,13 +1051,14 @@ function toSceneSpecs(
         idx,
         raw.remotionPrimitives,
         script,
-        raw.visualDescription
+        raw.visualDescription,
+        template
       ),
       diagramData,
       tts: {
         provider: defaultTtsProvider,
         voiceId,
-        speed: 0.95,
+        speed: 1.08,
         status: 'idle',
       },
       animation: {
@@ -1219,7 +1236,7 @@ ${JSON.stringify(slideSummaries, null, 2)}`;
     tts: {
       provider,
       voiceId,
-      speed: 0.95,
+      speed: 1.08,
       status: 'idle',
     },
     animation: {
@@ -1434,6 +1451,9 @@ Return strict JSON:
             subtitle: nextSubtitle,
             keyPoints: nextKeyPoints,
             script: nextScript,
+            captions: nextScript !== scene.script
+              ? generateCaptionsFromScript(nextScript, scene.durationSeconds)
+              : scene.captions,
             diagramData: nextDiagramData,
           };
         });
@@ -1483,6 +1503,9 @@ Return strict JSON:
     return {
       ...scene,
       title: fixedTitle.text,
+      captions: fixedScript.text !== scene.script
+        ? generateCaptionsFromScript(fixedScript.text, scene.durationSeconds)
+        : scene.captions,
       subtitle: fixedSub.text,
       keyPoints: fixedKeyPoints,
       script: fixedScript.text,
@@ -1609,7 +1632,7 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
 - Build cause-and-effect in small steps, use short spoken sentences, and include a simple real-world example in each scene when relevant.
 - Do not weaken technical accuracy; make unfamiliar concepts understandable through analogy and familiar observations.
 ` : ''}CRITICAL RULES:
-1. Total sum of all scenes' durationSeconds MUST equal ${targetDuration} seconds. Aim for ~${recommendedScenes} scenes (each 5–20 seconds).
+1. Total sum of all scenes' durationSeconds MUST equal ${targetDuration} seconds. Aim for ~${recommendedScenes} scenes (each 5–10 seconds, never exceeding 10 seconds per scene so the tempo stays crisp).
 2. LANGUAGE AND SPEECH PACING (VERY IMPORTANT):
   - Write ALL video content in ${language.promptName}: titles, subtitles, narration, key points, visual descriptions, and diagram labels. Translate reference notes when necessary. Preserve technical acronyms, model numbers, units, and product names.
   - Spoken ${language.promptName} runs at approximately ${language.charsPerSecond} characters per second. Keep each script near ${Math.round(language.charsPerSecond * 0.9)} characters per second of scene duration so the narration finishes cleanly.

@@ -1,0 +1,2754 @@
+{
+  "name": "remotionui",
+  "homepage": "https://remotionui.com",
+  "items": [
+    {
+      "name": "timing",
+      "type": "registry:lib",
+      "description": "Frame timing helpers and enter easing"
+    },
+    {
+      "name": "springs",
+      "type": "registry:lib",
+      "description": "Default spring configurations"
+    },
+    {
+      "name": "transition-timing",
+      "type": "registry:lib",
+      "description": "Shared TransitionSeries timing helpers and layered progress curves"
+    },
+    {
+      "name": "ai-composer-utils",
+      "type": "registry:lib",
+      "description": "Shared typewriter, caret, morph, and intro helpers for AI composer scenes"
+    },
+    {
+      "name": "code-syntax",
+      "type": "registry:lib",
+      "description": "Syntax tokenizer, editor palettes, and revealable code line renderer for the code scenes"
+    },
+    {
+      "name": "text-emphasis",
+      "type": "registry:lib",
+      "description": "Word-level phrase matching and marker geometry for scenes that sweep emphasis across text"
+    },
+    {
+      "name": "motion-tokens",
+      "type": "registry:lib",
+      "description": "Named motion duration and stagger tokens"
+    },
+    {
+      "name": "gpu",
+      "type": "registry:lib",
+      "description": "WebGL2 fragment-shader effect factory for GPU primitives"
+    },
+    {
+      "name": "layout",
+      "type": "registry:lib",
+      "description": "Format-agnostic layout helpers"
+    },
+    {
+      "name": "motion-wrapper",
+      "type": "registry:lib",
+      "description": "Inline wrapper for enter/exit animations (avoids AbsoluteFill overlap)"
+    },
+    {
+      "name": "motion-primitive",
+      "type": "registry:lib",
+      "description": "Enter/exit motion contract shared by the animation primitives â opacity leads, exits are shorter, and a bounded Sequence times the exit itself"
+    },
+    {
+      "name": "use-stagger",
+      "type": "registry:hook",
+      "description": "Hook for staggered child delays"
+    },
+    {
+      "name": "fade-in",
+      "type": "registry:ui",
+      "description": "Opacity-only entrance, with an exit that lands on the end of its sequence",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "fade-out",
+      "type": "registry:ui",
+      "description": "Held exit that accelerates away, timed to the last frame of its sequence by default",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "exit"
+        ]
+      }
+    },
+    {
+      "name": "slide-up",
+      "type": "registry:ui",
+      "description": "Rise into place, with an optional mask reveal and automatic exit",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "slide-left",
+      "type": "registry:ui",
+      "description": "Slide in from either side, with an optional mask reveal and automatic exit",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "scale-in",
+      "type": "registry:ui",
+      "description": "Grow into place from just under full size, with an optional spring and exit",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "typewriter",
+      "type": "registry:ui",
+      "description": "Typewriter reveal with rhythm, pauses, looping, and a caret that only blinks at rest",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "counter",
+      "type": "registry:ui",
+      "description": "Animated number with grouping, decimals, odometer digit roll and a reserved width",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "blur-in",
+      "type": "registry:ui",
+      "description": "Resolve out of a defocus â blur clears before the move lands",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "spring-in",
+      "type": "registry:ui",
+      "description": "Spring-driven scale and rise, with snappy, smooth and bouncy presets",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "stagger-children",
+      "type": "registry:ui",
+      "description": "Offset children onto their own sequences, in forward, reverse, centre or edge order, in and out",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "sequence"
+        ]
+      }
+    },
+    {
+      "name": "marker-highlight",
+      "type": "registry:ui",
+      "description": "Highlighter stroke swept word by word across a phrase, with marker, knockout, underline and box variants",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "progress-bar",
+      "type": "registry:ui",
+      "description": "Inline progress bar with determinate and indeterminate modes, segments and a value readout",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "rotate-in",
+      "type": "registry:ui",
+      "description": "Swing into place in plane or hinged in depth on the x/y axis",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "transition-fade",
+      "type": "registry:ui",
+      "description": "Crossfade between scenes, or dip the cut through a colour",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "transition-slide",
+      "type": "registry:ui",
+      "description": "Slide transition helper for TransitionSeries",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "lower-third",
+      "type": "registry:block",
+      "description": "Name plate that plays its whole life: wipes out from the frame edge, settles, holds, then retreats the way it came",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "title-card",
+      "type": "registry:block",
+      "description": "Opening card where each headline line rises out of its own mask and one sweep of light crosses it as it stands",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "feature-list",
+      "type": "registry:block",
+      "description": "List being ticked off: each row arrives in turn, its rule draws across, and its check strokes in behind it",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "stat-card",
+      "type": "registry:block",
+      "description": "A number landing: the ring fills while the counter rolls, then the label and the change against the last period settle",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "quote-card",
+      "type": "registry:block",
+      "description": "Pull quote read aloud: the mark draws, the quote rises line by line, a marker sweeps the phrase, the attribution lands last",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "end-card",
+      "type": "registry:block",
+      "description": "Outro built in the order a viewer acts on it: title, button assembling under its label, address typing, channels, one pulse",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "intro",
+      "type": "registry:block",
+      "description": "5-second branded intro: chapter marker, headline, topic rail",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "showcase",
+      "type": "registry:block",
+      "description": "Full demo reel with TransitionSeries",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "hero-loop",
+      "type": "registry:block",
+      "description": "12-second seamless brand ident: the RemotionUI logo animated from its own parts over the site's phosphor light, with a transparent variant",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "hero",
+          "website"
+        ]
+      }
+    },
+    {
+      "name": "caption-utils",
+      "type": "registry:lib",
+      "description": "Caption page grouping and word-active helpers"
+    },
+    {
+      "name": "audio-viz-utils",
+      "type": "registry:lib",
+      "description": "Windowed audio spectrum helpers"
+    },
+    {
+      "name": "map-utils",
+      "type": "registry:lib",
+      "description": "MapLibre and Turf geospatial helpers"
+    },
+    {
+      "name": "path-utils",
+      "type": "registry:lib",
+      "description": "SVG path measuring, sampling, auto-fit and waypoint helpers"
+    },
+    {
+      "name": "caption-highlight",
+      "type": "registry:ui",
+      "description": "TikTok-style word-by-word caption highlight",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "audiogram-bars",
+      "type": "registry:ui",
+      "description": "Audio-reactive spectrum bar visualization",
+      "atlas": {
+        "lane": "signals",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "path-draw",
+      "type": "registry:ui",
+      "description": "SVG stroke reveal with auto-fit framing, multi-path stagger and a drawing head",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "map-canvas",
+      "type": "registry:ui",
+      "description": "Deterministic MapLibre map mount",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "map-route",
+      "type": "registry:ui",
+      "description": "Animated GeoJSON route line on a map",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "map-markers",
+      "type": "registry:ui",
+      "description": "GeoJSON circle and label markers on a map",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "transition-wipe",
+      "type": "registry:ui",
+      "description": "Wipe transition helper for TransitionSeries",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "transition-clock-wipe",
+      "type": "registry:ui",
+      "description": "Clock sweep that reads the composition size itself",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "transition-light-leak",
+      "type": "registry:ui",
+      "description": "Film flare overlay that peaks on the cut and hides the seam under it",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "blur-reveal",
+      "type": "registry:ui",
+      "description": "Cut where the outgoing scene softens away and the incoming one resolves out of blur",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "grid-pixelate-wipe",
+      "type": "registry:ui",
+      "description": "Reveal where the next scene arrives one grid cell at a time",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "frosted-glass-wipe",
+      "type": "registry:ui",
+      "description": "A pane of frosted glass crosses the frame and leaves the next scene behind it",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "directional-wipe",
+      "type": "registry:ui",
+      "description": "Soft-edged wipe that uncovers the next scene without exposing the background",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "spatial-push",
+      "type": "registry:ui",
+      "description": "Push where both scenes travel locked edge to edge across the frame",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "chromatic-aberration-wipe",
+      "type": "registry:ui",
+      "description": "Slide that pulls the colour channels apart at its fastest point and recombines them on landing",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "zoom-through",
+      "type": "registry:ui",
+      "description": "Camera push-through: one scene drives past the lens, the next lands out of the same move",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "mesh-gradient-bg",
+      "type": "registry:ui",
+      "description": "Living mesh gradient blob background",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "dynamic-grid",
+      "type": "registry:ui",
+      "description": "Subtle drifting dot and line grid background",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "simulated-cursor",
+      "type": "registry:ui",
+      "description": "Frame-timed cursor with press, click ripples, hit targets and labels",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "confetti-burst",
+      "type": "registry:ui",
+      "description": "Frame-driven confetti burst overlay",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "device-mockup-zoom",
+      "type": "registry:block",
+      "description": "Cinematic laptop, phone, or browser mockup with staged UI and slow camera pullback",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "caption-scene",
+      "type": "registry:block",
+      "description": "Lower-third TikTok-style captions synced to audio",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "audiogram-scene",
+      "type": "registry:block",
+      "description": "Podcast audiogram layout with spectrum bars",
+      "atlas": {
+        "lane": "signals",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "logo-reveal",
+      "type": "registry:block",
+      "description": "Logo mark draw-on with wordmark and tagline beats",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "map-flight",
+      "type": "registry:block",
+      "description": "Animated map flyover with route reveal and markers",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "auto-fit-title",
+      "type": "registry:block",
+      "description": "Headline sized to the frame it is given, then assembled word by word so any length lands the same way",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "data",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "social-clip",
+      "type": "registry:block",
+      "description": "9:16 social clip with hook, captions, and CTA",
+      "atlas": {
+        "lane": "reels",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "media-utils",
+      "type": "registry:lib",
+      "description": "Media item timing and fit helpers"
+    },
+    {
+      "name": "chart-utils",
+      "type": "registry:lib",
+      "description": "Chart scaling and SVG path helpers"
+    },
+    {
+      "name": "text-fit-utils",
+      "type": "registry:lib",
+      "description": "Safe headline fitting helpers"
+    },
+    {
+      "name": "waveform-line",
+      "type": "registry:ui",
+      "description": "Audio waveform line visualization",
+      "atlas": {
+        "lane": "signals",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "audio-pulse",
+      "type": "registry:ui",
+      "description": "Audio-reactive pulse rings",
+      "atlas": {
+        "lane": "signals",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "karaoke-captions",
+      "type": "registry:ui",
+      "description": "Active-word karaoke caption styling",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "line-chart-draw",
+      "type": "registry:ui",
+      "description": "SVG line chart that draws itself on",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "cursor-path",
+      "type": "registry:ui",
+      "description": "Cursor travelling a path with drawn trail and click ripples",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "media-frame",
+      "type": "registry:block",
+      "description": "One piece of media presented: the frame opens like a shutter under a slow push, then the title masks up and the caption settles",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "media-sequence",
+      "type": "registry:block",
+      "description": "Edited run of shots pushed on one after another, with a chapter strip that fills through the item playing",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "split-screen",
+      "type": "registry:block",
+      "description": "Before/after that is actually made: panels meet at the divider, labels land, and the divider can travel across to leave one side whole",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "b-roll-stack",
+      "type": "registry:block",
+      "description": "Deck of supporting shots dealt one at a time: each rides to the front with its label while the last slides back into the stack",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "caption-bumper",
+      "type": "registry:block",
+      "description": "Between-beats card that punches its line in word by word, draws a rule under it, and wipes out when its hold is over",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "data",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "animated-bar-chart",
+      "type": "registry:block",
+      "description": "Ranked bar chart scene with a value axis",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "metric-ticker",
+      "type": "registry:block",
+      "description": "KPI cards that count themselves in",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts",
+          "metrics"
+        ]
+      }
+    },
+    {
+      "name": "timeline-steps",
+      "type": "registry:block",
+      "description": "Process walked step by step: the rail draws ahead of a travelling head that lands on each step, works it through a closing ring, then checks it off",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "callout-spotlight",
+      "type": "registry:block",
+      "description": "Spotlight that is aimed: the mask closes from the whole frame onto the target, a ring pings it, then a connector draws out to the callout",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "zoom-pan-frame",
+      "type": "registry:block",
+      "description": "Camera move on a still driven by focal points, settling before the cut, with an optional label chip",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "code-reveal",
+      "type": "registry:block",
+      "description": "Editor window that writes a syntax-highlighted file character by character, then focuses the lines that matter",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "hook-card",
+      "type": "registry:block",
+      "description": "Short-form opener where the hook rises line by line out of its mask and an underline draws under the promise",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "creator"
+        ]
+      }
+    },
+    {
+      "name": "talking-head-layout",
+      "type": "registry:block",
+      "description": "Talking-head clip frame that opens on the speaker, slides a name plate out from behind it, and plays the spoken lines in a reserved caption zone with the waveform reacting",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "creator",
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "comment-callout",
+      "type": "registry:block",
+      "description": "Viewer comment answered on screen: it lands from the feed, the ask is marked up, the creator hearts it, and the reply is typed and sent",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "creator",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "tutorial-clip",
+      "type": "registry:block",
+      "description": "Tutorial clip composition for demos and explainers",
+      "atlas": {
+        "lane": "reels",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "data-story",
+      "type": "registry:block",
+      "description": "Data storytelling composition template",
+      "atlas": {
+        "lane": "reels",
+        "drive": "data",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "creator-reel",
+      "type": "registry:block",
+      "description": "Vertical creator media composition template",
+      "atlas": {
+        "lane": "reels",
+        "drive": "media",
+        "tier": "advanced",
+        "tags": [
+          "creator",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "podcast-clip",
+      "type": "registry:block",
+      "description": "Podcast clip composition with audio visuals and captions",
+      "atlas": {
+        "lane": "reels",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "blur-focus-in",
+      "type": "registry:ui",
+      "description": "Text fades from heavy blur into sharp focus",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "staggered-fade-up",
+      "type": "registry:ui",
+      "description": "Words rise with cascading fade-up stagger",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "masked-slide-reveal",
+      "type": "registry:ui",
+      "description": "Words slide up through a horizontal mask",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "tracking-in",
+      "type": "registry:ui",
+      "description": "Letter-spacing collapses with spring snap",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "light-sweep-text",
+      "type": "registry:ui",
+      "description": "Light gradient sweeps across dim text",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "slot-roll",
+      "type": "registry:ui",
+      "description": "Characters roll like a slot reel into place",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "matrix-decode",
+      "type": "registry:ui",
+      "description": "Scramble resolves left-to-right into target text",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "rgb-glitch-text",
+      "type": "registry:ui",
+      "description": "Signal-lock RGB glitch text with channel splits, slices, and scanlines",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "infinite-marquee",
+      "type": "registry:ui",
+      "description": "Endlessly scrolling horizontal text band",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "perspective-marquee",
+      "type": "registry:ui",
+      "description": "Marquee tilted in 3D with depth fade",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "strikethrough-replace",
+      "type": "registry:ui",
+      "description": "Strikes out one phrase and puts another in its place, on a three-beat correction timeline",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "terminal-simulator",
+      "type": "registry:block",
+      "description": "Terminal window that types a command, streams spinner-to-check build steps with timings, then returns the prompt",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "code-accordion",
+      "type": "registry:block",
+      "description": "Stepped walkthrough where each section opens, writes its code, is checked off, and closes behind the next",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "code-diff-wipe",
+      "type": "registry:block",
+      "description": "Diff patch landing line by line: an apply front travels the file, removals collapse, additions open and write in",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "data-flow-pipes",
+      "type": "registry:block",
+      "description": "Pipeline running end to end: stages come up in order, pipes draw between them, and a stream of payloads hops through, lighting each stage and ticking its tally",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    {
+      "name": "drag-drop-flow",
+      "type": "registry:block",
+      "description": "Cursor drags a file out of a media library into a drop zone that arms, catches it, and uploads it to completion",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "chat-to-preview",
+      "type": "registry:block",
+      "description": "Prompt-to-render loop: the ask types into the composer and sends into the thread, the answer streams back, and the preview assembles from wireframe to rendered scene",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "hero-device-assemble",
+      "type": "registry:block",
+      "description": "Device layers assemble hero",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "ecosystem-orbit",
+      "type": "registry:block",
+      "description": "Logo with orbiting satellites",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "bento-pan",
+      "type": "registry:block",
+      "description": "Camera pan across a bento grid of metric cards",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "browser-flow",
+      "type": "registry:block",
+      "description": "URL to browser preview flow",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "ai-generation-canvas",
+      "type": "registry:block",
+      "description": "Prompt-to-dashboard generation with morphing input, skeleton shimmer, and card flips",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "ai-composer-showcase",
+      "type": "registry:block",
+      "description": "Showcase reel cutting through five AI composer interfaces with title and end cards",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "live-code-split",
+      "type": "registry:block",
+      "description": "Editor on the left, its rendered output live on the right",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "deploy-reveal",
+      "type": "registry:block",
+      "description": "Terminal deploy to browser",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "dashboard-populate",
+      "type": "registry:block",
+      "description": "Dashboard metrics populate",
+      "atlas": {
+        "lane": "reels",
+        "drive": "data",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "pricing-focus",
+      "type": "registry:block",
+      "description": "Pricing tier focus animation",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "landing-code-showcase",
+      "type": "registry:block",
+      "description": "Landing with install commands",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "tool-menu-slide",
+      "type": "registry:block",
+      "description": "Tool menu slide-in",
+      "atlas": {
+        "lane": "reels",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "image-expand",
+      "type": "registry:block",
+      "description": "A still opens from a card to full frame, then takes its caption",
+      "atlas": {
+        "lane": "reels",
+        "drive": "media",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "claude-chat",
+      "type": "registry:block",
+      "description": "Claude composer card with typed prompt and waveform-to-send morph",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "chat-gpt",
+      "type": "registry:block",
+      "description": "ChatGPT composer pill with greeting, suggestion chips, and voice-to-send morph",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "v0",
+      "type": "registry:block",
+      "description": "v0 composer with greeting, model chip, project selector, and mic-to-send morph",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "claude-code",
+      "type": "registry:block",
+      "description": "Claude Code terminal welcome screen with CLI prompt typing",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "opencode",
+      "type": "registry:block",
+      "description": "OpenCode TUI composer with agent and model status",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    {
+      "name": "text-split",
+      "type": "registry:lib",
+      "description": "Split a string into chars, words or lines with staggered per-unit timing"
+    },
+    {
+      "name": "path-morph",
+      "type": "registry:lib",
+      "description": "Cached SVG path morphing with winding alignment and box fitting"
+    },
+    {
+      "name": "displacement-transition",
+      "type": "registry:lib",
+      "description": "Frame maths for displacement-map and shape-mask transitions"
+    },
+    {
+      "name": "displacement-presentation",
+      "type": "registry:lib",
+      "description": "Shared TransitionSeries presentation for warp and shape-mask cuts"
+    },
+    {
+      "name": "sample-media",
+      "type": "registry:lib",
+      "description": "Placeholder stills, captions, and audio for composition defaults"
+    },
+    {
+      "name": "split-text-chars",
+      "type": "registry:ui",
+      "description": "Split text into chars, words or lines and stagger them in",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "audio-reactive-scale",
+      "type": "registry:ui",
+      "description": "Scales any child by per-frame audio amplitude",
+      "atlas": {
+        "lane": "signals",
+        "drive": "media",
+        "tier": "core",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "srt-caption-track",
+      "type": "registry:ui",
+      "description": "Renders a caption track straight from an SRT or WebVTT file",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "transition-circle-reveal",
+      "type": "registry:ui",
+      "description": "Circular mask that opens from any point onto the next scene",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "transition-card-flip",
+      "type": "registry:ui",
+      "description": "Whole-frame 3D flip that hands off on backface culling",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "transition-blinds",
+      "type": "registry:ui",
+      "description": "Staggered slats sweeping open to reveal the next scene",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "transition-whip-pan",
+      "type": "registry:ui",
+      "description": "Fast pan with directional motion blur along the travel axis",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "transition-morph-shape",
+      "type": "registry:ui",
+      "description": "Reveal through a shape that morphs as it grows across the frame",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "transition-liquid-warp",
+      "type": "registry:ui",
+      "description": "Liquid displacement warp that stirs one scene into the next",
+      "atlas": {
+        "lane": "cuts",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "skew-in",
+      "type": "registry:ui",
+      "description": "Skew + translate, editorial feel",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "enter"
+        ]
+      }
+    },
+    {
+      "name": "scramble-text",
+      "type": "registry:ui",
+      "description": "Random-glyph scramble resolving per character",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "text-mask-video",
+      "type": "registry:ui",
+      "description": "Video or gradient showing through letterforms",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "handwriting-text",
+      "type": "registry:ui",
+      "description": "Takes a string and strokes it on",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "stroke-to-fill-text",
+      "type": "registry:ui",
+      "description": "Outline text filling solid",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "variable-font-morph",
+      "type": "registry:ui",
+      "description": "Animates weight/width axes of a variable font",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "liquid-text-morph",
+      "type": "registry:ui",
+      "description": "Letterforms morphing between two words",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "wave-text",
+      "type": "registry:ui",
+      "description": "Per-character sine displacement",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "neon-flicker-text",
+      "type": "registry:ui",
+      "description": "Neon sign flicker and settle",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "aurora-bg",
+      "type": "registry:ui",
+      "description": "Drifting light ribbons",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "particle-field",
+      "type": "registry:ui",
+      "description": "Ambient drifting particles with depth",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "topographic-lines-bg",
+      "type": "registry:ui",
+      "description": "Contour lines drifting",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "caustics-bg",
+      "type": "registry:ui",
+      "description": "Underwater light caustics",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "animated-noise-grain",
+      "type": "registry:ui",
+      "description": "Film grain overlay",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "light-rays",
+      "type": "registry:ui",
+      "description": "Volumetric god rays drifting across the stage",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "parallax-layers",
+      "type": "registry:ui",
+      "description": "Depth-offset layers on one driver",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "shake-emphasis",
+      "type": "registry:ui",
+      "description": "Short impact shake",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "glow-pulse",
+      "type": "registry:ui",
+      "description": "Rhythmic glow for CTAs and live indicators",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "motion-trail",
+      "type": "registry:ui",
+      "description": "Echo trails behind a moving element",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "squash-stretch",
+      "type": "registry:ui",
+      "description": "The animation principle as a primitive",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "orbit-motion",
+      "type": "registry:ui",
+      "description": "Element orbiting a center point",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "depth-of-field-blur",
+      "type": "registry:ui",
+      "description": "Rack focus between layers",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "scanline-crt",
+      "type": "registry:ui",
+      "description": "CRT scanlines and curvature overlay",
+      "atlas": {
+        "lane": "atoms",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "bar-chart-race",
+      "type": "registry:ui",
+      "description": "Ranked bars reorder over time",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "donut-chart",
+      "type": "registry:ui",
+      "description": "Multi-segment donut with labels",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "pie-slice-reveal",
+      "type": "registry:ui",
+      "description": "Slices sweep in sequentially",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "scatter-plot-pop",
+      "type": "registry:ui",
+      "description": "Points pop in on stagger, optional trend line",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "bubble-chart-pack",
+      "type": "registry:ui",
+      "description": "Circle-packed values settling into place",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "gauge-dial",
+      "type": "registry:ui",
+      "description": "Needle sweeps to target",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts",
+          "metrics"
+        ]
+      }
+    },
+    {
+      "name": "sparkline-row",
+      "type": "registry:ui",
+      "description": "Compact trend lines that read at small sizes",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts",
+          "metrics"
+        ]
+      }
+    },
+    {
+      "name": "heatmap-grid",
+      "type": "registry:ui",
+      "description": "Cell grid filling by intensity, contribution-graph style",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "comparison-bars",
+      "type": "registry:ui",
+      "description": "Two-series before/after with delta callout",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "funnel-chart",
+      "type": "registry:ui",
+      "description": "Stage bars narrowing with drop-off percentages",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "radar-chart",
+      "type": "registry:ui",
+      "description": "Multi-axis spider chart drawing its polygon",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "treemap-blocks",
+      "type": "registry:ui",
+      "description": "Nested rectangles sized by value",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "waterfall-chart",
+      "type": "registry:ui",
+      "description": "Cumulative bridge with positive/negative steps",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "stacked-area-chart",
+      "type": "registry:ui",
+      "description": "Multiple series stacking as they draw on",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "candlestick-chart",
+      "type": "registry:ui",
+      "description": "OHLC financial series",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "gantt-timeline",
+      "type": "registry:ui",
+      "description": "Date-scaled schedule bars",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "charts"
+        ]
+      }
+    },
+    {
+      "name": "word-pop-captions",
+      "type": "registry:ui",
+      "description": "Narrowed: one word at a time, alone on frame",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "caption-emoji-beat",
+      "type": "registry:ui",
+      "description": "Emoji punctuation landing on beats",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "speaker-label-captions",
+      "type": "registry:ui",
+      "description": "Narrowed: multi-speaker caption track with name tags and color coding",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "transcript-scroll",
+      "type": "registry:ui",
+      "description": "Full readable transcript scrolling with the active line marked",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "subtitle-translate",
+      "type": "registry:ui",
+      "description": "Dual-language stacked subtitles",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "captions"
+        ]
+      }
+    },
+    {
+      "name": "waveform-bars-radial",
+      "type": "registry:ui",
+      "description": "Circular bars around a center element",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "vu-meter",
+      "type": "registry:ui",
+      "description": "Segmented level meter with peak hold",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "voice-note-bubble",
+      "type": "registry:ui",
+      "description": "Chat-style audio message with waveform and playhead",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "audio",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "beat-pulse-grid",
+      "type": "registry:ui",
+      "description": "Grid cells pulsing on detected beats",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "advanced",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "audio-scrubber",
+      "type": "registry:ui",
+      "description": "Waveform with traveling playhead and time labels",
+      "atlas": {
+        "lane": "signals",
+        "drive": "data",
+        "tier": "core",
+        "tags": [
+          "audio"
+        ]
+      }
+    },
+    {
+      "name": "poll-overlay",
+      "type": "registry:block",
+      "description": "Question with bars filling to results",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "creator",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "reaction-burst",
+      "type": "registry:block",
+      "description": "Narrowed: hearts/likes rising continuously",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "creator",
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "countdown-timer",
+      "type": "registry:block",
+      "description": "Numeric or ring countdown to zero",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "creator"
+        ]
+      }
+    },
+    {
+      "name": "sports-scorebug",
+      "type": "registry:block",
+      "description": "Broadcast score furniture with clock",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "news-ticker-bar",
+      "type": "registry:block",
+      "description": "Broadcast lower ticker with headlines",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "form-fill-sequence",
+      "type": "registry:block",
+      "description": "Fields typing and validating in order",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "notification-stack",
+      "type": "registry:block",
+      "description": "Toasts stacking and dismissing",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "tab-switch-panel",
+      "type": "registry:block",
+      "description": "Tab bar with cross-fading panels",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "search-results-populate",
+      "type": "registry:block",
+      "description": "Query typed, results streaming in and ranking",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "file-tree-reveal",
+      "type": "registry:block",
+      "description": "Directory tree expanding node by node",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "kanban-move",
+      "type": "registry:block",
+      "description": "Cards moving across columns",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "commit-graph",
+      "type": "registry:block",
+      "description": "Branch/merge graph drawing itself",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "code"
+        ]
+      }
+    },
+    {
+      "name": "comparison-table",
+      "type": "registry:block",
+      "description": "Multi-column feature matrix",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "pricing-card",
+      "type": "registry:block",
+      "description": "Tier card with price roll and features",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "faq-accordion",
+      "type": "registry:block",
+      "description": "Narrowed: Q/A text rows expanding",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "ui"
+        ]
+      }
+    },
+    {
+      "name": "team-grid",
+      "type": "registry:block",
+      "description": "Avatar grid with role labels on stagger",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "logo-wall",
+      "type": "registry:block",
+      "description": "Client logo grid, grayscale to color",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "changelog-entry",
+      "type": "registry:block",
+      "description": "Version header with categorized change rows",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "roadmap-lanes",
+      "type": "registry:block",
+      "description": "Swimlanes of shipped/building/planned",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "org-chart-build",
+      "type": "registry:block",
+      "description": "Hierarchy assembling top-down",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "quiz-question",
+      "type": "registry:block",
+      "description": "Question, options, correct-answer reveal",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "social"
+        ]
+      }
+    },
+    {
+      "name": "weather-card",
+      "type": "registry:block",
+      "description": "Conditions with animated iconography",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "calendar-month-fill",
+      "type": "registry:block",
+      "description": "Month grid populating with events",
+      "atlas": {
+        "lane": "blocks",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "arrow-annotate",
+      "type": "registry:ui",
+      "description": "Hand-drawn arrow pointing at a target",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "badge-stamp",
+      "type": "registry:ui",
+      "description": "Stamp/seal impact with rotation settle",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "shape-morph",
+      "type": "registry:ui",
+      "description": "Path interpolation between two shapes",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "blob-morph",
+      "type": "registry:ui",
+      "description": "Organic blob continuously morphing",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "dashed-path-travel",
+      "type": "registry:ui",
+      "description": "Narrowed: any element traveling any path with a dashed trail",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "connector-lines",
+      "type": "registry:ui",
+      "description": "Narrowed: primitive that draws edges between anchored elements",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "svg-mask-reveal",
+      "type": "registry:ui",
+      "description": "Arbitrary SVG shape as a reveal mask",
+      "atlas": {
+        "lane": "vectors",
+        "drive": "time",
+        "tier": "core"
+      }
+    },
+    {
+      "name": "map-heat-overlay",
+      "type": "registry:ui",
+      "description": "Density overlay fading in over the basemap",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "globe-arc",
+      "type": "registry:ui",
+      "description": "Arcs between points on a globe",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "multi-device-lineup",
+      "type": "registry:ui",
+      "description": "Phone + tablet + laptop showing one responsive design",
+      "atlas": {
+        "lane": "spatial",
+        "drive": "spatial",
+        "tier": "advanced"
+      }
+    },
+    {
+      "name": "device-mockup-3d",
+      "type": "registry:block",
+      "description": "Laptop product shot in real 3D: lid opens, then a turn and push-in over a lit floor",
+      "atlas": {
+        "lane": "3d",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "device",
+          "new"
+        ]
+      }
+    },
+    {
+      "name": "paper-shader",
+      "type": "registry:lib",
+      "description": "Deterministic frame driver and first-draw gate for Paper shader fields"
+    },
+    {
+      "name": "light-tunnel-bg",
+      "type": "registry:ui",
+      "description": "Flight down a twisting barrel of light with a defocused vanishing point",
+      "atlas": {
+        "lane": "shaders",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "text-reveal-shader",
+      "type": "registry:ui",
+      "description": "Words condensing out of light into liquid chrome",
+      "atlas": {
+        "lane": "shaders",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "dither-field-bg",
+      "type": "registry:ui",
+      "description": "Two-colour ordered-dither field quantised to a pixel grid",
+      "atlas": {
+        "lane": "shaders",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "warp-bands-bg",
+      "type": "registry:ui",
+      "description": "Colour bands folded through noise and a swirl",
+      "atlas": {
+        "lane": "shaders",
+        "drive": "time",
+        "tier": "core",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "grain-gradient-bg",
+      "type": "registry:ui",
+      "description": "Multi-colour gradient with grain worked through it",
+      "atlas": {
+        "lane": "shaders",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "background"
+        ]
+      }
+    },
+    {
+      "name": "product-turntable-3d",
+      "type": "registry:block",
+      "description": "A product on a studio turntable: the model turns a full revolution under a soft key and rim while the camera holds, with a contact shadow anchoring it to the floor",
+      "atlas": {
+        "lane": "3d",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "new"
+        ]
+      }
+    },
+    {
+      "name": "text-extrude-3d",
+      "type": "registry:block",
+      "description": "Extruded 3D headline with a lit bevel: the letters rise and settle as the camera pulls back across them",
+      "atlas": {
+        "lane": "3d",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "new"
+        ]
+      }
+    },
+    {
+      "name": "card-stack-3d",
+      "type": "registry:block",
+      "description": "A stack of physical cards fanning out in depth, each with real thickness and an edge highlight, turning to face the camera",
+      "atlas": {
+        "lane": "3d",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "new"
+        ]
+      }
+    },
+    {
+      "name": "globe-points-3d",
+      "type": "registry:block",
+      "description": "Lit sphere with instanced city markers and arcs rising between them, turning slowly under a rim light",
+      "atlas": {
+        "lane": "3d",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "new"
+        ]
+      }
+    },
+    {
+      "name": "ae-motion",
+      "type": "registry:lib",
+      "description": "After Effects mechanics as pure functions: graph-editor keyframe easing, loopIn/loopOut, deterministic wiggle and noise, repeater powers and parented transforms"
+    },
+    {
+      "name": "bezier-path",
+      "type": "registry:lib",
+      "description": "Paths as cubic segments: parse any SVG d, measure, slice by arc length, resample and rebuild"
+    },
+    {
+      "name": "curve-fit",
+      "type": "registry:lib",
+      "description": "Fit cubic bÃ©ziers through a polyline (Schneider) with corner detection, so dense-point operators emit real curves"
+    },
+    {
+      "name": "shape-ops",
+      "type": "registry:lib",
+      "description": "AE shape-layer operators â trim, repeater, offset, wiggle, zig-zag, pucker & bloat â run as an ordered stack"
+    },
+    {
+      "name": "ae-import",
+      "type": "registry:lib",
+      "description": "Runtime for `remotion-ui import-ae`: After Effects shape, solid, null and precomp layers with parenting, time remap and lottie-web's stacking rules, drawn as SVG from ae-motion data"
+    },
+    {
+      "name": "text-selectors",
+      "type": "registry:lib",
+      "description": "AE text range and wiggly selectors: per-unit selection with shapes, ease high/low, random order and combine modes"
+    },
+    {
+      "name": "glyph-layout",
+      "type": "registry:lib",
+      "description": "Measured per-glyph layout with kerning-preserving prefixes, word-safe wrapping and fit-to-width"
+    },
+    {
+      "name": "mograph",
+      "type": "registry:lib",
+      "description": "Cinema 4D MoGraph maths: cloner layouts, spherical/linear/noise falloff fields and stacked effectors"
+    },
+    {
+      "name": "shape-layer",
+      "type": "registry:ui",
+      "description": "After Effects shape layer with an ordered operator stack â trim paths, repeater, offset paths, wiggle paths, zig-zag and pucker & bloat â evaluated per frame as pure geometry",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "shapes",
+          "paths"
+        ]
+      }
+    },
+    {
+      "name": "text-animator",
+      "type": "registry:ui",
+      "description": "After Effects text animator: range and wiggly selectors drive per-character, per-word or per-line position, scale, rotation, opacity, blur, tracking and fill over measured layout",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "effector-field",
+      "type": "registry:ui",
+      "description": "Cinema 4D MoGraph cloner and effectors: clone any element into a grid, radial or linear arrangement and let animatable spherical, linear or noise falloff fields drive each clone",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "mograph"
+        ]
+      }
+    },
+    {
+      "name": "rig",
+      "type": "registry:lib",
+      "description": "Rig maths: law-of-cosines two-bone IK with bend, stretch and soft IK (no knee pop at full reach), and constant-length rubber-hose arcs"
+    },
+    {
+      "name": "pen-plot",
+      "type": "registry:lib",
+      "description": "Pen-plotter motion planning: SVG strokes to a pen position per frame, with cosine-ramped speed, full stops in cusps, lifts, and anticipating pen-up moves"
+    },
+    {
+      "name": "follow",
+      "type": "registry:lib",
+      "description": "Overlapping action: a chain of damped springs following a leader track, simulated deterministically from frame 0 and memoised"
+    },
+    {
+      "name": "slit-geometry",
+      "type": "registry:lib",
+      "description": "Slit-scan strips (bands at any angle or radial rings) with per-strip delays grouped into a bounded number of child renders"
+    },
+    {
+      "name": "slit-scan",
+      "type": "registry:ui",
+      "description": "Slit-scan time displacement: each strip of any child â rows, columns, rings or a gradient map â shows that child at a different moment, deterministically",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "time"
+        ]
+      }
+    },
+    {
+      "name": "ik-rig",
+      "type": "registry:ui",
+      "description": "A lit, shadowed two-bone IK arm that reaches for any target or plots SVG strokes with a pen, laying ink exactly where the solved hand is; soft IK, fixed bend, animatable base",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "rigging",
+          "plotter"
+        ]
+      }
+    },
+    {
+      "name": "track-matte",
+      "type": "registry:ui",
+      "description": "After Effects track mattes: reveal any child through any other with alpha, inverted alpha, luma or inverted luma",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "matte",
+          "masking"
+        ]
+      }
+    },
+    {
+      "name": "follow-through",
+      "type": "registry:ui",
+      "description": "Overlapping action along a chain: every element follows one leader track with its own delay, drag, overshoot and settle",
+      "atlas": {
+        "lane": "motion",
+        "drive": "time",
+        "tier": "advanced",
+        "tags": [
+          "secondary-motion"
+        ]
+      }
+    }
+  ]
+}
