@@ -33,7 +33,13 @@ import { DomainChoice, isTechDomain } from '../utils/domainInference';
 import { DEFAULT_GNAI_CONFIG, LLM_PROVIDER_PRESETS, loadStoredLlmConfig, saveStoredLlmConfig } from '../utils/llmConfigStorage';
 import { loadTtsSettings } from '../utils/ttsSettingsStorage';
 import { listVoiceProfiles, toCustomVoice } from '../utils/voiceProfiles';
-import { getVideoTheme, VIDEO_THEMES } from '../utils/videoThemes';
+import {
+  getVideoTheme,
+  inferVideoThemeFromContext,
+  isVideoThemeId,
+  VIDEO_THEMES,
+  type VideoThemeChoice,
+} from '../utils/videoThemes';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface SourceWizardModalProps {
@@ -51,6 +57,9 @@ type WizardPlanDraft = {
   domain: TechDomain;
   domainReason?: string;
   domainSource?: string;
+  videoTheme?: VideoThemeId;
+  videoThemeReason?: string;
+  videoThemeSource?: string;
   note?: string;
   scenes: any[];
 };
@@ -66,7 +75,7 @@ type PersistedWizardDraft = {
   topic: string;
   odmMode: boolean;
   durationSeconds: number;
-  videoTheme: VideoThemeId;
+  videoTheme: VideoThemeChoice;
   researchText: string;
   brief: TrainingBrief;
   allowWebResearch: boolean;
@@ -129,7 +138,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [topic, setTopic] = useState('');
   const [odmMode, setOdmMode] = useState(false);
   const [durationSeconds, setDurationSeconds] = useState<number>(300);
-  const [videoTheme, setVideoTheme] = useState<VideoThemeId>('signal-grid');
+  const [videoTheme, setVideoTheme] = useState<VideoThemeChoice>('auto');
   const [researchText, setResearchText] = useState('');
   const [brief, setBrief] = useState<TrainingBrief>({
     audience: 'Professionals',
@@ -173,7 +182,16 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
   const usingEnvLlm = envLlmStatus.configured && !useBrowserLlmOverride;
   const selectedVoiceProfile = voiceProfiles.find((p) => p.fileName === selectedVoiceFileName);
-  const selectedVideoTheme = getVideoTheme(videoTheme);
+  const autoPreviewTheme = inferVideoThemeFromContext(
+    topic || 'Remotion Tech Training',
+    researchText,
+    isTechDomain(domainChoice) ? domainChoice : undefined
+  );
+  const selectedVideoTheme = getVideoTheme(
+    videoTheme === 'auto'
+      ? (planDraft?.videoTheme || autoPreviewTheme.videoTheme)
+      : videoTheme
+  );
 
   const stopProgressTimer = () => {
     if (progressTimerRef.current !== null) {
@@ -200,7 +218,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       setTopic(recovery.topic || '');
       setOdmMode(Boolean(recovery.odmMode));
       setDurationSeconds(Math.max(300, Math.min(1200, recovery.durationSeconds || 300)));
-      setVideoTheme(recovery.videoTheme || 'signal-grid');
+      setVideoTheme(recovery.videoTheme || 'auto');
       setResearchText(recovery.researchText || '');
       setBrief(recovery.brief || {
         audience: 'Professionals',
@@ -459,6 +477,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
           topic: resolvedTopic,
           durationSeconds: targetSec,
           domain: domainChoice,
+          videoTheme,
           odmMode,
           rawText: rawTextForLlm,
           pptxSlides: pptxSlidesForLlm,
@@ -489,12 +508,20 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
         sourceFileName,
         pptxSlides: pptxSlidesForLlm,
       });
-      const nextDraft = {
+      const resolvedVideoTheme: VideoThemeId = isVideoThemeId(data.videoTheme)
+        ? data.videoTheme
+        : videoTheme === 'auto'
+        ? autoPreviewTheme.videoTheme
+        : videoTheme;
+      const nextDraft: WizardPlanDraft = {
         title: data.title || resolvedTopic,
         subtitle: data.subtitle || DOMAIN_META[resolvedDomain].description,
         domain: resolvedDomain,
         domainReason: data.domainReason,
         domainSource: data.domainSource,
+        videoTheme: resolvedVideoTheme,
+        videoThemeReason: data.videoThemeReason,
+        videoThemeSource: data.videoThemeSource,
         note: data.note,
         scenes: Array.isArray(data.scenes) ? data.scenes : [],
       };
@@ -566,7 +593,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       sourceFileName: preparedSource.sourceFileName,
       rawSourceText: preparedSource.rawText,
       researchSources,
-      videoTheme,
+      videoTheme: isVideoThemeId(finalPlan.videoTheme)
+        ? finalPlan.videoTheme
+        : videoTheme === 'auto'
+        ? autoPreviewTheme.videoTheme
+        : videoTheme,
       llmConfig: projectLlmConfig,
       ttsConfig: {
         defaultProvider: ttsProvider === 'ming-3.0' ? 'ming-3.0' : 'openformosa',
@@ -986,8 +1017,59 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             <legend className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
               3. 影片背景主題
             </legend>
-            <p className="mb-3 text-[11px] text-slate-500">選擇貫穿所有場景的背景與 HUD 基礎風格；內容圖表仍會依技術領域配色。</p>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <p className="mb-3 text-[11px] text-slate-500">
+              預設由 AI 依主題與 Remotion 元素自動配對背景主題（各場景仍可自由組合 Remotion 元件，不限於固定圖表範本）；也可手動鎖定單一風格。
+            </p>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              <label
+                className={`group cursor-pointer border p-2 transition focus-within:ring-2 focus-within:ring-cyan-400/70 ${
+                  videoTheme === 'auto'
+                    ? 'border-cyan-400 bg-cyan-500/[0.08]'
+                    : 'border-slate-800 bg-slate-950/40 hover:border-slate-600'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="video-theme"
+                  value="auto"
+                  checked={videoTheme === 'auto'}
+                  onChange={() => {
+                    setVideoTheme('auto');
+                    window.requestAnimationFrame(() =>
+                      themePreviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    );
+                  }}
+                  className="sr-only"
+                />
+                <span
+                  className="relative flex aspect-video flex-col items-center justify-center overflow-hidden border border-cyan-500/35 bg-gradient-to-br from-slate-950 via-cyan-950/40 to-emerald-950/30 px-3 text-center"
+                  aria-hidden="true"
+                >
+                  <Sparkles className="h-5 w-5 text-cyan-300" />
+                  <span className="mt-1.5 text-[10px] font-bold tracking-wider text-cyan-200">
+                    AI AUTO + ELEMENTS
+                  </span>
+                  <span className="mt-0.5 text-[9px] text-slate-400">
+                    自動配對主題與 Remotion 元件
+                  </span>
+                </span>
+                <span className="mt-2 flex items-start gap-2">
+                  <span
+                    className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+                      videoTheme === 'auto' ? 'border-cyan-300 bg-cyan-400' : 'border-slate-600'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {videoTheme === 'auto' && <span className="h-1.5 w-1.5 rounded-full bg-slate-950" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-100">AI 自動配對（建議）</span>
+                    <span className="mt-0.5 block text-[10px] leading-4 text-slate-400">
+                      依主題挑選底圖風格，並放開場景自由組合 Remotion 元件
+                    </span>
+                  </span>
+                </span>
+              </label>
               {VIDEO_THEMES.map((theme) => {
                 const selected = videoTheme === theme.id;
                 return (
@@ -1077,8 +1159,17 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             <div ref={themePreviewRef} className="mt-4 scroll-mb-24 border-t border-slate-800 pt-4">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">主題預覽</div>
-                  <div className="mt-0.5 text-xs font-bold text-slate-100">{selectedVideoTheme.name}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {videoTheme === 'auto' ? '主題預覽（AI 依主題自動建議）' : '主題預覽'}
+                  </div>
+                  <div className="mt-0.5 text-xs font-bold text-slate-100">
+                    {selectedVideoTheme.name}
+                    {videoTheme === 'auto' && (
+                      <span className="ml-2 text-[10px] font-normal text-cyan-300">
+                        {planDraft?.videoThemeReason || autoPreviewTheme.videoThemeReason}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right text-[10px] leading-4 text-slate-500">點選上方任一主題<br />立即更新下方畫面</div>
               </div>

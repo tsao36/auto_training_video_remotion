@@ -41,6 +41,7 @@ import {
   SceneTransitionWrapper,
   SvgFlowConnector,
 } from '../components/DynamicPrimitives';
+import { isFullViewportPrimitive } from '../lib/scene-layout-policy';
 import { PptxSlideRenderer } from './PptxSlideRenderer';
 import { WIRELESS_TEMPLATES, WirelessTemplateRenderer } from './WirelessTemplates';
 
@@ -232,6 +233,113 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({
         scenePadding={presentationTheme.scenePadding}
         getItemRevealFrame={getItemRevealFrame}
       />
+    );
+  }
+
+  // 0. AI ELEMENT-COMPOSED SCENE (Remotion elements lead the stage; ScenePrimitiveLayer renders selected elements)
+  if (scene.template === 'element-composed') {
+    const hasFullViewportElement = (scene.remotionPrimitives || []).some((id) => isFullViewportPrimitive(id));
+    return (
+      <SceneTransitionWrapper
+        sceneIndex={scene.index}
+        sceneTotalFrames={sceneTotalFrames}
+        accentColor={accent}
+      >
+        <AbsoluteFill
+          style={{
+            padding: presentationTheme.scenePadding,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            transform: `scale(${cameraBreath})`,
+          }}
+        >
+          {renderHeader()}
+          {!hasFullViewportElement && (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                paddingTop: 28,
+                paddingBottom: 40,
+              }}
+            >
+              <div
+                style={{
+                  width: '56%',
+                  backgroundColor: presentationTheme.panelSurface,
+                  border: `1px solid ${presentationTheme.panelBorder}`,
+                  borderLeft: `4px solid ${accent}`,
+                  borderRadius: presentationTheme.panelRadius,
+                  padding: '28px 34px',
+                  boxShadow: `0 18px 42px rgba(2, 6, 23, 0.38)`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 18,
+                }}
+              >
+                {scene.keyPoints.slice(0, 4).map((point, idx) => {
+                  const revealStart = getItemRevealFrame(idx, Math.max(1, scene.keyPoints.length), idx * 10);
+                  const p = spring({
+                    frame: Math.max(0, frame - revealStart),
+                    fps,
+                    config: springConfig,
+                  });
+                  const isFocused = idx === targetIndex % Math.max(1, scene.keyPoints.length);
+                  return (
+                    <div
+                      key={`${point}-${idx}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 16,
+                        opacity: p,
+                        transform: `translateX(${interpolate(p, [0, 1], [-18, 0])}px)`,
+                        padding: '12px 16px',
+                        borderRadius: Math.max(4, presentationTheme.panelRadius - 2),
+                        backgroundColor: isFocused ? `${accent}1A` : 'rgba(15, 23, 42, 0.42)',
+                        border: `1px solid ${isFocused ? `${accent}77` : 'rgba(148, 163, 184, 0.16)'}`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          backgroundColor: isFocused ? accent : `${accent}26`,
+                          color: isFocused ? '#030712' : accent,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontFamily: presentationTheme.labelFontFamily,
+                          fontSize: 15,
+                          fontWeight: 800,
+                          flexShrink: 0,
+                        }}
+                      >
+                        0{idx + 1}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: presentationTheme.titleFontFamily,
+                          fontSize: 24,
+                          fontWeight: isFocused ? 750 : 600,
+                          color: isFocused ? '#F8FAFC' : '#CBD5E1',
+                          lineHeight: 1.38,
+                        }}
+                      >
+                        {point}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </AbsoluteFill>
+      </SceneTransitionWrapper>
     );
   }
 

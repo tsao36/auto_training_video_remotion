@@ -20,6 +20,7 @@ export type VisualTemplate =
   | 'qam-constellation'
   | 'mlo-multilink'
   | 'rf-link-budget'
+  | 'element-composed'
   | 'summary-takeaways'
   | 'pptx-slide';
 
@@ -642,6 +643,7 @@ export const TEMPLATE_LABELS: Record<VisualTemplate, string> = {
   'qam-constellation': 'QAM 星座圖與 EVM / SNR 干擾',
   'mlo-multilink': 'Wi-Fi 7 MLO 多鏈路聚合時序',
   'rf-link-budget': 'RF 鏈路預算與 SNR 餘裕儀表',
+  'element-composed': 'AI 元素自由組合 (Element Composed)',
   'summary-takeaways': '重點總結與實作',
   'pptx-slide': 'PowerPoint 原版投影片',
 };

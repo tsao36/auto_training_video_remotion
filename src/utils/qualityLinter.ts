@@ -25,6 +25,7 @@ const INTERNAL_TEMPLATE_IDS: ReadonlySet<string> = new Set<VisualTemplate>([
   'code-log',
   'kpi-metrics',
   'fault-tree',
+  'element-composed',
   'summary-takeaways',
   'pptx-slide',
 ]);

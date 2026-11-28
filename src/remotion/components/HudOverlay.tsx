@@ -379,6 +379,7 @@ export const HudOverlay: React.FC<HudOverlayProps> = ({
         scene.template !== 'kpi-metrics' &&
         scene.template !== 'fault-tree' &&
         scene.template !== 'debug-checklist' &&
+        scene.template !== 'element-composed' &&
         scene.template !== 'summary-takeaways' &&
         activeCue.effect === 'packet-traffic' && (
         <div

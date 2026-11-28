@@ -204,4 +204,75 @@ describe('llmGenerator', () => {
     expect(res.mode).toBe('smart-fallback');
     expect(res.scenePatch.animation?.effect).toBe('glitch-alert');
   });
+
+  it('supports element-composed scenes with full-viewport Remotion elements and AI auto videoTheme', async () => {
+    clearLlmEnv();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    title: 'Modern Web Architecture',
+                    subtitle: 'AI Element-Composed Walkthrough',
+                    videoTheme: 'aurora-flow',
+                    videoThemeReason: '動態資料流與現代介面示範適合資料極光主題',
+                    scenes: [
+                      {
+                        title: 'Dashboard Walkthrough',
+                        subtitle: 'UI Overview',
+                        durationSeconds: 30,
+                        template: 'element-composed',
+                        effect: 'zoom-focus',
+                        remotionPrimitives: ['aurora-bg', 'device-mockup-zoom', 'arrow-annotate'],
+                        keyPoints: ['Live Telemetry', 'Filter Pipeline'],
+                        script: 'Inspect the live dashboard layout and how telemetry flows into the interface.',
+                      },
+                      {
+                        title: 'Config Snippet',
+                        subtitle: 'Code Reveal',
+                        durationSeconds: 30,
+                        template: 'element-composed',
+                        effect: 'cascade-reveal',
+                        remotionPrimitives: ['code-reveal', 'typewriter'],
+                        keyPoints: ['Zero-config Setup'],
+                        script: 'Walk through the minimal configuration block line by line.',
+                      },
+                    ],
+                  }),
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      )
+    );
+
+    const result = await generateVideoPlanWithLlm({
+      topic: 'Modern Web Architecture',
+      durationSeconds: 60,
+      domain: 'auto',
+      videoTheme: 'auto',
+      language: 'en-US',
+      llmConfig: {
+        provider: 'openai-compatible',
+        baseUrl: 'https://api.example.com/v1',
+        apiKey: 'unit-test-key',
+        model: 'test-model',
+      },
+    });
+
+    expect(result.videoTheme).toBe('aurora-flow');
+    expect(result.videoThemeSource).toBe('llm');
+    expect(result.videoThemeReason).toContain('資料極光');
+    expect(result.scenes[0].template).toBe('element-composed');
+    expect(result.scenes[0].remotionPrimitives).toContain('device-mockup-zoom');
+    expect(result.scenes[0].remotionPrimitives).toContain('aurora-bg');
+    expect(result.scenes[1].template).toBe('element-composed');
+    expect(result.scenes[1].remotionPrimitives).toContain('code-reveal');
+  });
 });

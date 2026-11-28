@@ -13,9 +13,16 @@ import {
   TechDomain,
   TrainingBrief,
   TtsProvider,
+  VideoThemeId,
   VisualTemplate,
 } from '../src/types/training';
 import { inferDomainFromText, isTechDomain } from '../src/utils/domainInference';
+import {
+  inferVideoThemeFromContext,
+  isVideoThemeId,
+  VIDEO_THEMES,
+  type VideoThemeChoice,
+} from '../src/utils/videoThemes';
 import { getAiElementPrompt, isAiSelectableSceneElement } from '../src/remotion/element-registry';
 import {
   isFullViewportPrimitive,
@@ -36,6 +43,7 @@ export interface GeneratePlanParams {
   topic: string;
   durationSeconds: number;
   domain?: TechDomain | 'auto';
+  videoTheme?: VideoThemeChoice;
   rawText?: string;
   pptxSlides?: PptxSlideData[];
   defaultTtsProvider?: TtsProvider;
@@ -74,6 +82,8 @@ interface LlmScenePayload {
 interface LlmPlanPayload {
   title: string;
   subtitle: string;
+  videoTheme?: VideoThemeId;
+  videoThemeReason?: string;
   scenes: LlmScenePayload[];
 }
 
@@ -95,6 +105,7 @@ const VALID_TEMPLATES: VisualTemplate[] = [
   'qam-constellation',
   'mlo-multilink',
   'rf-link-budget',
+  'element-composed',
   'summary-takeaways',
 ];
 
@@ -293,14 +304,15 @@ function resolveScenePrimitives(
   template?: VisualTemplate
 ): RemotionPrimitive[] {
   const suppressFullViewport = isStructuredDiagramTemplate(template);
+  const maxPrimitives = template === 'element-composed' ? 3 : 2;
   const filterAllowed = (items: string[]) =>
     items.filter((item) => isAiSelectableSceneElement(item) && (!suppressFullViewport || !isFullViewportPrimitive(item)));
 
   const outlineSuggestions = extractOutlinePrimitiveSuggestions(outlineText, sceneTitle, sceneIndex);
   const selected = outlineSuggestions.length > 0
-    ? filterAllowed(outlineSuggestions).slice(0, 2)
-    : clampPrimitives(llmValue, script, visualDescription, suppressFullViewport);
-  const fallback = selected.length > 0 ? selected : clampPrimitives(undefined, script, visualDescription, suppressFullViewport);
+    ? filterAllowed(outlineSuggestions).slice(0, maxPrimitives)
+    : clampPrimitives(llmValue, script, visualDescription, suppressFullViewport, maxPrimitives);
+  const fallback = selected.length > 0 ? selected : clampPrimitives(undefined, script, visualDescription, suppressFullViewport, maxPrimitives);
   return ensurePoppingTechnicalTermsPrimitive(script, fallback) as RemotionPrimitive[];
 }
 
@@ -308,7 +320,8 @@ function clampPrimitives(
   value: unknown,
   script: string,
   visualDescription?: string,
-  suppressFullViewport = false
+  suppressFullViewport = false,
+  maxPrimitives = 2
 ): RemotionPrimitive[] {
   const isAllowed = (item: string) =>
     isAiSelectableSceneElement(item) && (!suppressFullViewport || !isFullViewportPrimitive(item));
@@ -316,10 +329,10 @@ function clampPrimitives(
     const selected = [...new Set(value
       .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
-      .filter(isAllowed))].slice(0, 2);
+      .filter(isAllowed))].slice(0, maxPrimitives);
     if (selected.length > 0) return selected;
   }
-  return inferPrimitivesFromScript(script, visualDescription).filter(isAllowed).slice(0, 2);
+  return inferPrimitivesFromScript(script, visualDescription).filter(isAllowed).slice(0, maxPrimitives);
 }
 
 function limitDiagramDensity(diagramData: SceneDiagramData): SceneDiagramData {
@@ -945,6 +958,7 @@ const DIVERSE_TEMPLATE_ROTATION: VisualTemplate[] = [
   'ofdm-spectrum',
   'beamforming-array',
   'qam-constellation',
+  'element-composed',
   'mlo-multilink',
   'rf-link-budget',
   'summary-takeaways',
@@ -964,7 +978,7 @@ function chooseDiverseTemplate(
   idx: number,
   previousTemplates: VisualTemplate[]
 ): VisualTemplate {
-  if (AI_AUTO_TEMPLATES.has(desired)) return desired;
+  if (AI_AUTO_TEMPLATES.has(desired) || desired === 'element-composed') return desired;
   if (idx === 0) return desired === 'pptx-slide' ? 'title-hero' : desired;
 
   const recent = previousTemplates.slice(-3);
@@ -1586,6 +1600,43 @@ rf = antenna, RF parameters, SAR, EMI, desense.`,
   };
 }
 
+function resolveVideoThemeSelection(params: {
+  requested?: VideoThemeChoice;
+  topic: string;
+  rawText?: string;
+  domain: TechDomain;
+  llmTheme?: unknown;
+  llmReason?: unknown;
+}): {
+  videoTheme: VideoThemeId;
+  videoThemeSource: 'manual' | 'llm' | 'heuristic';
+  videoThemeReason: string;
+} {
+  if (params.requested && params.requested !== 'auto' && isVideoThemeId(params.requested)) {
+    return {
+      videoTheme: params.requested,
+      videoThemeSource: 'manual',
+      videoThemeReason: '使用者手動指定影片背景主題',
+    };
+  }
+  if (isVideoThemeId(params.llmTheme)) {
+    return {
+      videoTheme: params.llmTheme,
+      videoThemeSource: 'llm',
+      videoThemeReason:
+        typeof params.llmReason === 'string' && params.llmReason.trim()
+          ? params.llmReason.trim()
+          : 'AI 依主題語境與 Remotion 元件風格自動配對背景主題',
+    };
+  }
+  const inferred = inferVideoThemeFromContext(params.topic, params.rawText, params.domain);
+  return {
+    videoTheme: inferred.videoTheme,
+    videoThemeSource: 'heuristic',
+    videoThemeReason: inferred.videoThemeReason,
+  };
+}
+
 export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promise<{
   title: string;
   subtitle: string;
@@ -1595,6 +1646,9 @@ export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promi
   domain: TechDomain;
   domainSource: 'manual' | 'llm' | 'keywords';
   domainReason: string;
+  videoTheme: VideoThemeId;
+  videoThemeSource: 'manual' | 'llm' | 'heuristic';
+  videoThemeReason: string;
 }> {
   const resolvedDomain = await resolveTrainingDomain(input);
   const params: ResolvedGeneratePlanParams = { ...input, domain: resolvedDomain.domain };
@@ -1613,8 +1667,19 @@ export async function generateVideoPlanWithLlm(input: GeneratePlanParams): Promi
   // Dedicated 1:1 PowerPoint slide mode
   if (params.pptxSlides && params.pptxSlides.length > 0) {
     const pptxPlan = await generatePptxPlan(params, params.pptxSlides, cfg, canCallLlm);
-    return { ...pptxPlan, ...resolvedDomain };
+    const resolvedTheme = resolveVideoThemeSelection({
+      requested: input.videoTheme,
+      topic: params.topic,
+      rawText: params.rawText,
+      domain: resolvedDomain.domain,
+    });
+    return { ...pptxPlan, ...resolvedDomain, ...resolvedTheme };
   }
+
+  const themeMenuPrompt = VIDEO_THEMES
+    .map((theme) => `- "${theme.id}": ${theme.name}（${theme.description}）`)
+    .join('\n');
+  const autoSelectTheme = !input.videoTheme || input.videoTheme === 'auto';
 
   if (canCallLlm) {
     try {
@@ -1648,15 +1713,20 @@ ${params.colorPalette?.length ? `CUSTOM COLOR PALETTE RULE:
    - Keep one central idea per scene. Show 2–4 keyPoints, at most 1–4 Remotion primitives, and at most 6 primary diagram items. Put supporting detail, caveats, and explanation in the spoken script, not on screen.
    - Never fill every available area. Preserve clear negative space and prioritize adequate, readable information over exhaustive lists. If content needs more than one focused visual, split it across scenes.
   - "script" (spoken narration) MUST NOT simply read out the text on the graphic! Instead, explain the WHY, HOW, physical intuition, cause-and-effect, or real-world engineering story that complements the visual.
-3. EFFECT-TO-SCRIPT ALIGNMENT:
-   - Every scene MUST choose the best "template" from: ["title-hero", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", "rf-link-budget", "summary-takeaways"].
-   - Use diverse templates across scenes! Prefer "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator" (multi-channel Device A->B packet transfer simulation), "ofdm-spectrum" (OFDMA RU/subcarriers/puncturing), "beamforming-array" (phased array steering), "qam-constellation" (I/Q constellation & EVM/SNR), "mlo-multilink" (Wi-Fi 7 MLO concurrent links), and "rf-link-budget" (RF link budget waterfall & margin).
-   - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
+3. EFFECT-TO-SCRIPT ALIGNMENT & REMOTION ELEMENT COMPOSITION:
+   - Every scene MUST choose the best "template" from: ["title-hero", "element-composed", "architecture-flow", "signal-waveform", "protocol-timeline", "comparison-matrix", "debug-checklist", "packet-frame", "state-machine", "code-log", "kpi-metrics", "fault-tree", "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", "rf-link-budget", "summary-takeaways"].
+   - DO NOT force every scene into a predefined technical diagram template! Prefer "element-composed" whenever a scene is better expressed by combining runtime-verified Remotion elements (for example: "device-mockup-zoom" for product/UI/dashboard walkthroughs, "multi-device-lineup" for cross-device comparison, "code-reveal" for focused code/config snippets, "caption-bumper" for punchy chapter transitions, or "aurora-bg" + "typewriter"/"text-animator"/"arrow-annotate"/"connector-lines"/"shape-layer"/"state-card"/"animated-counter"/"pop-badge").
+   - Use structured diagram templates when the scene truly needs that diagram: "packet-frame" for protocol headers/fields, "state-machine" for FSM/connection states, "code-log" for CLI/driver logs/registers, "kpi-metrics" for quantitative specs/benchmarks, "fault-tree" for root-cause decision branches, and for wireless/RF topics prefer "packet-simulator", "ofdm-spectrum", "beamforming-array", "qam-constellation", "mlo-multilink", and "rf-link-budget".
+   - HARD VARIETY RULE: No template may repeat in three consecutive scenes. No effect may repeat in three consecutive scenes. For 20–30 minute videos, deliberately rotate among at least 8 different templates (mixing "element-composed" with structured templates where appropriate) and at least 5 different effects across the whole course. Avoid using architecture-flow or signal-pulse for more than 25% of scenes unless the topic genuinely requires that exact graphic.
    - Every scene MUST choose a matching "effect" from: ["signal-pulse", "glitch-alert", "cascade-reveal", "zoom-focus", "sweep-scan"] that directly animates what the 台詞 (script) is describing (e.g., if script talks about noise/droop/failure, use "glitch-alert" + "signal-waveform" with faultChannelIndex; if script talks about signal flow, use "signal-pulse" + "architecture-flow"; if script talks about step-by-step timing, use "cascade-reveal" + "protocol-timeline" or "state-machine"; if script talks about comparing options or metrics, use "zoom-focus" + "comparison-matrix" or "kpi-metrics"; if script talks about probing/logs/fields, use "sweep-scan" + "code-log" or "packet-frame").
-   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. Choose 1–4 reusable scene elements, but ONLY use IDs from this runtime-verified registry (do not invent names):
+   - Primitive precedence: First use an explicit element/component suggestion from the Reference Notes outline for that scene. Choose 1–3 reusable scene elements (especially for "element-composed" scenes, where these elements ARE the primary visual stage), using ONLY IDs from this runtime-verified registry (do not invent names):
 ${getAiElementPrompt()}
    - Select GL components only when their WebGL visual materially clarifies the topic; otherwise prefer a non-GL chart, diagram, caption, or callout.
+${autoSelectTheme ? `   - VIDEO THEME SELECTION: Choose the single best global "videoTheme" for the whole video from:
+${themeMenuPrompt}
+     Also provide a concise "videoThemeReason" in ${language.promptName} explaining why this base theme fits the topic and selected Remotion elements.` : `   - VIDEO THEME: The user selected "${input.videoTheme}". Keep scene visuals harmonious with this theme.`}
    - Provide topic-specific "diagramData" matching the template:
+     * element-composed: { visualCaption, codeTitle?, codeLanguage?, codeLines?, kpiMetrics?, comparisonRows? } (include fields needed by the chosen Remotion elements, e.g. codeLines for code-reveal, kpiMetrics for animated-counter)
      * architecture-flow: { nodes: [{id, label, sublabel, color}], highlightNodeIndex, visualCaption }
      * signal-waveform: { waveformChannels: [{label, color, type: "clock"|"data"|"rf-sine"|"ofdma"}], faultChannelIndex, visualCaption }
      * protocol-timeline: { protocolSteps: [{actor, target, message, timing}], activeStepIndex, visualCaption }
@@ -1673,15 +1743,17 @@ ${getAiElementPrompt()}
      * mlo-multilink: { mloLinks: [{band, channel, bandwidth, color, throughputMbps, mode: "STR"|"EMLSR"|"NSTR"}], visualCaption }
      * rf-link-budget: { rfSensitivityDbm, rfLinkStages: [{label, deltaDb, note, type: "tx"|"gain"|"loss"|"rx"}], visualCaption }
      * title-hero / debug-checklist / summary-takeaways: { visualCaption }
-
-Return JSON schema:
-{
-  "title": "string",
-  "subtitle": "string",
+videoTheme": "signal-grid|blueprint|carbon-lines|aurora-flow|thermal-paper",
+  "videoThemeReason": "short reason in ${language.promptName}",
   "scenes": [
     {
       "title": "string",
       "subtitle": "string",
+      "durationSeconds": number,
+      "template": "title-hero|element-composed|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|packet-simulator|ofdm-spectrum|beamforming-array|qam-constellation|mlo-multilink|rf-link-budget|summary-takeaways",
+      "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan|packet-traffic",
+      "visualDescription": "string describing what the Remotion graphic + effect shows and why it matches the script",
+      "remotionPrimitives": ["runtime-verified Remotion element IDs from the registry abov
       "durationSeconds": number,
       "template": "title-hero|architecture-flow|signal-waveform|protocol-timeline|comparison-matrix|debug-checklist|packet-frame|state-machine|code-log|kpi-metrics|fault-tree|packet-simulator|ofdm-spectrum|beamforming-array|qam-constellation|mlo-multilink|rf-link-budget|summary-takeaways",
       "effect": "signal-pulse|glitch-alert|cascade-reveal|zoom-focus|sweep-scan|packet-traffic",
@@ -1716,6 +1788,14 @@ ${params.rawText ? `Reference Notes:\n${params.rawText}` : ''}`;
           canCallLlm: true,
         });
         const baseNote = `已由 LLM (${cfg.model}) 自動生成台詞與對應 Remotion 動態圖表`;
+        const resolvedTheme = resolveVideoThemeSelection({
+          requested: input.videoTheme,
+          topic: params.topic,
+          rawText: params.rawText,
+          domain: resolvedDomain.domain,
+          llmTheme: rawResult.videoTheme,
+          llmReason: rawResult.videoThemeReason,
+        });
         return {
           title: checked.title,
           subtitle: checked.subtitle,
@@ -1723,6 +1803,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText}` : ''}`;
           mode: 'llm',
           note: checked.checkNote ? `${baseNote} • ${checked.checkNote}` : baseNote,
           ...resolvedDomain,
+          ...resolvedTheme,
         };
       }
     } catch (err) {
@@ -1744,6 +1825,12 @@ ${params.rawText ? `Reference Notes:\n${params.rawText}` : ''}`;
     cfg,
     canCallLlm: false,
   });
+  const resolvedFallbackTheme = resolveVideoThemeSelection({
+    requested: input.videoTheme,
+    topic: params.topic,
+    rawText: params.rawText,
+    domain: resolvedDomain.domain,
+  });
   return {
     title: checkedFallback.title,
     subtitle: checkedFallback.subtitle,
@@ -1751,6 +1838,7 @@ ${params.rawText ? `Reference Notes:\n${params.rawText}` : ''}`;
     mode: 'smart-fallback',
     note: '未設定 LLM API Key，已使用內建智慧引擎生成（可於設定中填入 OpenAI / 本地 Ollama 金鑰以啟用雲端 LLM）',
     ...resolvedDomain,
+    ...resolvedFallbackTheme,
   };
 }
 
@@ -1816,7 +1904,7 @@ Return JSON: { "script": "..." }`;
   if (canCallLlm) {
     try {
       const systemPrompt = `You are a Remotion motion-graphics director and technical scriptwriter.
-Return strict JSON updating a single scene.packet-simulator","ofdm-spectrum","beamforming-array","qam-constellation","mlo-multilink","rf-link-budget","
+Return strict JSON updating a single scene.
 ${params.odmMode ? `ODM BEGINNER-MODE:
 - Use metaphors and concrete examples appropriate for entry-level engineers.
 - Define unfamiliar terms immediately and explain cause-and-effect in small steps.
@@ -1826,8 +1914,8 @@ ${params.odmMode ? `ODM BEGINNER-MODE:
 - ${getRegionalTerminologyPromptGuidance(language.value)}
 - The spoken "script" (台詞) MUST NOT just read the "keyPoints" or diagram labels. Script explains WHY/HOW; graphics show concise visual anchors.
 - The "template", "effect", and "diagramData" MUST visually match what the "script" is describing.
-- Keep one central idea per scene: 2–4 keyPoints, 1–4 Remotion primitives, and no more than 6 primary diagram items. Move detail into narration instead of crowding the screen.
-Valid templates: ["title-hero","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","summary-takeaways"]
+- Keep one central idea per scene: 2–4 keyPoints, 1–3 Remotion primitives, and no more than 6 primary diagram items. Move detail into narration instead of crowding the screen.
+Valid templates: ["title-hero","element-composed","architecture-flow","signal-waveform","protocol-timeline","comparison-matrix","debug-checklist","packet-frame","state-machine","code-log","kpi-metrics","fault-tree","packet-simulator","ofdm-spectrum","beamforming-array","qam-constellation","mlo-multilink","rf-link-budget","summary-takeaways"]
 Valid effects: ["signal-pulse","glitch-alert","cascade-reveal","zoom-focus","sweep-scan","packet-traffic"]
 Choose the smallest set of Remotion elements that communicates the scene clearly; never add decorative elements merely to fill space.
 

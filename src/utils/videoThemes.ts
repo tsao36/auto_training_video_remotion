@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { VideoThemeId } from '../types/training';
+import type { TechDomain, VideoThemeId } from '../types/training';
+
+export type VideoThemeChoice = VideoThemeId | 'auto';
 
 export interface VideoThemeDefinition {
   id: VideoThemeId;
@@ -151,6 +153,47 @@ export const VIDEO_THEMES: VideoThemeDefinition[] = [
     panelRadius: 8,
   },
 ];
+
+export const VALID_VIDEO_THEME_IDS: VideoThemeId[] = VIDEO_THEMES.map((theme) => theme.id);
+
+export const isVideoThemeId = (value: unknown): value is VideoThemeId =>
+  typeof value === 'string' && VALID_VIDEO_THEME_IDS.includes(value as VideoThemeId);
+
+export const inferVideoThemeFromContext = (
+  topic: string,
+  rawText?: string,
+  domain?: TechDomain,
+): { videoTheme: VideoThemeId; videoThemeReason: string } => {
+  const text = `${topic} ${rawText || ''}`.toLowerCase();
+  if (/pcb|schematic|layout|cad|blueprint|製圖|電路圖|封裝|機械|結構設計|腳位|pinout|架構圖/.test(text)) {
+    return {
+      videoTheme: 'blueprint',
+      videoThemeReason: '主題偏向硬體架構、製圖與系統拓撲，搭配光學工程藍圖最清晰。',
+    };
+  }
+  if (/thermal|熱管理|散熱|power|電源|量測|示波器|oscilloscope|calibration|校正|類比|analog|audio|聲學|實驗/.test(text)) {
+    return {
+      videoTheme: 'thermal-paper',
+      videoThemeReason: '主題涉及量測實驗、電源或熱分析，搭配銅色實驗室風格更貼近儀器筆記感。',
+    };
+  }
+  if (/ai|llm|agent|cloud|data|資料|雲端|軟體|ui|ux|product|wi-?fi|mlo|bluetooth|無線|串流|網路|flow/.test(text) || domain === 'wifi' || domain === 'bluetooth') {
+    return {
+      videoTheme: 'aurora-flow',
+      videoThemeReason: '主題著重動態資料流、無線協作或現代軟體介面，搭配資料極光最具流場層次。',
+    };
+  }
+  if (/kernel|linux|driver|cli|security|資安|效能|benchmark|gpu|cpu|compiler|韌體|firmware|碳/.test(text)) {
+    return {
+      videoTheme: 'carbon-lines',
+      videoThemeReason: '主題聚焦底層系統、效能調校或命令列實務，搭配石墨切面高對比最俐落。',
+    };
+  }
+  return {
+    videoTheme: 'signal-grid',
+    videoThemeReason: '主題涵蓋綜合工程與訊號分析，搭配精密訊號網格可兼顧圖表與 Remotion 元件可讀性。',
+  };
+};
 
 export const getVideoTheme = (id?: VideoThemeId): VideoThemeDefinition =>
   VIDEO_THEMES.find((theme) => theme.id === id) ?? VIDEO_THEMES[0];

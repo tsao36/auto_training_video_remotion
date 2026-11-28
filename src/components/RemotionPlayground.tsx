@@ -71,6 +71,7 @@ const TEMPLATE_DESCRIPTIONS: Record<VisualTemplate, string> = {
   'qam-constellation': '星座圖、EVM 與干擾變動。',
   'mlo-multilink': 'Wi-Fi 7 多鏈路聚合時序。',
   'rf-link-budget': '鏈路增益、損耗與 SNR 預算。',
+  'element-composed': '由 AI 依場景語意自由挑選 Remotion 元件組合呈現。',
   'summary-takeaways': '重點結論與實作清單。',
   'pptx-slide': '保留原始投影片版面與內容。',
 };
@@ -81,7 +82,7 @@ const TEMPLATE_AI_USE: Record<VisualTemplate, string> = {
   'packet-frame': '封包結構', 'state-machine': '狀態與轉移', 'code-log': '錯誤日誌',
   'kpi-metrics': '效能指標', 'fault-tree': '根因分析', 'packet-simulator': '無線收發模擬',
   'ofdm-spectrum': 'OFDM 頻譜', 'beamforming-array': '天線與波束', 'qam-constellation': '調變與干擾',
-  'mlo-multilink': 'MLO 時序', 'rf-link-budget': 'RF 鏈路預算', 'summary-takeaways': '課程總結',
+  'mlo-multilink': 'MLO 時序', 'rf-link-budget': 'RF 鏈路預算', 'element-composed': 'AI 元素自由組合', 'summary-takeaways': '課程總結',
   'pptx-slide': '匯入投影片',
 };
 

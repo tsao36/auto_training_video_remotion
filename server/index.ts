@@ -534,7 +534,7 @@ app.post('/api/music/upload', upload.single('file'), (req, res) => {
 // LLM Auto-Generate full video script + matching Remotion graphics & effects
 app.post('/api/llm/generate-plan', async (req, res) => {
   try {
-    const { topic, durationSeconds, domain, rawText, pptxSlides, defaultTtsProvider, language, odmMode, brief, colorPalette, llmConfig } = req.body;
+    const { topic, durationSeconds, domain, videoTheme, rawText, pptxSlides, defaultTtsProvider, language, odmMode, brief, colorPalette, llmConfig } = req.body;
     if (!topic || String(topic).trim().length < 2) {
       res.status(400).json({ error: '請輸入影片主題 (topic)' });
       return;
@@ -543,6 +543,7 @@ app.post('/api/llm/generate-plan', async (req, res) => {
       topic: String(topic).trim(),
       durationSeconds: Number(durationSeconds) || 60,
       domain: domain === 'auto' || !domain ? 'auto' : domain,
+      videoTheme: videoTheme === 'auto' || !videoTheme ? 'auto' : videoTheme,
       rawText,
       pptxSlides,
       defaultTtsProvider: defaultTtsProvider || 'openformosa',

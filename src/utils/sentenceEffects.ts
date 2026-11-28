@@ -169,6 +169,7 @@ export function analyzeSentencePairEffect(
     'qam-constellation': beatIndex % 2 === 0 ? 'zoom-focus' : 'glitch-alert',
     'mlo-multilink': beatIndex % 2 === 0 ? 'cascade-reveal' : 'signal-pulse',
     'rf-link-budget': beatIndex % 2 === 0 ? 'cascade-reveal' : 'zoom-focus',
+    'element-composed': beatIndex % 2 === 0 ? 'cascade-reveal' : 'zoom-focus',
     'summary-takeaways': beatIndex === 0 ? 'cascade-reveal' : 'zoom-focus',
     'pptx-slide': 'zoom-focus',
   };
