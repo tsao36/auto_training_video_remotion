@@ -13,6 +13,7 @@ import {
   Copy,
   Check,
   Mic,
+  ChevronDown,
 } from 'lucide-react';
 import {
   CONTENT_LANGUAGES,
@@ -70,7 +71,7 @@ type PersistedWizardDraft = {
   brief: TrainingBrief;
   allowWebResearch: boolean;
   researchSources: ResearchSourceRecord[];
-  pipelineStage: 0 | 1 | 2 | 3;
+  pipelineStage: 0 | 1 | 2;
   preparedSource: {
     topic: string;
     rawText: string;
@@ -153,7 +154,8 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
   const [createStage, setCreateStage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copiedError, setCopiedError] = useState(false);
-  const [pipelineStage, setPipelineStage] = useState<0 | 1 | 2 | 3>(0);
+  const [pipelineStage, setPipelineStage] = useState<0 | 1 | 2>(0);
+  const [showSourceEditor, setShowSourceEditor] = useState(false);
   const [preparedSource, setPreparedSource] = useState({
     topic: '',
     rawText: '',
@@ -209,7 +211,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       setSourceUrlsText((recovery.brief?.sourceUrls || []).join('\n'));
       setAllowWebResearch(Boolean(recovery.allowWebResearch));
       setResearchSources(recovery.researchSources || []);
-      setPipelineStage(recovery.pipelineStage);
+      const restoredStage: 0 | 1 | 2 = !recovery.planDraft
+        ? 0
+        : (Math.min(2, Math.max(0, recovery.pipelineStage)) as 0 | 1 | 2);
+      setPipelineStage(restoredStage);
+      setShowSourceEditor(false);
       setPreparedSource({
         ...recovery.preparedSource,
         sourceFileName: recovery.preparedSource.sourceFileName,
@@ -494,7 +500,8 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
       };
       setPlanDraft(nextDraft);
       setJsonDraft(JSON.stringify(nextDraft, null, 2));
-      setPipelineStage(pipelineStage === 1 ? 2 : 1);
+      setPipelineStage(1);
+      setShowSourceEditor(false);
       setCreateProgress(100);
       setCreateStage('');
     } catch (err) {
@@ -642,7 +649,6 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
 
   const PIPELINE_STAGES = [
     { label: '輸入內容', description: '主題與條件' },
-    { label: '來源整理', description: '解析後文字' },
     { label: 'AI 場景大綱', description: '標題與腳本' },
     { label: 'Remotion JSON', description: '最終草稿' },
   ] as const;
@@ -694,7 +700,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               </button>
             </div>
           )}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {PIPELINE_STAGES.map((stage, idx) => {
               const active = pipelineStage === idx;
               const complete = pipelineStage > idx;
@@ -703,11 +709,11 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                   key={stage.label}
                   type="button"
                   onClick={() => {
-                    if (idx === 0 || (idx === 1 && preparedSource.topic) || (idx >= 2 && planDraft)) {
-                      setPipelineStage(idx as 0 | 1 | 2 | 3);
+                    if (idx === 0 || (idx >= 1 && planDraft)) {
+                      setPipelineStage(idx as 0 | 1 | 2);
                     }
                   }}
-                  disabled={idx === 1 && !preparedSource.topic || idx >= 2 && !planDraft}
+                  disabled={idx >= 1 && !planDraft}
                   className={`text-left px-3 py-2 rounded-lg border transition ${
                     active
                       ? 'border-cyan-400 bg-cyan-500/10'
@@ -1473,9 +1479,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               aria-checked={createTtsOnFirstRun}
               onClick={() => setCreateTtsOnFirstRun((enabled) => !enabled)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-left transition ${
-                createTtsOnFirstRun
-                  ? 'border-cyan-400 bg-cyan-500/10 text-cyan-100'
-                  : 'border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700'
+                createTtsOnFirstRun ? 'border-cyan-400 bg-cyan-500/10 text-cyan-100' : 'border-slate-800 bg-slate-900/50 text-slate-300 hover:border-slate-700'
               }`}
             >
               <span>
@@ -1503,41 +1507,68 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {pipelineStage === 1 && (
+              {pipelineStage === 1 && planDraft && (
                 <section className="space-y-4">
-                  <div>
-                    <div className="text-sm font-bold text-white">來源整理結果</div>
-                    <p className="text-xs text-slate-400 mt-1">可直接修正這階段的文字；確認後會送入 AI 場景規劃。</p>
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowSourceEditor((prev) => !prev)}
+                      className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left text-xs text-slate-300 hover:bg-slate-900/70 transition"
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="font-semibold text-slate-200">來源文字與主題</span>
+                        <span className="text-[11px] text-slate-500 truncate">
+                          {preparedSource.sourceFileName
+                            ? `${preparedSource.sourceFileName} • ${preparedSource.rawText.length.toLocaleString()} 字`
+                            : preparedSource.rawText.trim()
+                            ? `${preparedSource.rawText.length.toLocaleString()} 字`
+                            : '展開可補充來源筆記並重新生成大綱'}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
+                          showSourceEditor ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    {showSourceEditor && (
+                      <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-800 space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-400 mb-1">影片主題</label>
+                          <input
+                            value={preparedSource.topic}
+                            onChange={(e) => setPreparedSource((prev) => ({ ...prev, topic: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-400 mb-1">送給 AI 的來源文字 / 筆記</label>
+                          <textarea
+                            rows={6}
+                            value={preparedSource.rawText}
+                            onChange={(e) => setPreparedSource((prev) => ({ ...prev, rawText: e.target.value }))}
+                            placeholder="可貼上或修正解析後的來源文字，再重新生成大綱..."
+                            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white font-mono leading-relaxed"
+                          />
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => void handleGenerate()}
+                            className="px-3.5 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
+                          >
+                            {isProcessing ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 重新生成大綱中...</>
+                            ) : (
+                              <><Sparkles className="w-3.5 h-3.5" /> 套用來源並重新生成大綱</>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">影片主題</label>
-                    <input
-                      value={preparedSource.topic}
-                      onChange={(e) => setPreparedSource((prev) => ({ ...prev, topic: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">送給 AI 的來源文字 / 筆記</label>
-                    <textarea
-                      rows={12}
-                      value={preparedSource.rawText}
-                      onChange={(e) => setPreparedSource((prev) => ({ ...prev, rawText: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white font-mono leading-relaxed"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleGenerate()}
-                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
-                  >
-                    確認來源，檢視 AI 場景大綱
-                  </button>
-                </section>
-              )}
 
-              {pipelineStage === 2 && planDraft && (
-                <section className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">專案標題</label>
@@ -1573,7 +1604,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                         setPlanDraft(next);
                         setJsonDraft(JSON.stringify(next, null, 2));
                       }}
-                      className="w-full px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"
                     >
                       {(Object.keys(DOMAIN_META) as TechDomain[]).map((domain) => (
                         <option key={domain} value={domain}>{DOMAIN_META[domain].label}</option>
@@ -1617,20 +1648,10 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                       </section>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setJsonDraft(JSON.stringify(planDraft, null, 2));
-                      setPipelineStage(3);
-                    }}
-                    className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
-                  >
-                    確認場景大綱，檢視最終 JSON
-                  </button>
                 </section>
               )}
 
-              {pipelineStage === 3 && planDraft && (
+              {pipelineStage === 2 && planDraft && (
                 <section className="space-y-3">
                   <div>
                     <div className="text-sm font-bold text-white">最終 Remotion JSON 草稿</div>
@@ -1643,15 +1664,6 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
                     spellCheck={false}
                     className="w-full px-3.5 py-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 font-mono leading-relaxed resize-y"
                   />
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleFinalizeProject}
-                      className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-[#050607] text-sm font-bold"
-                    >
-                      建立已審閱的 Remotion 專案
-                    </button>
-                  </div>
                 </section>
               )}
             </div>
@@ -1721,7 +1733,7 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
             <button
               type="button"
               disabled={isProcessing}
-              onClick={() => setPipelineStage((pipelineStage - 1) as 0 | 1 | 2)}
+              onClick={() => setPipelineStage((pipelineStage - 1) as 0 | 1)}
               className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 text-slate-300 hover:bg-slate-800 transition"
             >
               上一步
@@ -1735,40 +1747,29 @@ export const SourceWizardModal: React.FC<SourceWizardModalProps> = ({
               className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] flex items-center gap-2 transition disabled:opacity-50"
             >
               {isProcessing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> AI 生成來源與大綱中...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> AI 生成場景大綱中...</>
               ) : (
-                <><Sparkles className="w-4 h-4" /> 生成並進入來源審閱</>
+                <><Sparkles className="w-4 h-4" /> 生成 AI 場景大綱</>
               )}
             </button>
           ) : pipelineStage === 1 ? (
             <button
               type="button"
               disabled={isProcessing}
-              onClick={() => void handleGenerate()}
-              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] flex items-center gap-2 transition disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 正在重新生成大綱...</>
-              ) : (
-                <><Sparkles className="w-4 h-4" /> 確認來源並重新生成大綱</>
-              )}
-            </button>
-          ) : pipelineStage === 2 ? (
-            <button
-              type="button"
               onClick={() => {
                 setJsonDraft(JSON.stringify(planDraft, null, 2));
-                setPipelineStage(3);
+                setPipelineStage(2);
               }}
-              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607]"
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] transition disabled:opacity-50"
             >
               確認場景大綱，檢視 JSON
             </button>
           ) : (
             <button
               type="button"
+              disabled={isProcessing}
               onClick={handleFinalizeProject}
-              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607]"
+              className="px-5 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-[#050607] transition disabled:opacity-50"
             >
               建立已審閱的 Remotion 專案
             </button>
